@@ -177,17 +177,11 @@ pnpm db:push
 **Error de conexión a BD**
 → Usa la URL **pooled** de Neon y `?sslmode=require`.
 
-**Login player devuelve 500 (`digest:...`)**
-→ Casi siempre: Prisma no encuentra el query engine en el bundle de Vercel (monorepo). `next.config.ts` debe incluir `outputFileTracingRoot` apuntando a la raíz del repo.
-→ También: `DATABASE_URL` mal configurada, o no se ejecutó `pnpm db:push` / `pnpm db:seed` contra Neon.
-→ En Vercel → proyecto Player → **Settings → Environment Variables** → comprueba `DATABASE_URL` (URL **pooled** con `-pooler` en el host).
-→ Desde tu Mac:
-```bash
-export DATABASE_URL="postgresql://...tu-url-pooled-de-neon..."
-pnpm db:push
-pnpm db:seed
-```
-→ Redeploy del player. Si falla, revisa **Deployments → Functions → Logs** al intentar login.
+**Login player devuelve 500 (`digest:...`) o "No se pudo conectar con la base de datos"**
+→ Si el log menciona `Query Engine for runtime "rhel-openssl-3.0.x"`: Prisma usa `engineType = "client"` con el driver HTTP de Neon (sin binario nativo).
+→ `DATABASE_URL` debe ser la URL **pooled** de Neon (`-pooler` en el host, `?sslmode=require`).
+→ Ejecuta `pnpm db:push` y `pnpm db:seed` contra Neon desde local.
+→ Redeploy del player tras cada cambio en `@repo/database`.
 
 **Build: `no output files found for @repo/database#build`**
 → Aviso inofensivo: esos paquetes no generan `.next/` ni `dist/`. Turbo los tiene con `cache: false`.

@@ -3,7 +3,7 @@ import path from "node:path";
 
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
-  serverExternalPackages: ["@prisma/client"],
+  serverExternalPackages: ["@prisma/client", "@neondatabase/serverless"],
   transpilePackages: ["@repo/ui", "@repo/domain", "@repo/database"],
 };
 
