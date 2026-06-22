@@ -1,0 +1,141 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useState } from "react";
+import {
+  LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
+  Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays,
+} from "lucide-react";
+import { cn, AppLogo } from "@repo/ui";
+import { logout } from "@/actions/auth";
+
+const mainNavItems = [
+  { href: "/", icon: LayoutDashboard, label: "Inicio" },
+  { href: "/characters", icon: Users, label: "Personajes" },
+  { href: "/missions", icon: Target, label: "Misiones" },
+  { href: "/achievements", icon: Trophy, label: "Logros" },
+];
+
+const allNavItems = [
+  ...mainNavItems,
+  { href: "/schedule", icon: CalendarDays, label: "Agenda" },
+  { href: "/rewards", icon: Gift, label: "Recompensas" },
+  { href: "/bosses", icon: Swords, label: "Retos del mes" },
+  { href: "/levels", icon: BarChart3, label: "Niveles" },
+  { href: "/penalties", icon: AlertTriangle, label: "Penalizaciones" },
+  { href: "/screen-time", icon: Settings, label: "Tiempo pantalla" },
+  { href: "/timeline", icon: Clock, label: "Timeline" },
+];
+
+function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutClick?: () => void }) {
+  return (
+    <div className="border-t border-slate-800 pt-4">
+      <div className="mb-2 px-3">
+        <p className="truncate text-sm font-medium text-slate-200">{userName}</p>
+        <p className="text-xs text-slate-500">Administrador</p>
+      </div>
+      <form action={logout}>
+        <button
+          type="submit"
+          onClick={onLogoutClick}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Cerrar sesión
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export function AdminNav({ userName }: { userName: string }) {
+  const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const NavLink = ({ href, icon: Icon, label }: { href: string; icon: typeof LayoutDashboard; label: string }) => (
+    <Link
+      href={href}
+      onClick={() => setMobileOpen(false)}
+      className={cn(
+        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
+        pathname === href
+          ? "bg-violet-600 text-white"
+          : "text-slate-400 hover:bg-slate-800 hover:text-white"
+      )}
+    >
+      <Icon className="h-4 w-4 shrink-0" />
+      {label}
+    </Link>
+  );
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur lg:hidden">
+        <AppLogo variant="icon" size="sm" />
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"
+          aria-label="Abrir menú"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+      </header>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
+          <aside className="absolute right-0 top-0 flex h-full w-72 flex-col bg-slate-900 p-4 shadow-xl">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <AppLogo variant="full" fullWidth className="min-w-0 flex-1" />
+              <button type="button" onClick={() => setMobileOpen(false)} className="shrink-0 rounded-lg p-1.5 hover:bg-slate-800">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex-1 space-y-1 overflow-y-auto">
+              {allNavItems.map((item) => (
+                <NavLink key={item.href} {...item} />
+              ))}
+            </nav>
+            <UserFooter userName={userName} onLogoutClick={() => setMobileOpen(false)} />
+          </aside>
+        </div>
+      )}
+
+      {/* Mobile bottom nav */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-800 bg-slate-900/95 backdrop-blur lg:hidden">
+        {mainNavItems.map(({ href, icon: Icon, label }) => (
+          <Link
+            key={href}
+            href={href}
+            className={cn(
+              "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
+              pathname === href ? "text-violet-400" : "text-slate-500"
+            )}
+          >
+            <Icon className="h-5 w-5" />
+            {label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden w-64 shrink-0 border-r border-slate-800 bg-slate-900 lg:block">
+        <div className="sticky top-0 flex h-screen flex-col px-3 py-4">
+          <div className="mb-6 px-1">
+            <AppLogo variant="full" fullWidth />
+          </div>
+          <nav className="flex-1 space-y-1 overflow-y-auto">
+            {allNavItems.map((item) => (
+              <NavLink key={item.href} {...item} />
+            ))}
+          </nav>
+          <UserFooter userName={userName} />
+        </div>
+      </aside>
+    </>
+  );
+}

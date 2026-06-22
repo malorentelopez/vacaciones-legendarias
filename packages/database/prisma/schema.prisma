@@ -1,0 +1,428 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PARENT
+  CHILD
+}
+
+enum MissionFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
+enum MissionType {
+  HABIT
+  CREATIVE
+  LEARNING
+  CHORE
+  CUSTOM
+}
+
+enum RewardStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DELIVERED
+}
+
+enum EventType {
+  MISSION_COMPLETED
+  XP_GAINED
+  LEVEL_UP
+  ACHIEVEMENT_UNLOCKED
+  CRYSTALS_GAINED
+  CRYSTALS_SPENT
+  BOSS_COMPLETED
+  PENALTY_APPLIED
+  WEEKLY_RESET
+  CHARACTER_CREATED
+}
+
+enum PenaltyType {
+  POINTS_DEDUCTION
+  SCREEN_TIME_REDUCTION
+  CUSTOM
+}
+
+enum AvatarAccessoryType {
+  HAT
+  OUTFIT
+  BACKGROUND
+  PET
+}
+
+enum CharacterGender {
+  BOY
+  GIRL
+}
+
+enum DayScheduleType {
+  WEEKDAY
+  WEEKEND
+}
+
+model Family {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  characters Character[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String?  @unique
+  passwordHash String?
+  name         String
+  role         Role
+  familyId     String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  family    Family     @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  character Character?
+
+  @@index([familyId])
+}
+
+model Character {
+  id             String          @id @default(cuid())
+  name           String
+  gender         CharacterGender @default(GIRL)
+  themeKey       String          @default("adventure")
+  pin            String?
+  avatarBase     String          @default("default")
+  avatarConfig   Json            @default("{}")
+  level          Int             @default(1)
+  xp             Int      @default(0)
+  crystals       Int      @default(0)
+  weeklyPoints   Int      @default(0)
+  familyId       String
+  userId         String?  @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  family              Family                @relation(fields: [familyId], references: [id], onDelete: Cascade)
+  user                User?                 @relation(fields: [userId], references: [id], onDelete: SetNull)
+  skills              CharacterSkill[]
+  missionProgress     MissionProgress[]
+  achievements        CharacterAchievement[]
+  rewardPurchases     RewardPurchase[]
+  penalties           Penalty[]
+  weeklyPenalties     WeeklyPenalty[]
+  crystalTransactions CrystalTransaction[]
+  gameEvents          GameEvent[]
+  scheduleBlocks      ScheduleBlock[]
+
+  @@index([familyId])
+}
+
+model Skill {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  icon        String   @default("star")
+  color       String   @default("#6366f1")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  characterSkills CharacterSkill[]
+  missions        Mission[]
+  achievements    Achievement[]
+}
+
+model CharacterSkill {
+  id          String @id @default(cuid())
+  characterId String
+  skillId     String
+  xp          Int    @default(0)
+  level       Int    @default(1)
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  skill     Skill     @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, skillId])
+}
+
+model Mission {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  frequency   MissionFrequency
+  type        MissionType      @default(HABIT)
+  xpReward    Int              @default(10)
+  crystalReward Int            @default(0)
+  skillId     String?
+  isActive    Boolean          @default(true)
+  familyId    String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  skill              Skill?              @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  progress           MissionProgress[]
+  achievementMissions AchievementMission[]
+  scheduleBlocks     ScheduleBlockMission[]
+}
+
+model MissionProgress {
+  id          String   @id @default(cuid())
+  missionId   String
+  characterId String
+  periodKey   String
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mission   Mission   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([missionId, characterId, periodKey])
+  @@index([characterId, periodKey])
+}
+
+model Achievement {
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  icon            String   @default("trophy")
+  requiredLevel   Int?
+  requiredMissions Int?
+  requiredSkillId String?
+  requiredSkillXp Int?
+  crystalReward   Int      @default(0)
+  isActive        Boolean  @default(true)
+  familyId        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  requiredSkill Skill?                 @relation(fields: [requiredSkillId], references: [id], onDelete: SetNull)
+  unlocks       CharacterAchievement[]
+  missions      AchievementMission[]
+}
+
+model AchievementMission {
+  id            String @id @default(cuid())
+  achievementId String
+  missionId     String
+
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  mission     Mission     @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementId, missionId])
+}
+
+model CharacterAchievement {
+  id            String   @id @default(cuid())
+  characterId   String
+  achievementId String
+  unlockedAt    DateTime @default(now())
+
+  character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, achievementId])
+}
+
+model Reward {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  crystalCost Int
+  icon        String   @default("gift")
+  isActive    Boolean  @default(true)
+  familyId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  purchases RewardPurchase[]
+}
+
+model RewardPurchase {
+  id          String       @id @default(cuid())
+  rewardId    String
+  characterId String
+  status      RewardStatus @default(PENDING)
+  purchasedAt DateTime     @default(now())
+  approvedAt  DateTime?
+  deliveredAt DateTime?
+
+  reward    Reward    @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, status])
+}
+
+model Penalty {
+  id          String      @id @default(cuid())
+  characterId String
+  type        PenaltyType
+  points      Int         @default(0)
+  reason      String?
+  appliedAt   DateTime    @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+}
+
+model WeeklyPenalty {
+  id          String   @id @default(cuid())
+  characterId String
+  weekKey     String
+  points      Int      @default(0)
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([characterId, weekKey])
+}
+
+model BossBattle {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  month       Int
+  year        Int
+  xpReward    Int      @default(100)
+  crystalReward Int    @default(50)
+  isActive    Boolean  @default(true)
+  familyId    String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  objectives BossObjective[]
+}
+
+model BossObjective {
+  id           String   @id @default(cuid())
+  bossBattleId String
+  title        String
+  description  String?
+  targetDate   DateTime?
+  order        Int      @default(0)
+  completed    Boolean  @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bossBattle BossBattle @relation(fields: [bossBattleId], references: [id], onDelete: Cascade)
+}
+
+model CrystalTransaction {
+  id          String   @id @default(cuid())
+  characterId String
+  amount      Int
+  reason      String
+  createdAt   DateTime @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId])
+}
+
+model GameEvent {
+  id          String    @id @default(cuid())
+  characterId String
+  type        EventType
+  payload     Json      @default("{}")
+  createdAt   DateTime  @default(now())
+
+  character Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@index([characterId, createdAt])
+  @@index([type])
+}
+
+model LevelConfiguration {
+  id             String   @id @default(cuid())
+  level          Int      @unique
+  xpRequired     Int
+  crystalReward  Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ScreenTimeConfiguration {
+  id              String   @id @default(cuid())
+  minWeeklyPoints Int
+  maxWeeklyPoints Int
+  minutesAllowed  Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PenaltyConfiguration {
+  id          String      @id @default(cuid())
+  type        PenaltyType
+  points      Int
+  description String?
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model CrystalStoreConfiguration {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AvatarAccessory {
+  id             String              @id @default(cuid())
+  key            String              @unique
+  name           String
+  type           AvatarAccessoryType
+  icon           String              @default("sparkles")
+  requiredLevel  Int?
+  achievementId  String?
+  isDefault      Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+}
+
+model ScheduleBlock {
+  id          String          @id @default(cuid())
+  characterId String
+  dayType     DayScheduleType
+  title       String
+  description String?
+  icon        String?
+  startTime   String
+  endTime     String?
+  section     String?
+  order       Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  character Character              @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  missions  ScheduleBlockMission[]
+
+  @@index([characterId, dayType, order])
+}
+
+model ScheduleBlockMission {
+  id              String @id @default(cuid())
+  scheduleBlockId String
+  missionId       String
+  order           Int    @default(0)
+
+  scheduleBlock ScheduleBlock @relation(fields: [scheduleBlockId], references: [id], onDelete: Cascade)
+  mission       Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleBlockId, missionId])
+}
