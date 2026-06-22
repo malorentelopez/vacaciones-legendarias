@@ -2,7 +2,7 @@
 
 import { selectCharacter, syncPlayerSessionCookie } from "@/actions/auth";
 import { Card, CardContent, CardHeader, CardTitle, Badge, CharacterPortrait, AppLogo } from "@repo/ui";
-import { getTheme, getRoleName, normalizeRoleKey, getCharacterPortraitSrc } from "@repo/domain";
+import { getTheme, getRoleName, normalizeRoleKey, getCharacterPortraitSrc } from "@repo/domain/client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 

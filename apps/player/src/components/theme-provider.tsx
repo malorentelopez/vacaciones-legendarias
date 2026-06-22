@@ -1,8 +1,8 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { ThemeConfig } from "@repo/domain";
-import { getTheme } from "@repo/domain";
+import type { ThemeConfig } from "@repo/domain/client";
+import { getTheme } from "@repo/domain/client";
 
 const ThemeContext = createContext<ThemeConfig>(getTheme("adventure"));
 

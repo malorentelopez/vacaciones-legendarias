@@ -3,7 +3,7 @@ import path from "node:path";
 
 const prismaTracing = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
-  serverExternalPackages: ["@prisma/client", "@neondatabase/serverless"],
+  serverExternalPackages: ["@prisma/client", "pg"],
   outputFileTracingIncludes: {
     "/*": [
       "../../node_modules/.pnpm/**/node_modules/.prisma/client/query_compiler_bg.wasm",

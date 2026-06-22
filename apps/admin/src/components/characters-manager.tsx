@@ -16,7 +16,7 @@ import {
   getRoleName,
   getRoleImage,
   normalizeRoleKey,
-} from "@repo/domain";
+} from "@repo/domain/client";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
