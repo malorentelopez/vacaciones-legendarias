@@ -1,14 +1,17 @@
 import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon } from "@repo/ui";
 import { Gem, Star, Zap, Crown } from "lucide-react";
+import { getAvatarEmoji } from "@repo/domain";
 
 interface CharacterData {
   id: string;
   name: string;
+  gender: "BOY" | "GIRL";
+  themeKey: string;
+  avatarBase: string;
   level: number;
   xp: number;
   crystals: number;
   weeklyPoints: number;
-  avatarBase: string;
   skills: {
     id: string;
     xp: number;
@@ -33,14 +36,21 @@ export function DashboardView({
   familyCharacters?: FamilyCharacter[];
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
+  const genderKey = character.gender === "BOY" ? "boy" : "girl";
+  const avatarEmoji = getAvatarEmoji(character.themeKey, genderKey, character.avatarBase);
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-violet-500/30 to-emerald-500/30 text-4xl">
-          🧙
+        <div
+          className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full text-5xl"
+          style={{ background: "linear-gradient(135deg, var(--theme-primary, #8b5cf6)30, var(--theme-secondary, #22c55e)30)" }}
+        >
+          {avatarEmoji}
         </div>
-        <h1 className="text-3xl font-bold text-violet-300">{character.name}</h1>
+        <h1 className="text-3xl font-bold" style={{ color: "var(--theme-heading, #c4b5fd)" }}>
+          {character.name}
+        </h1>
         <div className="mt-2 flex items-center justify-center gap-3">
           <Badge variant="info">
             <Star className="mr-1 inline h-3 w-3" />
@@ -78,7 +88,7 @@ export function DashboardView({
                 <SkillIcon icon={cs.skill.icon} color={cs.skill.color} />
                 <span className="text-sm font-medium">{cs.skill.name}</span>
                 <Badge variant="default">Nv. {cs.level}</Badge>
-                <Progress value={(cs.xp % 100)} className="h-1.5" color="bg-emerald-500" />
+                <Progress value={cs.xp % 100} className="h-1.5" color="bg-emerald-500" />
               </div>
             </Card>
           ))}

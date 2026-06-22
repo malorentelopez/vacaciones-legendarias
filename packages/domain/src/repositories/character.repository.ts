@@ -22,6 +22,39 @@ export class CharacterRepository {
     });
   }
 
+  async isPinTaken(pin: string, excludeCharacterId?: string) {
+    const characters = await prisma.character.findMany({
+      where: {
+        pin: { not: null },
+        ...(excludeCharacterId ? { id: { not: excludeCharacterId } } : {}),
+      },
+      select: { id: true, pin: true },
+    });
+
+    const bcrypt = await import("bcryptjs");
+    for (const character of characters) {
+      if (character.pin && (await bcrypt.compare(pin, character.pin))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  async findByPinGlobal(pin: string) {
+    const characters = await prisma.character.findMany({
+      where: { pin: { not: null } },
+      include: { user: true },
+    });
+
+    const bcrypt = await import("bcryptjs");
+    for (const character of characters) {
+      if (character.pin && (await bcrypt.compare(pin, character.pin))) {
+        return character;
+      }
+    }
+    return null;
+  }
+
   async findByPin(familyId: string, pin: string) {
     const characters = await prisma.character.findMany({
       where: { familyId },
@@ -44,8 +77,14 @@ export class CharacterRepository {
     userId?: string;
     pin?: string;
     avatarBase?: string;
+    gender?: "BOY" | "GIRL";
+    themeKey?: string;
   }) {
     const skills = await prisma.skill.findMany();
+    const gender = data.gender ?? "GIRL";
+    const themeKey = data.themeKey ?? "adventure";
+    const theme = await import("../config/themes").then((m) => m.getTheme(themeKey));
+    const defaultAvatar = theme.avatars[gender === "BOY" ? "boy" : "girl"][0]?.key ?? "default";
 
     return prisma.character.create({
       data: {
@@ -53,7 +92,9 @@ export class CharacterRepository {
         familyId: data.familyId,
         userId: data.userId,
         pin: data.pin,
-        avatarBase: data.avatarBase ?? "default",
+        gender,
+        themeKey,
+        avatarBase: data.avatarBase ?? defaultAvatar,
         skills: {
           create: skills.map((skill) => ({
             skillId: skill.id,
@@ -72,6 +113,8 @@ export class CharacterRepository {
     id: string,
     data: Partial<{
       name: string;
+      gender: "BOY" | "GIRL";
+      themeKey: string;
       level: number;
       xp: number;
       crystals: number;

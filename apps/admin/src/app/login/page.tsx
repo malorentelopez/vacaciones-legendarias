@@ -31,7 +31,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Admin — Verano Nivel 3</CardTitle>
+          <CardTitle>Admin — Verano Legendario</CardTitle>
           <p className="text-slate-400">Acceso para padres</p>
         </CardHeader>
         <CardContent>

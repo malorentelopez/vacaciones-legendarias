@@ -38,6 +38,8 @@ export class CharacterService {
     userId?: string;
     pin?: string;
     avatarBase?: string;
+    gender?: "BOY" | "GIRL";
+    themeKey?: string;
   }) {
     const character = await this.characterRepo.create(data);
     await this.gameEventRepo.create(character.id, "CHARACTER_CREATED", { name: character.name });
@@ -46,7 +48,14 @@ export class CharacterService {
 
   async updateCharacter(
     id: string,
-    data: Partial<{ name: string; avatarBase: string; avatarConfig: object; pin: string }>
+    data: Partial<{
+      name: string;
+      gender: "BOY" | "GIRL";
+      themeKey: string;
+      avatarBase: string;
+      avatarConfig: object;
+      pin: string;
+    }>
   ) {
     return this.characterRepo.update(id, data);
   }

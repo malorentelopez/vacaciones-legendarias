@@ -48,7 +48,7 @@ export async function completeMission(missionId: string) {
 export async function getAchievements() {
   const session = await requireSession("CHILD");
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
-  return achievementService.getCharacterAchievements(session.characterId);
+  return achievementService.getCharacterAchievements(session.characterId, session.familyId);
 }
 
 export async function getRewards() {
@@ -85,10 +85,21 @@ export async function getTimeline() {
   return gameEventRepo.findByCharacter(session.characterId);
 }
 
-export async function updateAvatar(avatarBase: string, avatarConfig: object) {
+export async function updateAvatar(data: {
+  name?: string;
+  gender?: "BOY" | "GIRL";
+  themeKey?: string;
+  avatarBase?: string;
+  avatarConfig?: object;
+}) {
   const session = await requireSession("CHILD");
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
-  await characterService.updateCharacter(session.characterId, { avatarBase, avatarConfig });
+  await characterService.updateCharacter(session.characterId, data);
   revalidatePath("/");
   revalidatePath("/avatar");
+}
+
+export async function getThemes() {
+  const { THEME_LIST } = await import("@repo/domain");
+  return THEME_LIST;
 }

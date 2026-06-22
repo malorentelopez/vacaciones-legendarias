@@ -16,16 +16,36 @@ export class AchievementService {
     return this.achievementRepo.findAll(familyId);
   }
 
-  async getCharacterAchievements(characterId: string) {
-    const all = await this.achievementRepo.findAll();
+  async getCharacterAchievements(characterId: string, familyId?: string) {
+    const all = await this.achievementRepo.findAll(familyId);
     const unlocked = await this.achievementRepo.getCharacterAchievements(characterId);
     const unlockedIds = new Set(unlocked.map((u) => u.achievementId));
 
-    return all.map((achievement) => ({
-      ...achievement,
-      unlocked: unlockedIds.has(achievement.id),
-      unlockedAt: unlocked.find((u) => u.achievementId === achievement.id)?.unlockedAt,
-    }));
+    const completedMissionIds = new Set(
+      (
+        await prisma.missionProgress.findMany({
+          where: { characterId, completed: true },
+          select: { missionId: true },
+        })
+      ).map((p) => p.missionId)
+    );
+
+    return all.map((achievement) => {
+      const requiredMissionIds = achievement.missions.map((m) => m.missionId);
+      const completedRequired = requiredMissionIds.filter((id) =>
+        completedMissionIds.has(id)
+      ).length;
+
+      return {
+        ...achievement,
+        unlocked: unlockedIds.has(achievement.id),
+        unlockedAt: unlocked.find((u) => u.achievementId === achievement.id)?.unlockedAt,
+        progress:
+          requiredMissionIds.length > 0
+            ? { completed: completedRequired, total: requiredMissionIds.length }
+            : undefined,
+      };
+    });
   }
 
   async createAchievement(data: Parameters<AchievementRepository["create"]>[0]) {
@@ -40,6 +60,21 @@ export class AchievementService {
     return this.achievementRepo.delete(id);
   }
 
+  private async hasCompletedRequiredMissions(
+    characterId: string,
+    missionIds: string[]
+  ): Promise<boolean> {
+    if (missionIds.length === 0) return true;
+
+    const completed = await prisma.missionProgress.findMany({
+      where: { characterId, missionId: { in: missionIds }, completed: true },
+      select: { missionId: true },
+      distinct: ["missionId"],
+    });
+
+    return completed.length >= missionIds.length;
+  }
+
   async evaluateAchievements(characterId: string) {
     const character = await this.characterRepo.findById(characterId);
     if (!character) return [];
@@ -47,7 +82,7 @@ export class AchievementService {
     const achievements = await this.achievementRepo.findAll(character.familyId);
     const newlyUnlocked = [];
 
-    const completedMissions = await prisma.missionProgress.count({
+    const completedMissionsCount = await prisma.missionProgress.count({
       where: { characterId, completed: true },
     });
 
@@ -56,12 +91,15 @@ export class AchievementService {
       if (isUnlocked) continue;
 
       let qualifies = true;
+      const requiredMissionIds = achievement.missions.map((m) => m.missionId);
 
-      if (achievement.requiredLevel && character.level < achievement.requiredLevel) {
-        qualifies = false;
+      if (requiredMissionIds.length > 0) {
+        qualifies = await this.hasCompletedRequiredMissions(characterId, requiredMissionIds);
+      } else if (achievement.requiredMissions) {
+        qualifies = completedMissionsCount >= achievement.requiredMissions;
       }
 
-      if (achievement.requiredMissions && completedMissions < achievement.requiredMissions) {
+      if (achievement.requiredLevel && character.level < achievement.requiredLevel) {
         qualifies = false;
       }
 

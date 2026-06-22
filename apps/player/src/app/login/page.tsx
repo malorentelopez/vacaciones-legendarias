@@ -34,7 +34,7 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-violet-500/20">
             <Sparkles className="h-8 w-8 text-violet-400" />
           </div>
-          <CardTitle className="text-2xl text-violet-300">Verano Nivel 3</CardTitle>
+          <CardTitle className="text-2xl text-violet-300">Verano Legendario</CardTitle>
           <p className="text-slate-400">Introduce tu PIN para empezar la aventura</p>
         </CardHeader>
         <CardContent>

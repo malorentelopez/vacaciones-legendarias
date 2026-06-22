@@ -109,6 +109,9 @@ async function main() {
     const character = await prisma.character.create({
       data: {
         name: "Aventurero",
+        gender: "GIRL",
+        themeKey: "manga",
+        avatarBase: "magical-girl",
         pin: childPin,
         familyId: family.id,
         userId: childUser.id,
@@ -144,10 +147,42 @@ async function main() {
     skipDuplicates: true,
   });
 
+  const seededMissions = await prisma.mission.findMany({ where: { familyId: family.id } });
+  const readMission = seededMissions.find((m) => m.title.includes("Leer"));
+  const bedMission = seededMissions.find((m) => m.title.includes("cama"));
+
+  if (readMission) {
+    const existing = await prisma.achievement.findFirst({ where: { title: "Primer paso", familyId: family.id } });
+    if (!existing) {
+      await prisma.achievement.create({
+        data: {
+          title: "Primer paso",
+          description: "Completa tu primera misión de lectura",
+          crystalReward: 5,
+          familyId: family.id,
+          missions: { create: [{ missionId: readMission.id }] },
+        },
+      });
+    }
+  }
+
+  if (readMission && bedMission) {
+    const existing = await prisma.achievement.findFirst({ where: { title: "Rutina matinal", familyId: family.id } });
+    if (!existing) {
+      await prisma.achievement.create({
+        data: {
+          title: "Rutina matinal",
+          description: "Completa leer y hacer la cama",
+          crystalReward: 15,
+          familyId: family.id,
+          missions: { create: [{ missionId: readMission.id }, { missionId: bedMission.id }] },
+        },
+      });
+    }
+  }
+
   await prisma.achievement.createMany({
     data: [
-      { title: "Primer paso", description: "Completa tu primera misión", requiredMissions: 1, crystalReward: 5, familyId: family.id },
-      { title: "Explorador", description: "Completa 10 misiones", requiredMissions: 10, crystalReward: 20, familyId: family.id },
       { title: "Nivel 3", description: "Alcanza el nivel 3", requiredLevel: 3, crystalReward: 15, familyId: family.id },
     ],
     skipDuplicates: true,

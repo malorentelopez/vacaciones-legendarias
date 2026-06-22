@@ -59,6 +59,11 @@ enum AvatarAccessoryType {
   PET
 }
 
+enum CharacterGender {
+  BOY
+  GIRL
+}
+
 model Family {
   id        String   @id @default(cuid())
   name      String
@@ -86,12 +91,14 @@ model User {
 }
 
 model Character {
-  id             String   @id @default(cuid())
+  id             String          @id @default(cuid())
   name           String
+  gender         CharacterGender @default(GIRL)
+  themeKey       String          @default("adventure")
   pin            String?
-  avatarBase     String   @default("default")
-  avatarConfig   Json     @default("{}")
-  level          Int      @default(1)
+  avatarBase     String          @default("default")
+  avatarConfig   Json            @default("{}")
+  level          Int             @default(1)
   xp             Int      @default(0)
   crystals       Int      @default(0)
   weeklyPoints   Int      @default(0)
@@ -156,8 +163,9 @@ model Mission {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  skill    Skill?            @relation(fields: [skillId], references: [id], onDelete: SetNull)
-  progress MissionProgress[]
+  skill              Skill?              @relation(fields: [skillId], references: [id], onDelete: SetNull)
+  progress           MissionProgress[]
+  achievementMissions AchievementMission[]
 }
 
 model MissionProgress {
@@ -194,6 +202,18 @@ model Achievement {
 
   requiredSkill Skill?                 @relation(fields: [requiredSkillId], references: [id], onDelete: SetNull)
   unlocks       CharacterAchievement[]
+  missions      AchievementMission[]
+}
+
+model AchievementMission {
+  id            String @id @default(cuid())
+  achievementId String
+  missionId     String
+
+  achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+  mission     Mission     @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([achievementId, missionId])
 }
 
 model CharacterAchievement {

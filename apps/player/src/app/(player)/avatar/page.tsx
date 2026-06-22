@@ -8,5 +8,14 @@ export default async function AvatarPage() {
   if (!session?.characterId) redirect("/");
 
   const character = await getCharacter();
-  return <AvatarCustomizer currentAvatar={character.avatarBase} />;
+  return (
+    <AvatarCustomizer
+      character={{
+        name: character.name,
+        gender: character.gender,
+        themeKey: character.themeKey,
+        avatarBase: character.avatarBase,
+      }}
+    />
+  );
 }

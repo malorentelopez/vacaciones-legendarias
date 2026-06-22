@@ -8,7 +8,7 @@ const nunito = Nunito({
 });
 
 export const metadata: Metadata = {
-  title: "Verano Nivel 3",
+  title: "Verano Legendario",
   description: "Tu aventura de verano",
 };
 

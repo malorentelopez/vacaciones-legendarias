@@ -17,3 +17,13 @@ export {
 } from "./repositories/skill.repository";
 
 export { getPeriodKey, getWeekKey, calculateXpForNextLevel } from "./utils/period";
+
+export {
+  THEMES,
+  THEME_LIST,
+  getTheme,
+  getAvatarEmoji,
+  type ThemeConfig,
+  type ThemeAvatar,
+  type CharacterGender,
+} from "./config/themes";

@@ -1,6 +1,6 @@
 # Product Vision
 
-Verano Nivel 3 es una plataforma de gamificación familiar inspirada en RPG.
+Verano Legendario es una plataforma de gamificación familiar inspirada en RPG.
 
 Objetivos:
 - Crear hábitos.

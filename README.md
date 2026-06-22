@@ -1,4 +1,4 @@
-# Verano Nivel 3 — Vacaciones Legendarias
+# Verano Legendario
 
 Plataforma de gamificación familiar inspirada en RPG para el verano.
 

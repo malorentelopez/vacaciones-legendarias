@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Admin — Verano Nivel 3",
+  title: "Admin — Verano Legendario",
   description: "Panel de administración familiar",
 };
 

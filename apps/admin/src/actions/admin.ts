@@ -55,16 +55,63 @@ export async function getCharacters() {
   return characterService.getFamilyCharacters(session.familyId);
 }
 
-export async function createCharacter(data: { name: string; pin?: string }) {
+export async function createCharacter(data: {
+  name: string;
+  pin: string;
+  gender?: "BOY" | "GIRL";
+  themeKey?: string;
+}) {
   const session = await requireSession();
-  const pin = data.pin ? await bcrypt.hash(data.pin, 10) : undefined;
+
+  if (!/^\d{4}$/.test(data.pin)) {
+    return { success: false as const, error: "El PIN debe tener exactamente 4 dígitos" };
+  }
+
+  const { CharacterRepository } = await import("@repo/domain");
+  const characterRepo = new CharacterRepository();
+  if (await characterRepo.isPinTaken(data.pin)) {
+    return { success: false as const, error: "Este PIN ya está en uso. Elige otro." };
+  }
+
+  const pinHash = await bcrypt.hash(data.pin, 10);
   const character = await characterService.createCharacter({
     name: data.name,
     familyId: session.familyId,
-    pin,
+    pin: pinHash,
+    gender: data.gender,
+    themeKey: data.themeKey,
   });
   revalidatePath("/characters");
-  return character;
+  return { success: true as const, character };
+}
+
+export async function checkPinAvailable(pin: string) {
+  await requireSession();
+  if (!/^\d{4}$/.test(pin)) return { available: false };
+  const { CharacterRepository } = await import("@repo/domain");
+  const characterRepo = new CharacterRepository();
+  const taken = await characterRepo.isPinTaken(pin);
+  return { available: !taken };
+}
+
+export async function getCharacterDetail(id: string) {
+  const session = await requireSession();
+  const character = await characterService.getCharacter(id);
+  if (character.familyId !== session.familyId) {
+    throw new Error("Acceso denegado");
+  }
+
+  const [completedMissions, achievements, recentEvents] = await Promise.all([
+    prisma.missionProgress.count({ where: { characterId: id, completed: true } }),
+    prisma.characterAchievement.count({ where: { characterId: id } }),
+    prisma.gameEvent.findMany({
+      where: { characterId: id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+  ]);
+
+  return { ...character, completedMissions, achievements, recentEvents };
 }
 
 export async function getMissions() {
@@ -110,9 +157,13 @@ export async function createAchievement(data: {
   requiredLevel?: number;
   requiredMissions?: number;
   crystalReward?: number;
+  missionIds?: string[];
 }) {
   const session = await requireSession();
-  const achievement = await achievementService.createAchievement({ ...data, familyId: session.familyId });
+  const achievement = await achievementService.createAchievement({
+    ...data,
+    familyId: session.familyId,
+  });
   revalidatePath("/achievements");
   return achievement;
 }

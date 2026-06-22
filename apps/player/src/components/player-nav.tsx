@@ -6,6 +6,7 @@ import {
   Home, Target, Sparkles, Trophy, ShoppingBag, Swords, Calendar, Clock, User,
 } from "lucide-react";
 import { cn } from "@repo/ui";
+import { useTheme } from "./theme-provider";
 
 const navItems = [
   { href: "/", icon: Home, label: "Inicio" },
@@ -21,6 +22,7 @@ const navItems = [
 
 export function PlayerNav() {
   const pathname = usePathname();
+  const theme = useTheme();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-lg">
@@ -32,9 +34,14 @@ export function PlayerNav() {
             className={cn(
               "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors",
               pathname === href
-                ? "bg-violet-600 text-white"
+                ? "text-white"
                 : "text-slate-400 hover:bg-slate-800 hover:text-white"
             )}
+            style={
+              pathname === href
+                ? { backgroundColor: theme.colors.navActive }
+                : undefined
+            }
           >
             <Icon className="h-4 w-4" />
             <span className="hidden sm:inline">{label}</span>

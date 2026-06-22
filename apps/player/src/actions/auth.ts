@@ -7,25 +7,22 @@ import { CharacterRepository } from "@repo/domain";
 import { redirect } from "next/navigation";
 
 export async function loginWithPin(pin: string) {
-  const families = await prisma.family.findMany();
   const characterRepo = new CharacterRepository();
+  const character = await characterRepo.findByPinGlobal(pin);
 
-  for (const family of families) {
-    const character = await characterRepo.findByPin(family.id, pin);
-    if (character) {
-      const user = character.userId
-        ? await prisma.user.findUnique({ where: { id: character.userId } })
-        : null;
+  if (character) {
+    const user = character.userId
+      ? await prisma.user.findUnique({ where: { id: character.userId } })
+      : null;
 
-      await createSession({
-        userId: user?.id ?? character.id,
-        role: "CHILD",
-        familyId: family.id,
-        characterId: character.id,
-        name: character.name,
-      });
-      return { success: true };
-    }
+    await createSession({
+      userId: user?.id ?? character.id,
+      role: "CHILD",
+      familyId: character.familyId,
+      characterId: character.id,
+      name: character.name,
+    });
+    return { success: true };
   }
 
   return { success: false, error: "PIN incorrecto" };
