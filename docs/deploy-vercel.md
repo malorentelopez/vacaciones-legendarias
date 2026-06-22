@@ -152,7 +152,7 @@ Neon y Vercel incluyen HTTPS automático.
 
 ## Actualizaciones
 
-Cada push a `main` o `development` (según la rama conectada) redeploya automáticamente.
+Cada push a la rama conectada redeploya automáticamente. En este repo la rama activa es **`development`** (GitHub default: `main`).
 
 Si cambias el schema Prisma:
 
@@ -160,6 +160,38 @@ Si cambias el schema Prisma:
 export DATABASE_URL="..."
 pnpm db:push
 ```
+
+---
+
+## Despliegues automáticos por rama
+
+GitHub tiene `main` como rama por defecto, pero el desarrollo va en **`development`**. Vercel debe saber qué rama despliega a Production y cuáles generan Preview.
+
+### Opción A — Production en `development` (recomendado si solo usas esa rama)
+
+En cada proyecto Vercel (Player y Admin):
+
+1. **Settings → Environments → Production**
+2. **Branch** → cambia de `main` a **`development`**
+3. Guarda
+
+Cada push a `development` actualizará Production (incluido `player.veranolegendario.es` si el dominio está en Production).
+
+### Opción B — Production en `main`, Preview en `development`
+
+1. Deja Production Branch en **`main`**
+2. Los pushes a `development` crean deployments **Preview** (URL distinta, p. ej. `…-git-development-….vercel.app`)
+3. Mira la pestaña **Deployments** → filtra por Preview, no Production
+
+### Si no se dispara ningún deploy al hacer push
+
+1. **Settings → Git** → comprueba que el repo está conectado
+2. **Settings → Git → Ignored Build Step** → debe estar vacío (o no ignorar `development`)
+3. Reconecta GitHub: **Settings → Git → Disconnect** → **Connect** de nuevo
+4. En GitHub: **Settings → Integrations → Vercel** → confirma acceso al repo
+5. Deploy manual mientras tanto: **Deployments → Create Deployment** → elige rama `development` → **Deploy**
+
+Los archivos `apps/*/vercel.json` incluyen `"git.deploymentEnabled.development": true` para no bloquear esa rama.
 
 ---
 
