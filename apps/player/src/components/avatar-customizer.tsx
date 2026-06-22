@@ -14,7 +14,7 @@ import {
   getCharacterPortraitSrc,
   parseAvatarConfig,
   hasCustomAvatar,
-} from "@repo/domain";
+} from "@repo/domain/client";
 import { useRouter } from "next/navigation";
 import { Upload, Trash2, Shield, ImageIcon } from "lucide-react";
 

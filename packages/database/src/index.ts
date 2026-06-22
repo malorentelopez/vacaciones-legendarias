@@ -1,7 +1,8 @@
-import { neonConfig } from "@neondatabase/serverless";
-import { PrismaNeon } from "@prisma/adapter-neon";
+import "server-only";
+
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
-import ws from "ws";
+import { Pool } from "pg";
 
 function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL?.trim().replace(/^["']|["']$/g, "");
@@ -12,9 +13,11 @@ function getDatabaseUrl(): string {
 }
 
 function createPrismaClient(): PrismaClient {
-  // WebSocket pool supports transactions; HTTP mode does not.
-  neonConfig.webSocketConstructor = ws;
-  const adapter = new PrismaNeon({ connectionString: getDatabaseUrl() });
+  const pool = new Pool({
+    connectionString: getDatabaseUrl(),
+    max: 1,
+  });
+  const adapter = new PrismaPg(pool);
 
   return new PrismaClient({
     adapter,
