@@ -1,9 +1,30 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "DATABASE_URL",
+    "AUTH_SECRET",
+    "BLOB_READ_WRITE_TOKEN",
+    "BLOB_STORE_ID",
+    "BLOB_WEBHOOK_PUBLIC_KEY"
+  ],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "AUTH_SECRET",
+    "BLOB_READ_WRITE_TOKEN",
+    "BLOB_STORE_ID",
+    "BLOB_WEBHOOK_PUBLIC_KEY"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "BLOB_READ_WRITE_TOKEN",
+        "BLOB_STORE_ID",
+        "BLOB_WEBHOOK_PUBLIC_KEY"
+      ]
     },
     "dev": {
       "cache": false,
