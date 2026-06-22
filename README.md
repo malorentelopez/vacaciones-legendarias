@@ -61,6 +61,10 @@ docs/         # Documentación del proyecto
 | `pnpm test` | Tests del dominio |
 | `pnpm db:studio` | Prisma Studio |
 
+## Despliegue
+
+Guía paso a paso para **Vercel + Neon (0 €)**: [docs/deploy-vercel.md](docs/deploy-vercel.md)
+
 ## Fases implementadas
 
 1. Personaje — dashboard, skills, selector multijugador

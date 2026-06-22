@@ -1,37 +1,14 @@
 "use server";
 
-import { mkdir, writeFile, unlink } from "fs/promises";
-import path from "path";
 import { revalidatePath } from "next/cache";
 import { CharacterService, parseAvatarConfig } from "@repo/domain";
 import { requirePlayerSession } from "@/lib/player-session";
+import { removeStoredAvatar, storeAvatarImage } from "@/lib/avatar-storage";
 
 const MAX_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const characterService = new CharacterService();
-
-function customAvatarDir() {
-  return path.join(process.cwd(), "public/avatars/custom");
-}
-
-function customAvatarPath(characterId: string, ext: string) {
-  return path.join(customAvatarDir(), `${characterId}.${ext}`);
-}
-
-function customAvatarUrl(characterId: string, ext: string) {
-  return `/avatars/custom/${characterId}.${ext}`;
-}
-
-async function removeExistingCustomFiles(characterId: string) {
-  for (const ext of ["jpg", "jpeg", "png", "webp"]) {
-    try {
-      await unlink(customAvatarPath(characterId, ext));
-    } catch {
-      // file may not exist
-    }
-  }
-}
 
 export async function uploadCustomAvatar(formData: FormData) {
   const session = await requirePlayerSession();
@@ -53,19 +30,18 @@ export async function uploadCustomAvatar(formData: FormData) {
   const ext = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
   const characterId = session.characterId;
 
-  await mkdir(customAvatarDir(), { recursive: true });
-  await removeExistingCustomFiles(characterId);
-
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(customAvatarPath(characterId, ext), buffer);
-
   const character = await characterService.getCharacter(characterId);
   const current = parseAvatarConfig(character.avatarConfig);
+
+  await removeStoredAvatar(characterId, current.customImage);
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const customImage = await storeAvatarImage(characterId, ext, buffer, file.type);
 
   await characterService.updateCharacter(characterId, {
     avatarConfig: {
       ...current,
-      customImage: customAvatarUrl(characterId, ext),
+      customImage,
       useCustom: true,
     },
   });
@@ -74,7 +50,7 @@ export async function uploadCustomAvatar(formData: FormData) {
   revalidatePath("/avatar");
   revalidatePath("/ruta");
 
-  return { success: true as const, customImage: customAvatarUrl(characterId, ext) };
+  return { success: true as const, customImage };
 }
 
 export async function removeCustomAvatar() {
@@ -83,10 +59,10 @@ export async function removeCustomAvatar() {
     return { success: false as const, error: "Sin personaje seleccionado" };
   }
 
-  await removeExistingCustomFiles(session.characterId);
-
   const character = await characterService.getCharacter(session.characterId);
   const current = parseAvatarConfig(character.avatarConfig);
+
+  await removeStoredAvatar(session.characterId, current.customImage);
 
   await characterService.updateCharacter(session.characterId, {
     avatarConfig: {
