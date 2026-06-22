@@ -1,7 +1,6 @@
-import { PrismaClient, Role } from "@prisma/client";
+import { prisma } from "../src/index";
+import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
 
 const SKILLS = [
   { key: "wisdom", name: "Sabiduría", icon: "book", color: "#8b5cf6" },

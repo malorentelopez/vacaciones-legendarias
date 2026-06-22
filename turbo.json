@@ -38,6 +38,12 @@
     },
     "db:generate": {
       "cache": false
+    },
+    "@repo/database#build": {
+      "cache": false
+    },
+    "@repo/domain#build": {
+      "cache": false
     }
   }
 }

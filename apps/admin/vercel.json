@@ -2,5 +2,11 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm db:generate && pnpm turbo build --filter=@repo/admin",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "development": true
+    }
+  }
 }

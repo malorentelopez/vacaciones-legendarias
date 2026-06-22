@@ -69,13 +69,15 @@ openssl rand -base64 32
 
 3. El archivo `apps/player/vercel.json` ya define install/build del monorepo.
 
-4. **Environment Variables** (Production + Preview):
+4. **Environment Variables** — añádelas para **Production** y **Preview**:
 
-   | Variable | Valor |
-   |----------|-------|
-   | `DATABASE_URL` | Connection string de Neon |
-   | `AUTH_SECRET` | El secreto generado |
-   | `BLOB_READ_WRITE_TOKEN` | Ver paso 5 |
+   | Variable | Valor | Obligatoria |
+   |----------|-------|-------------|
+   | `DATABASE_URL` | Connection string **pooled** de Neon | Sí |
+   | `AUTH_SECRET` | El secreto generado | Sí |
+   | `BLOB_READ_WRITE_TOKEN` | Auto al conectar Blob (paso 5) | Solo avatares |
+
+   > Si el build muestra `[warn] DATABASE_URL`, la variable **no está definida** en ese proyecto Vercel. Sin `DATABASE_URL` el login fallará con error 500.
 
 5. Deploy.
 
@@ -150,7 +152,7 @@ Neon y Vercel incluyen HTTPS automático.
 
 ## Actualizaciones
 
-Cada push a `main` o `development` (según la rama conectada) redeploya automáticamente.
+Cada push a la rama conectada redeploya automáticamente. En este repo la rama activa es **`development`** (GitHub default: `main`).
 
 Si cambias el schema Prisma:
 
@@ -158,6 +160,38 @@ Si cambias el schema Prisma:
 export DATABASE_URL="..."
 pnpm db:push
 ```
+
+---
+
+## Despliegues automáticos por rama
+
+GitHub tiene `main` como rama por defecto, pero el desarrollo va en **`development`**. Vercel debe saber qué rama despliega a Production y cuáles generan Preview.
+
+### Opción A — Production en `development` (recomendado si solo usas esa rama)
+
+En cada proyecto Vercel (Player y Admin):
+
+1. **Settings → Environments → Production**
+2. **Branch** → cambia de `main` a **`development`**
+3. Guarda
+
+Cada push a `development` actualizará Production (incluido `player.veranolegendario.es` si el dominio está en Production).
+
+### Opción B — Production en `main`, Preview en `development`
+
+1. Deja Production Branch en **`main`**
+2. Los pushes a `development` crean deployments **Preview** (URL distinta, p. ej. `…-git-development-….vercel.app`)
+3. Mira la pestaña **Deployments** → filtra por Preview, no Production
+
+### Si no se dispara ningún deploy al hacer push
+
+1. **Settings → Git** → comprueba que el repo está conectado
+2. **Settings → Git → Ignored Build Step** → debe estar vacío (o no ignorar `development`)
+3. Reconecta GitHub: **Settings → Git → Disconnect** → **Connect** de nuevo
+4. En GitHub: **Settings → Integrations → Vercel** → confirma acceso al repo
+5. Deploy manual mientras tanto: **Deployments → Create Deployment** → elige rama `development` → **Deploy**
+
+Los archivos `apps/*/vercel.json` incluyen `"git.deploymentEnabled.development": true` para no bloquear esa rama.
 
 ---
 
@@ -174,6 +208,22 @@ pnpm db:push
 
 **Error de conexión a BD**
 → Usa la URL **pooled** de Neon y `?sslmode=require`.
+
+**Build supera 250 MB o tarda >6 min**
+→ No usar `@prisma/nextjs-monorepo-workaround-plugin`: duplica el query engine en cada chunk serverless.
+→ Prisma usa `engineType = "client"` (~2 MB WASM) con tracing mínimo en `next.config.ts`.
+
+**Login player devuelve 500 — `query_compiler_bg.wasm` ENOENT**
+→ `serverExternalPackages` incluye `@prisma/client`; `outputFileTracingIncludes` lista solo `query_compiler_bg.wasm`, `.js` y `schema.prisma`.
+
+**Login player devuelve 500 (`digest:...`) o "No se pudo conectar con la base de datos"**
+→ Si el log menciona `Query Engine for runtime "rhel-openssl-3.0.x"`: Prisma usa `engineType = "client"` con el driver HTTP de Neon (sin binario nativo).
+→ `DATABASE_URL` debe ser la URL **pooled** de Neon (`-pooler` en el host, `?sslmode=require`).
+→ Ejecuta `pnpm db:push` y `pnpm db:seed` contra Neon desde local.
+→ Redeploy del player tras cada cambio en `@repo/database`.
+
+**Build: `no output files found for @repo/database#build`**
+→ Aviso inofensivo: esos paquetes no generan `.next/` ni `dist/`. Turbo los tiene con `cache: false`.
 
 ---
 

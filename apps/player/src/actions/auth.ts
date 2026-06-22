@@ -7,25 +7,35 @@ import { CharacterRepository } from "@repo/domain";
 import { redirect } from "next/navigation";
 
 export async function loginWithPin(pin: string) {
-  const characterRepo = new CharacterRepository();
-  const character = await characterRepo.findByPinGlobal(pin);
+  try {
+    if (!process.env.DATABASE_URL) {
+      console.error("loginWithPin: DATABASE_URL is not set");
+      return { success: false as const, error: "Error de configuración del servidor" };
+    }
 
-  if (character) {
-    const user = character.userId
-      ? await prisma.user.findUnique({ where: { id: character.userId } })
-      : null;
+    const characterRepo = new CharacterRepository();
+    const character = await characterRepo.findByPinGlobal(pin);
 
-    await createSession({
-      userId: user?.id ?? character.id,
-      role: "CHILD",
-      familyId: character.familyId,
-      characterId: character.id,
-      name: character.name,
-    });
-    return { success: true };
+    if (character) {
+      const user = character.userId
+        ? await prisma.user.findUnique({ where: { id: character.userId } })
+        : null;
+
+      await createSession({
+        userId: user?.id ?? character.id,
+        role: "CHILD",
+        familyId: character.familyId,
+        characterId: character.id,
+        name: character.name,
+      });
+      return { success: true as const };
+    }
+
+    return { success: false as const, error: "PIN incorrecto" };
+  } catch (error) {
+    console.error("loginWithPin failed:", error);
+    return { success: false as const, error: "No se pudo conectar con la base de datos" };
   }
-
-  return { success: false, error: "PIN incorrecto" };
 }
 
 export async function selectCharacter(characterId: string) {
