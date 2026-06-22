@@ -84,7 +84,7 @@ export class CharacterRepository {
     const gender = data.gender ?? "GIRL";
     const themeKey = data.themeKey ?? "adventure";
     const theme = await import("../config/themes").then((m) => m.getTheme(themeKey));
-    const defaultAvatar = theme.avatars[gender === "BOY" ? "boy" : "girl"][0]?.key ?? "default";
+    const defaultAvatar = theme.roles[0]?.key ?? "warrior";
 
     return prisma.character.create({
       data: {
@@ -130,6 +130,12 @@ export class CharacterRepository {
       include: {
         skills: { include: { skill: true } },
       },
+    });
+  }
+
+  async delete(id: string) {
+    return prisma.character.delete({
+      where: { id },
     });
   }
 

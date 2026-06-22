@@ -60,6 +60,10 @@ export class CharacterService {
     return this.characterRepo.update(id, data);
   }
 
+  async deleteCharacter(id: string) {
+    return this.characterRepo.delete(id);
+  }
+
   async addXp(characterId: string, amount: number, skillId?: string) {
     const character = await this.characterRepo.findById(characterId);
     if (!character) throw new Error("Personaje no encontrado");

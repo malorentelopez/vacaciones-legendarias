@@ -1,8 +1,13 @@
 export type CharacterGender = "boy" | "girl";
 
+export interface ThemeRole {
+  key: string;
+  boy: { name: string };
+  girl: { name: string };
+}
+
 export interface ThemeAvatar {
   key: string;
-  emoji: string;
   name: string;
 }
 
@@ -20,8 +25,41 @@ export interface ThemeConfig {
     navActive: string;
     heading: string;
   };
-  avatars: Record<CharacterGender, ThemeAvatar[]>;
+  roles: ThemeRole[];
 }
+
+/** Maps legacy avatar keys to unified role keys */
+const LEGACY_ROLE_MAP: Record<string, Record<string, string>> = {
+  adventure: {
+    knight: "warrior",
+    princess: "warrior",
+    wizard: "wizard",
+    witch: "wizard",
+    archer: "archer",
+    explorer: "explorer",
+    ninja: "mystic",
+    fairy: "mystic",
+  },
+  manga: {
+    shonen: "hero",
+    "magical-girl": "hero",
+    samurai: "samurai",
+    warrior: "samurai",
+    mecha: "mecha",
+    idol: "mecha",
+    ninja: "shinobi",
+    catgirl: "shinobi",
+    student: "student",
+    schoolgirl: "student",
+  },
+  ocean: {
+    pirate: "pirate",
+    captain: "captain",
+    diver: "diver",
+    fisher: "angler",
+    mermaid: "angler",
+  },
+};
 
 export const THEMES: Record<string, ThemeConfig> = {
   adventure: {
@@ -38,22 +76,13 @@ export const THEMES: Record<string, ThemeConfig> = {
       navActive: "#7c3aed",
       heading: "#c4b5fd",
     },
-    avatars: {
-      boy: [
-        { key: "knight", emoji: "⚔️", name: "Caballero" },
-        { key: "wizard", emoji: "🧙‍♂️", name: "Mago" },
-        { key: "archer", emoji: "🏹", name: "Arquero" },
-        { key: "explorer", emoji: "🗺️", name: "Explorador" },
-        { key: "ninja", emoji: "🥷", name: "Ninja" },
-      ],
-      girl: [
-        { key: "witch", emoji: "🧙‍♀️", name: "Hechicera" },
-        { key: "archer", emoji: "🏹", name: "Arquera" },
-        { key: "princess", emoji: "👸", name: "Princesa guerrera" },
-        { key: "explorer", emoji: "🗺️", name: "Exploradora" },
-        { key: "fairy", emoji: "🧚", name: "Hada" },
-      ],
-    },
+    roles: [
+      { key: "warrior", boy: { name: "Caballero" }, girl: { name: "Guerrera" } },
+      { key: "wizard", boy: { name: "Mago" }, girl: { name: "Hechicera" } },
+      { key: "archer", boy: { name: "Arquero" }, girl: { name: "Arquera" } },
+      { key: "explorer", boy: { name: "Explorador" }, girl: { name: "Exploradora" } },
+      { key: "mystic", boy: { name: "Ninja" }, girl: { name: "Hada" } },
+    ],
   },
   manga: {
     key: "manga",
@@ -69,22 +98,13 @@ export const THEMES: Record<string, ThemeConfig> = {
       navActive: "#ec4899",
       heading: "#fbcfe8",
     },
-    avatars: {
-      boy: [
-        { key: "shonen", emoji: "💥", name: "Shōnen" },
-        { key: "samurai", emoji: "🗡️", name: "Samurái" },
-        { key: "mecha", emoji: "🤖", name: "Piloto Mecha" },
-        { key: "ninja", emoji: "🥷", name: "Shinobi" },
-        { key: "student", emoji: "📚", name: "Estudiante" },
-      ],
-      girl: [
-        { key: "magical-girl", emoji: "✨", name: "Chica mágica" },
-        { key: "idol", emoji: "🎤", name: "Ídolo" },
-        { key: "warrior", emoji: "⚔️", name: "Guerrera" },
-        { key: "schoolgirl", emoji: "🎀", name: "Colegiala" },
-        { key: "catgirl", emoji: "🐱", name: "Neko" },
-      ],
-    },
+    roles: [
+      { key: "hero", boy: { name: "Shōnen" }, girl: { name: "Chica mágica" } },
+      { key: "samurai", boy: { name: "Samurái" }, girl: { name: "Guerrera" } },
+      { key: "mecha", boy: { name: "Piloto Mecha" }, girl: { name: "Ídolo" } },
+      { key: "shinobi", boy: { name: "Shinobi" }, girl: { name: "Neko" } },
+      { key: "student", boy: { name: "Estudiante" }, girl: { name: "Colegiala" } },
+    ],
   },
   ocean: {
     key: "ocean",
@@ -100,20 +120,12 @@ export const THEMES: Record<string, ThemeConfig> = {
       navActive: "#0284c7",
       heading: "#7dd3fc",
     },
-    avatars: {
-      boy: [
-        { key: "pirate", emoji: "🏴‍☠️", name: "Pirata" },
-        { key: "captain", emoji: "⚓", name: "Capitán" },
-        { key: "diver", emoji: "🤿", name: "Buzo" },
-        { key: "fisher", emoji: "🎣", name: "Pescador" },
-      ],
-      girl: [
-        { key: "pirate", emoji: "🏴‍☠️", name: "Pirata" },
-        { key: "mermaid", emoji: "🧜‍♀️", name: "Sirena" },
-        { key: "captain", emoji: "⚓", name: "Capitana" },
-        { key: "diver", emoji: "🤿", name: "Buzo" },
-      ],
-    },
+    roles: [
+      { key: "pirate", boy: { name: "Pirata" }, girl: { name: "Pirata" } },
+      { key: "captain", boy: { name: "Capitán" }, girl: { name: "Capitana" } },
+      { key: "diver", boy: { name: "Buzo" }, girl: { name: "Buzo" } },
+      { key: "angler", boy: { name: "Pescador" }, girl: { name: "Sirena" } },
+    ],
   },
 };
 
@@ -123,9 +135,50 @@ export function getTheme(key: string): ThemeConfig {
   return THEMES[key] ?? THEMES.adventure;
 }
 
-export function getAvatarEmoji(themeKey: string, gender: CharacterGender, avatarKey: string): string {
+export function normalizeRoleKey(themeKey: string, avatarKey: string): string {
   const theme = getTheme(themeKey);
-  const avatar = theme.avatars[gender]?.find((a) => a.key === avatarKey);
-  if (avatar) return avatar.emoji;
-  return theme.avatars[gender]?.[0]?.emoji ?? "🧙";
+  const legacy = LEGACY_ROLE_MAP[themeKey]?.[avatarKey];
+  if (legacy) return legacy;
+  if (theme.roles.some((r) => r.key === avatarKey)) return avatarKey;
+  return theme.roles[0]?.key ?? "warrior";
+}
+
+export function getThemeRoles(themeKey: string): ThemeRole[] {
+  return getTheme(themeKey).roles;
+}
+
+export function getRoleName(themeKey: string, gender: CharacterGender, roleKey: string): string {
+  const role = getTheme(themeKey).roles.find((r) => r.key === normalizeRoleKey(themeKey, roleKey));
+  if (!role) return "Aventurero";
+  return gender === "boy" ? role.boy.name : role.girl.name;
+}
+
+/** @deprecated Use getRoleName + CharacterPortrait instead */
+export function getAvatarEmoji(themeKey: string, gender: CharacterGender, avatarKey: string): string {
+  const roleKey = normalizeRoleKey(themeKey, avatarKey);
+  const emojis: Record<string, Record<CharacterGender, string>> = {
+    warrior: { boy: "⚔️", girl: "🛡️" },
+    wizard: { boy: "🧙‍♂️", girl: "🧙‍♀️" },
+    archer: { boy: "🏹", girl: "🏹" },
+    explorer: { boy: "🗺️", girl: "🧭" },
+    mystic: { boy: "🥷", girl: "🧚" },
+    hero: { boy: "💥", girl: "✨" },
+    samurai: { boy: "🗡️", girl: "⚔️" },
+    mecha: { boy: "🤖", girl: "🎤" },
+    shinobi: { boy: "🥷", girl: "🐱" },
+    student: { boy: "📚", girl: "🎀" },
+    pirate: { boy: "🏴‍☠️", girl: "🏴‍☠️" },
+    captain: { boy: "⚓", girl: "⚓" },
+    diver: { boy: "🤿", girl: "🤿" },
+    angler: { boy: "🎣", girl: "🧜‍♀️" },
+  };
+  return emojis[roleKey]?.[gender] ?? "🧙";
+}
+
+/** Returns avatars list for a gender (for backward compatibility) */
+export function getThemeAvatars(themeKey: string, gender: CharacterGender): ThemeAvatar[] {
+  return getThemeRoles(themeKey).map((role) => ({
+    key: role.key,
+    name: gender === "boy" ? role.boy.name : role.girl.name,
+  }));
 }

@@ -23,7 +23,12 @@ export {
   THEME_LIST,
   getTheme,
   getAvatarEmoji,
+  getThemeRoles,
+  getThemeAvatars,
+  getRoleName,
+  normalizeRoleKey,
   type ThemeConfig,
   type ThemeAvatar,
+  type ThemeRole,
   type CharacterGender,
 } from "./config/themes";

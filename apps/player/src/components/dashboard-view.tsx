@@ -1,6 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon } from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon, CharacterPortrait } from "@repo/ui";
 import { Gem, Star, Zap, Crown } from "lucide-react";
-import { getAvatarEmoji } from "@repo/domain";
+import { getTheme, getRoleName, normalizeRoleKey } from "@repo/domain";
 
 interface CharacterData {
   id: string;
@@ -37,20 +37,25 @@ export function DashboardView({
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
-  const avatarEmoji = getAvatarEmoji(character.themeKey, genderKey, character.avatarBase);
+  const theme = getTheme(character.themeKey);
+  const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
+  const roleName = getRoleName(character.themeKey, genderKey, roleKey);
 
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <div
-          className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full text-5xl"
-          style={{ background: "linear-gradient(135deg, var(--theme-primary, #8b5cf6)30, var(--theme-secondary, #22c55e)30)" }}
-        >
-          {avatarEmoji}
-        </div>
+        <CharacterPortrait
+          roleKey={roleKey}
+          gender={genderKey}
+          primaryColor={theme.colors.primary}
+          secondaryColor={theme.colors.secondary}
+          size="xl"
+          className="mx-auto mb-4"
+        />
         <h1 className="text-3xl font-bold" style={{ color: "var(--theme-heading, #c4b5fd)" }}>
           {character.name}
         </h1>
+        <p className="text-sm text-slate-400">{roleName}</p>
         <div className="mt-2 flex items-center justify-center gap-3">
           <Badge variant="info">
             <Star className="mr-1 inline h-3 w-3" />

@@ -60,6 +60,7 @@ export async function createCharacter(data: {
   pin: string;
   gender?: "BOY" | "GIRL";
   themeKey?: string;
+  avatarBase?: string;
 }) {
   const session = await requireSession();
 
@@ -80,17 +81,70 @@ export async function createCharacter(data: {
     pin: pinHash,
     gender: data.gender,
     themeKey: data.themeKey,
+    avatarBase: data.avatarBase,
   });
   revalidatePath("/characters");
   return { success: true as const, character };
 }
 
-export async function checkPinAvailable(pin: string) {
+export async function updateCharacter(
+  id: string,
+  data: {
+    name?: string;
+    pin?: string;
+    gender?: "BOY" | "GIRL";
+    themeKey?: string;
+    avatarBase?: string;
+  }
+) {
+  const session = await requireSession();
+  const existing = await characterService.getCharacter(id);
+  if (existing.familyId !== session.familyId) {
+    return { success: false as const, error: "Acceso denegado" };
+  }
+
+  const updateData: Parameters<typeof characterService.updateCharacter>[1] = {};
+
+  if (data.name !== undefined) updateData.name = data.name;
+  if (data.gender !== undefined) updateData.gender = data.gender;
+  if (data.themeKey !== undefined) updateData.themeKey = data.themeKey;
+  if (data.avatarBase !== undefined) updateData.avatarBase = data.avatarBase;
+
+  if (data.pin !== undefined) {
+    if (!/^\d{4}$/.test(data.pin)) {
+      return { success: false as const, error: "El PIN debe tener exactamente 4 dígitos" };
+    }
+    const { CharacterRepository } = await import("@repo/domain");
+    const characterRepo = new CharacterRepository();
+    if (await characterRepo.isPinTaken(data.pin, id)) {
+      return { success: false as const, error: "Este PIN ya está en uso. Elige otro." };
+    }
+    updateData.pin = await bcrypt.hash(data.pin, 10);
+  }
+
+  const character = await characterService.updateCharacter(id, updateData);
+  revalidatePath("/characters");
+  return { success: true as const, character };
+}
+
+export async function deleteCharacter(id: string) {
+  const session = await requireSession();
+  const existing = await characterService.getCharacter(id);
+  if (existing.familyId !== session.familyId) {
+    return { success: false as const, error: "Acceso denegado" };
+  }
+
+  await characterService.deleteCharacter(id);
+  revalidatePath("/characters");
+  return { success: true as const };
+}
+
+export async function checkPinAvailable(pin: string, excludeCharacterId?: string) {
   await requireSession();
   if (!/^\d{4}$/.test(pin)) return { available: false };
   const { CharacterRepository } = await import("@repo/domain");
   const characterRepo = new CharacterRepository();
-  const taken = await characterRepo.isPinTaken(pin);
+  const taken = await characterRepo.isPinTaken(pin, excludeCharacterId);
   return { available: !taken };
 }
 

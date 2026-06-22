@@ -6,3 +6,4 @@ export { Badge } from "./components/badge";
 export { SkillIcon } from "./components/skill-icon";
 export { MissionCard } from "./components/mission-card";
 export { AchievementBadge } from "./components/achievement-badge";
+export { CharacterPortrait, type PortraitGender, type PortraitSize } from "./components/character-portrait";

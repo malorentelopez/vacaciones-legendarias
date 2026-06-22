@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, Button, Badge } from "@repo/ui";
+import { Card, Button, Badge, CharacterPortrait } from "@repo/ui";
 import { updateAvatar } from "@/actions/game";
-import { THEME_LIST, getTheme, type CharacterGender } from "@repo/domain";
+import { THEME_LIST, getTheme, getThemeRoles, normalizeRoleKey, getRoleName } from "@repo/domain";
 import { useRouter } from "next/navigation";
 
 interface CharacterProfile {
@@ -13,9 +13,9 @@ interface CharacterProfile {
   avatarBase: string;
 }
 
-const GENDER_OPTIONS: { value: "BOY" | "GIRL"; label: string; icon: string }[] = [
-  { value: "BOY", label: "Chico", icon: "👦" },
-  { value: "GIRL", label: "Chica", icon: "👧" },
+const GENDER_OPTIONS: { value: "BOY" | "GIRL"; label: string }[] = [
+  { value: "BOY", label: "Chico" },
+  { value: "GIRL", label: "Chica" },
 ];
 
 export function AvatarCustomizer({ character }: { character: CharacterProfile }) {
@@ -23,29 +23,21 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
   const [name, setName] = useState(character.name);
   const [gender, setGender] = useState<"BOY" | "GIRL">(character.gender);
   const [themeKey, setThemeKey] = useState(character.themeKey);
-  const [avatarBase, setAvatarBase] = useState(character.avatarBase);
+  const [avatarBase, setAvatarBase] = useState(normalizeRoleKey(character.themeKey, character.avatarBase));
   const [loading, setLoading] = useState(false);
 
-  const genderKey: CharacterGender = gender === "BOY" ? "boy" : "girl";
+  const genderKey = gender === "BOY" ? "boy" : "girl";
   const theme = getTheme(themeKey);
-  const avatars = theme.avatars[genderKey] ?? [];
-  const selectedAvatar = avatars.find((a) => a.key === avatarBase) ?? avatars[0];
+  const roles = getThemeRoles(themeKey);
+  const roleKey = normalizeRoleKey(themeKey, avatarBase);
+  const roleName = getRoleName(themeKey, genderKey, roleKey);
 
   function handleThemeChange(newThemeKey: string) {
     setThemeKey(newThemeKey);
-    const newTheme = getTheme(newThemeKey);
-    const newAvatars = newTheme.avatars[genderKey] ?? [];
-    if (newAvatars.length > 0 && !newAvatars.find((a) => a.key === avatarBase)) {
-      setAvatarBase(newAvatars[0].key);
-    }
-  }
-
-  function handleGenderChange(newGender: "BOY" | "GIRL") {
-    setGender(newGender);
-    const gKey: CharacterGender = newGender === "BOY" ? "boy" : "girl";
-    const newAvatars = getTheme(themeKey).avatars[gKey] ?? [];
-    if (newAvatars.length > 0 && !newAvatars.find((a) => a.key === avatarBase)) {
-      setAvatarBase(newAvatars[0].key);
+    const normalized = normalizeRoleKey(newThemeKey, avatarBase);
+    const newRoles = getThemeRoles(newThemeKey);
+    if (!newRoles.some((r) => r.key === normalized)) {
+      setAvatarBase(newRoles[0]?.key ?? "warrior");
     }
   }
 
@@ -63,14 +55,22 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
       </h1>
 
       <Card className="p-8 text-center">
-        <div className="text-8xl mb-4">{selectedAvatar?.emoji ?? "🧙"}</div>
+        <CharacterPortrait
+          roleKey={roleKey}
+          gender={genderKey}
+          primaryColor={theme.colors.primary}
+          secondaryColor={theme.colors.secondary}
+          size="xl"
+          className="mx-auto mb-4"
+        />
         <p className="text-lg" style={{ color: theme.colors.heading }}>
           {name || "Sin nombre"}
         </p>
+        <p className="text-sm text-slate-400">{roleName}</p>
         <Badge className="mt-2">{theme.name}</Badge>
       </Card>
 
-      <Card className="p-4 space-y-4">
+      <Card className="space-y-4 p-4">
         <div>
           <label className="mb-1 block text-sm text-slate-400">Nombre</label>
           <input
@@ -88,15 +88,14 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => handleGenderChange(opt.value)}
+                onClick={() => setGender(opt.value)}
                 className={`flex-1 rounded-xl border p-3 text-center transition-all ${
                   gender === opt.value
                     ? "border-violet-500 bg-violet-500/20"
                     : "border-slate-700 hover:border-slate-500"
                 }`}
               >
-                <div className="text-2xl">{opt.icon}</div>
-                <p className="mt-1 text-sm">{opt.label}</p>
+                <p className="text-sm font-medium">{opt.label}</p>
               </button>
             ))}
           </div>
@@ -129,23 +128,34 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
       </Card>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-slate-300">Avatar</h2>
+        <h2 className="mb-1 text-lg font-semibold text-slate-300">Rol del personaje</h2>
+        <p className="mb-3 text-sm text-slate-500">El aspecto y nombre se adaptan al sexo elegido.</p>
         <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-          {avatars.map((avatar) => (
-            <button
-              key={avatar.key}
-              type="button"
-              onClick={() => setAvatarBase(avatar.key)}
-              className={`rounded-2xl border p-4 text-center transition-all ${
-                avatarBase === avatar.key
-                  ? "border-violet-500 bg-violet-500/20"
-                  : "border-slate-700 hover:border-slate-500"
-              }`}
-            >
-              <div className="text-3xl">{avatar.emoji}</div>
-              <p className="mt-1 text-xs">{avatar.name}</p>
-            </button>
-          ))}
+          {roles.map((role) => {
+            const name = genderKey === "boy" ? role.boy.name : role.girl.name;
+            return (
+              <button
+                key={role.key}
+                type="button"
+                onClick={() => setAvatarBase(role.key)}
+                className={`rounded-2xl border p-3 text-center transition-all ${
+                  roleKey === role.key
+                    ? "border-violet-500 bg-violet-500/20"
+                    : "border-slate-700 hover:border-slate-500"
+                }`}
+              >
+                <CharacterPortrait
+                  roleKey={role.key}
+                  gender={genderKey}
+                  primaryColor={theme.colors.primary}
+                  secondaryColor={theme.colors.secondary}
+                  size="sm"
+                  className="mx-auto"
+                />
+                <p className="mt-2 text-xs leading-tight">{name}</p>
+              </button>
+            );
+          })}
         </div>
       </div>
 

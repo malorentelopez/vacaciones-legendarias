@@ -111,7 +111,7 @@ async function main() {
         name: "Aventurero",
         gender: "GIRL",
         themeKey: "manga",
-        avatarBase: "magical-girl",
+        avatarBase: "hero",
         pin: childPin,
         familyId: family.id,
         userId: childUser.id,

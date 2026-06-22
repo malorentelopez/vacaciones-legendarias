@@ -1,13 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Badge, Button, Progress } from "@repo/ui";
-import { createCharacter, getCharacterDetail, checkPinAvailable } from "@/actions/admin";
-import { THEME_LIST, getTheme, getAvatarEmoji } from "@repo/domain";
+import { Card, Badge, Button, Progress, CharacterPortrait } from "@repo/ui";
+import {
+  createCharacter,
+  updateCharacter,
+  deleteCharacter,
+  getCharacterDetail,
+  checkPinAvailable,
+} from "@/actions/admin";
+import {
+  THEME_LIST,
+  getTheme,
+  getThemeRoles,
+  getRoleName,
+  normalizeRoleKey,
+} from "@repo/domain";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
-import { Gem, Star, Zap, Trophy, Target } from "lucide-react";
+import { Gem, Star, Zap, Trophy, Target, Pencil, Trash2 } from "lucide-react";
 
 interface Character {
   id: string;
@@ -24,31 +36,84 @@ interface Character {
 }
 
 const GENDER_OPTIONS = [
-  { value: "BOY" as const, label: "Chico", icon: "👦" },
-  { value: "GIRL" as const, label: "Chica", icon: "👧" },
+  { value: "BOY" as const, label: "Chico" },
+  { value: "GIRL" as const, label: "Chica" },
 ];
 
-function CharacterAvatar({ character, size = "lg" }: { character: Character; size?: "lg" | "xl" }) {
+type FormMode = "create" | "edit";
+
+function CharacterAvatarDisplay({ character, size = "lg" }: { character: Character; size?: "lg" | "xl" }) {
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
-  const emoji = getAvatarEmoji(character.themeKey, genderKey, character.avatarBase);
   const theme = getTheme(character.themeKey);
-  const sizeClass = size === "xl" ? "h-24 w-24 text-5xl" : "h-16 w-16 text-3xl";
+  const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
 
   return (
-    <div
-      className={`flex ${sizeClass} items-center justify-center rounded-2xl`}
-      style={{ background: `linear-gradient(135deg, ${theme.colors.primary}30, ${theme.colors.secondary}30)` }}
-    >
-      {emoji}
+    <CharacterPortrait
+      roleKey={roleKey}
+      gender={genderKey}
+      primaryColor={theme.colors.primary}
+      secondaryColor={theme.colors.secondary}
+      size={size === "xl" ? "xl" : "lg"}
+    />
+  );
+}
+
+function RolePicker({
+  themeKey,
+  gender,
+  avatarBase,
+  onSelect,
+}: {
+  themeKey: string;
+  gender: "BOY" | "GIRL";
+  avatarBase: string;
+  onSelect: (key: string) => void;
+}) {
+  const genderKey = gender === "BOY" ? "boy" : "girl";
+  const theme = getTheme(themeKey);
+  const roles = getThemeRoles(themeKey);
+  const normalized = normalizeRoleKey(themeKey, avatarBase);
+
+  return (
+    <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+      {roles.map((role) => {
+        const name = genderKey === "boy" ? role.boy.name : role.girl.name;
+        const selected = normalized === role.key;
+        return (
+          <button
+            key={role.key}
+            type="button"
+            onClick={() => onSelect(role.key)}
+            className={`rounded-xl border p-2 text-center transition-all ${
+              selected
+                ? "border-violet-500 bg-violet-500/20"
+                : "border-slate-600 hover:border-slate-500"
+            }`}
+          >
+            <CharacterPortrait
+              roleKey={role.key}
+              gender={genderKey}
+              primaryColor={theme.colors.primary}
+              secondaryColor={theme.colors.secondary}
+              size="sm"
+              className="mx-auto"
+            />
+            <p className="mt-1 text-xs leading-tight">{name}</p>
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 export function CharactersManager({ characters: initial }: { characters: Character[] }) {
   const [characters, setCharacters] = useState(initial);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<FormMode>("create");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
-  const [detail, setDetail] = useState<(Character & { completedMissions?: number; achievements?: number; recentEvents?: { type: string; createdAt: Date }[] }) | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [detail, setDetail] = useState<(Character & { completedMissions?: number; achievements?: number }) | null>(null);
   const [loading, setLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
 
@@ -57,41 +122,110 @@ export function CharactersManager({ characters: initial }: { characters: Charact
   const [pinError, setPinError] = useState("");
   const [gender, setGender] = useState<"BOY" | "GIRL">("GIRL");
   const [themeKey, setThemeKey] = useState("adventure");
+  const [avatarBase, setAvatarBase] = useState("warrior");
   const [formError, setFormError] = useState("");
 
-  function resetCreateForm() {
+  function resetForm() {
     setName("");
     setPin("");
     setPinError("");
     setGender("GIRL");
     setThemeKey("adventure");
+    setAvatarBase("warrior");
     setFormError("");
+    setEditingId(null);
+  }
+
+  function openCreate() {
+    resetForm();
+    setFormMode("create");
+    setFormOpen(true);
+  }
+
+  function openEdit(character: Character) {
+    setFormMode("edit");
+    setEditingId(character.id);
+    setName(character.name);
+    setPin("");
+    setPinError("");
+    setGender(character.gender);
+    setThemeKey(character.themeKey);
+    setAvatarBase(normalizeRoleKey(character.themeKey, character.avatarBase));
+    setFormError("");
+    setFormOpen(true);
+    setDetailOpen(false);
+  }
+
+  function handleThemeChange(newTheme: string) {
+    setThemeKey(newTheme);
+    const roles = getThemeRoles(newTheme);
+    const normalized = normalizeRoleKey(newTheme, avatarBase);
+    if (!roles.some((r) => r.key === normalized)) {
+      setAvatarBase(roles[0]?.key ?? "warrior");
+    }
+  }
+
+  function handleGenderChange(newGender: "BOY" | "GIRL") {
+    setGender(newGender);
   }
 
   async function handlePinBlur() {
     if (pin.length !== 4) return;
-    const result = await checkPinAvailable(pin);
+    const result = await checkPinAvailable(pin, editingId ?? undefined);
     setPinError(result.available ? "" : "Este PIN ya está en uso");
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError("");
-    if (pin.length !== 4) {
-      setPinError("El PIN debe tener 4 dígitos");
-      return;
+
+    if (formMode === "create") {
+      if (pin.length !== 4) {
+        setPinError("El PIN debe tener 4 dígitos");
+        return;
+      }
+      setLoading(true);
+      const result = await createCharacter({ name, pin, gender, themeKey, avatarBase });
+      if (!result.success) {
+        setFormError(result.error);
+        if (result.error.includes("PIN")) setPinError(result.error);
+        setLoading(false);
+        return;
+      }
+      setCharacters([...characters, result.character]);
+    } else if (editingId) {
+      setLoading(true);
+      const result = await updateCharacter(editingId, {
+        name,
+        ...(pin ? { pin } : {}),
+        gender,
+        themeKey,
+        avatarBase,
+      });
+      if (!result.success) {
+        setFormError(result.error);
+        if (result.error.includes("PIN")) setPinError(result.error);
+        setLoading(false);
+        return;
+      }
+      setCharacters(characters.map((c) => (c.id === editingId ? { ...c, ...result.character } : c)));
     }
+
+    setFormOpen(false);
+    resetForm();
+    setLoading(false);
+  }
+
+  async function handleDelete() {
+    if (!detail) return;
     setLoading(true);
-    const result = await createCharacter({ name, pin, gender, themeKey });
-    if (!result.success) {
-      setFormError(result.error);
-      if (result.error.includes("PIN")) setPinError(result.error);
-      setLoading(false);
-      return;
+    const result = await deleteCharacter(detail.id);
+    if (result.success) {
+      setCharacters(characters.filter((c) => c.id !== detail.id));
+      setDeleteOpen(false);
+      setDetailOpen(false);
+      setDetail(null);
     }
-    setCharacters([...characters, result.character]);
-    setCreateOpen(false);
-    resetCreateForm();
     setLoading(false);
   }
 
@@ -113,36 +247,32 @@ export function CharactersManager({ characters: initial }: { characters: Charact
         title="Personajes"
         description="Gestiona los jugadores de la familia. Cada uno necesita un PIN único de 4 dígitos."
         actionLabel="Nuevo personaje"
-        onAction={() => { resetCreateForm(); setCreateOpen(true); }}
+        onAction={openCreate}
       />
 
       {characters.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
-          <div className="mb-4 text-5xl">🎮</div>
+          <CharacterPortrait roleKey="warrior" gender="girl" size="xl" className="mb-4 opacity-60" />
           <p className="text-slate-400">Aún no hay personajes. Crea el primero.</p>
-          <Button className="mt-4" onClick={() => setCreateOpen(true)}>Crear personaje</Button>
+          <Button className="mt-4" onClick={openCreate}>Crear personaje</Button>
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {characters.map((c) => {
             const theme = getTheme(c.themeKey);
+            const roleName = getRoleName(c.themeKey, c.gender === "BOY" ? "boy" : "girl", c.avatarBase);
             return (
-              <button
-                key={c.id}
-                type="button"
-                onClick={() => openDetail(c.id)}
-                className="text-left"
-              >
+              <button key={c.id} type="button" onClick={() => openDetail(c.id)} className="text-left">
                 <Card className="overflow-hidden transition-all hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/5">
                   <div
                     className="h-2"
                     style={{ background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
                   />
                   <div className="flex items-center gap-4 p-5">
-                    <CharacterAvatar character={c} />
+                    <CharacterAvatarDisplay character={c} />
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-lg font-bold">{c.name}</h3>
-                      <p className="text-sm text-slate-400">{theme.name}</p>
+                      <p className="text-sm text-slate-400">{roleName} · {theme.name}</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <Badge variant="info">Nv. {c.level}</Badge>
                         <Badge variant="warning">💎 {c.crystals}</Badge>
@@ -161,14 +291,15 @@ export function CharactersManager({ characters: initial }: { characters: Charact
         </div>
       )}
 
-      {/* Create modal */}
+      {/* Create / Edit modal */}
       <Modal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        title="Nuevo personaje"
-        description="El PIN identifica al jugador al entrar en la app."
+        open={formOpen}
+        onClose={() => { setFormOpen(false); resetForm(); }}
+        title={formMode === "create" ? "Nuevo personaje" : "Editar personaje"}
+        description={formMode === "create" ? "El PIN identifica al jugador al entrar en la app." : "Modifica los datos del personaje."}
+        size="lg"
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <FormField label="Nombre" htmlFor="char-name" required>
             <input
               id="char-name"
@@ -181,10 +312,10 @@ export function CharactersManager({ characters: initial }: { characters: Charact
           </FormField>
 
           <FormField
-            label="PIN de acceso"
+            label={formMode === "create" ? "PIN de acceso" : "Nuevo PIN (opcional)"}
             htmlFor="char-pin"
-            required
-            hint="4 dígitos únicos. Lo usará para entrar en la app del jugador."
+            required={formMode === "create"}
+            hint={formMode === "edit" ? "Déjalo vacío para mantener el PIN actual." : "4 dígitos únicos."}
             error={pinError}
           >
             <input
@@ -196,7 +327,7 @@ export function CharactersManager({ characters: initial }: { characters: Charact
               inputMode="numeric"
               placeholder="••••"
               maxLength={4}
-              required
+              required={formMode === "create"}
             />
           </FormField>
 
@@ -206,14 +337,13 @@ export function CharactersManager({ characters: initial }: { characters: Charact
                 <button
                   key={opt.value}
                   type="button"
-                  onClick={() => setGender(opt.value)}
-                  className={`flex items-center justify-center gap-2 rounded-xl border py-3 text-sm ${
+                  onClick={() => handleGenderChange(opt.value)}
+                  className={`rounded-xl border py-3 text-sm ${
                     gender === opt.value
                       ? "border-violet-500 bg-violet-500/20"
                       : "border-slate-600 hover:border-slate-500"
                   }`}
                 >
-                  <span>{opt.icon}</span>
                   {opt.label}
                 </button>
               ))}
@@ -224,7 +354,7 @@ export function CharactersManager({ characters: initial }: { characters: Charact
             <select
               id="char-theme"
               value={themeKey}
-              onChange={(e) => setThemeKey(e.target.value)}
+              onChange={(e) => handleThemeChange(e.target.value)}
               className={selectClass}
             >
               {THEME_LIST.map((t) => (
@@ -233,14 +363,23 @@ export function CharactersManager({ characters: initial }: { characters: Charact
             </select>
           </FormField>
 
+          <FormField label="Rol del personaje" hint="El nombre y aspecto se adaptan al sexo elegido.">
+            <RolePicker
+              themeKey={themeKey}
+              gender={gender}
+              avatarBase={avatarBase}
+              onSelect={setAvatarBase}
+            />
+          </FormField>
+
           {formError && <p className="text-sm text-red-400">{formError}</p>}
 
           <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>
+            <Button type="button" variant="outline" className="flex-1" onClick={() => { setFormOpen(false); resetForm(); }}>
               Cancelar
             </Button>
             <Button type="submit" className="flex-1" disabled={loading || !!pinError}>
-              {loading ? "Creando..." : "Crear"}
+              {loading ? "Guardando..." : formMode === "create" ? "Crear" : "Guardar cambios"}
             </Button>
           </div>
         </form>
@@ -254,16 +393,27 @@ export function CharactersManager({ characters: initial }: { characters: Charact
         size="lg"
       >
         {detailLoading ? (
-          <p className="text-center text-slate-400 py-8">Cargando...</p>
+          <p className="py-8 text-center text-slate-400">Cargando...</p>
         ) : detail ? (
           <div className="space-y-5">
             <div className="flex items-center gap-4">
-              <CharacterAvatar character={detail} size="xl" />
-              <div>
+              <CharacterAvatarDisplay character={detail} size="xl" />
+              <div className="flex-1">
+                <p className="font-medium text-violet-300">
+                  {getRoleName(detail.themeKey, detail.gender === "BOY" ? "boy" : "girl", detail.avatarBase)}
+                </p>
                 <p className="text-slate-400">{getTheme(detail.themeKey).name}</p>
                 <p className="text-sm text-slate-500">
                   {detail.gender === "BOY" ? "Chico" : "Chica"}
                 </p>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={() => openEdit(detail)}>
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
@@ -305,24 +455,28 @@ export function CharactersManager({ characters: initial }: { characters: Charact
                 <p className="text-xs text-slate-500">Logros desbloqueados</p>
               </div>
             </div>
-
-            {detail.skills && detail.skills.length > 0 && (
-              <div>
-                <h4 className="mb-2 text-sm font-semibold text-slate-300">Habilidades</h4>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {detail.skills.map((s, i) => (
-                    <div key={i} className="rounded-lg bg-slate-800/50 p-2 text-center text-sm">
-                      <p className="font-medium">{s.skill.name}</p>
-                      <p className="text-xs text-slate-500">Nv. {s.level} · {s.xp} XP</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         ) : (
-          <p className="text-center text-red-400 py-8">No se pudo cargar el personaje</p>
+          <p className="py-8 text-center text-red-400">No se pudo cargar el personaje</p>
         )}
+      </Modal>
+
+      {/* Delete confirmation */}
+      <Modal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        title="Eliminar personaje"
+        description={`¿Seguro que quieres eliminar a ${detail?.name}? Esta acción no se puede deshacer.`}
+        size="sm"
+      >
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" className="flex-1" onClick={() => setDeleteOpen(false)}>
+            Cancelar
+          </Button>
+          <Button variant="destructive" className="flex-1" disabled={loading} onClick={handleDelete}>
+            {loading ? "Eliminando..." : "Eliminar"}
+          </Button>
+        </div>
       </Modal>
     </div>
   );

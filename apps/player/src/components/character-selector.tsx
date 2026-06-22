@@ -1,7 +1,8 @@
 "use client";
 
 import { selectCharacter } from "@/actions/auth";
-import { Card, CardContent, CardHeader, CardTitle, SkillIcon } from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle, Badge, CharacterPortrait } from "@repo/ui";
+import { getTheme, getRoleName, normalizeRoleKey } from "@repo/domain";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -9,6 +10,8 @@ interface Character {
   id: string;
   name: string;
   level: number;
+  gender: "BOY" | "GIRL";
+  themeKey: string;
   avatarBase: string;
 }
 
@@ -29,29 +32,47 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
         <p className="text-slate-400">Elige tu personaje</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        {characters.map((character) => (
-          <button
-            key={character.id}
-            onClick={() => handleSelect(character.id)}
-            disabled={loading === character.id}
-            className="text-left"
-          >
-            <Card className="transition-all hover:border-violet-500/50 hover:shadow-violet-500/10">
-              <CardHeader className="flex-row items-center gap-4">
-                <SkillIcon icon="user" color="#8b5cf6" size="lg" />
-                <div>
-                  <CardTitle>{character.name}</CardTitle>
-                  <p className="text-sm text-slate-400">Nivel {character.level}</p>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-violet-400">
-                  {loading === character.id ? "Cargando..." : "Seleccionar →"}
-                </p>
-              </CardContent>
-            </Card>
-          </button>
-        ))}
+        {characters.map((character) => {
+          const genderKey = character.gender === "BOY" ? "boy" : "girl";
+          const theme = getTheme(character.themeKey);
+          const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
+          const roleName = getRoleName(character.themeKey, genderKey, roleKey);
+
+          return (
+            <button
+              key={character.id}
+              onClick={() => handleSelect(character.id)}
+              disabled={loading === character.id}
+              className="text-left"
+            >
+              <Card className="overflow-hidden transition-all hover:border-violet-500/50 hover:shadow-violet-500/10">
+                <div
+                  className="h-1"
+                  style={{ background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
+                />
+                <CardHeader className="flex-row items-center gap-4">
+                  <CharacterPortrait
+                    roleKey={roleKey}
+                    gender={genderKey}
+                    primaryColor={theme.colors.primary}
+                    secondaryColor={theme.colors.secondary}
+                    size="lg"
+                  />
+                  <div>
+                    <CardTitle>{character.name}</CardTitle>
+                    <p className="text-sm text-slate-400">{roleName}</p>
+                    <Badge variant="info" className="mt-1">Nivel {character.level}</Badge>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-violet-400">
+                    {loading === character.id ? "Cargando..." : "Seleccionar →"}
+                  </p>
+                </CardContent>
+              </Card>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
