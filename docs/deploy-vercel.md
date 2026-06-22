@@ -213,7 +213,8 @@ Los archivos `apps/*/vercel.json` incluyen `"git.deploymentEnabled.development":
 → No usar `@prisma/nextjs-monorepo-workaround-plugin`: duplica el query engine en cada chunk serverless.
 → Prisma usa `engineType = "client"` (~2 MB WASM) con tracing mínimo en `next.config.ts`.
 
-**Login player devuelve 500 — `query_compiler_bg.wasm` ENOENT**
+**Error "Transactions are not supported in HTTP mode"**
+→ El adapter HTTP de Neon no soporta transacciones. Usamos `PrismaNeon` (WebSocket) en `@repo/database`.
 → `serverExternalPackages` incluye `@prisma/client`; `outputFileTracingIncludes` lista solo `query_compiler_bg.wasm`, `.js` y `schema.prisma`.
 
 **Login player devuelve 500 (`digest:...`) o "No se pudo conectar con la base de datos"**

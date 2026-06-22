@@ -1,5 +1,7 @@
-import { PrismaNeonHTTP } from "@prisma/adapter-neon";
+import { neonConfig } from "@neondatabase/serverless";
+import { PrismaNeon } from "@prisma/adapter-neon";
 import { PrismaClient } from "@prisma/client";
+import ws from "ws";
 
 function getDatabaseUrl(): string {
   const url = process.env.DATABASE_URL?.trim().replace(/^["']|["']$/g, "");
@@ -10,7 +12,9 @@ function getDatabaseUrl(): string {
 }
 
 function createPrismaClient(): PrismaClient {
-  const adapter = new PrismaNeonHTTP(getDatabaseUrl(), {});
+  // WebSocket pool supports transactions; HTTP mode does not.
+  neonConfig.webSocketConstructor = ws;
+  const adapter = new PrismaNeon({ connectionString: getDatabaseUrl() });
 
   return new PrismaClient({
     adapter,

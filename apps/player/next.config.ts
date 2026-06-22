@@ -4,7 +4,7 @@ import path from "node:path";
 /** Minimal Prisma client-engine tracing for Vercel (avoids 250 MB bundle bloat). */
 const prismaTracing = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
-  serverExternalPackages: ["@prisma/client", "@neondatabase/serverless"],
+  serverExternalPackages: ["@prisma/client", "@neondatabase/serverless", "ws"],
   outputFileTracingIncludes: {
     "/*": [
       "../../node_modules/.pnpm/**/node_modules/.prisma/client/query_compiler_bg.wasm",
