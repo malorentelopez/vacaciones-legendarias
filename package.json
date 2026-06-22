@@ -12,7 +12,8 @@
     "db:seed": "pnpm --filter @repo/database db:seed",
     "db:studio": "pnpm --filter @repo/database db:studio",
     "avatars:download": "node scripts/download-avatars.mjs",
-    "avatars:sync": "node scripts/sync-avatars.mjs"
+    "avatars:sync": "node scripts/sync-avatars.mjs",
+    "branding:sync": "node scripts/sync-branding.mjs"
   },
   "devDependencies": {
     "turbo": "^2.5.4",

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardContent, CardHeader, CardTitle } from "@repo/ui";
+import { Button, Card, CardContent, CardHeader, AppLogo } from "@repo/ui";
 import { loginParent } from "@/actions/auth";
 
 export default function LoginPage() {
@@ -30,8 +30,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Admin — Verano Legendario</CardTitle>
+        <CardHeader className="text-center">
+          <AppLogo variant="full" size="md" className="mx-auto mb-3" priority />
           <p className="text-slate-400">Acceso para padres</p>
         </CardHeader>
         <CardContent>

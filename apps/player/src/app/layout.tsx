@@ -9,7 +9,12 @@ const nunito = Nunito({
 
 export const metadata: Metadata = {
   title: "Verano Legendario",
-  description: "Tu aventura de verano",
+  description: "Tu aventura de verano — misiones, XP y recompensas en familia",
+  icons: {
+    icon: "/logo-icon.png",
+    apple: "/logo-icon.png",
+  },
+  applicationName: "Verano Legendario",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

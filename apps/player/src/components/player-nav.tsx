@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   Home, Target, Sparkles, Trophy, ShoppingBag, Swords, Calendar, Clock, User,
 } from "lucide-react";
-import { cn } from "@repo/ui";
+import { cn, AppLogo } from "@repo/ui";
 import { useTheme } from "./theme-provider";
 
 const navItems = [
@@ -26,7 +26,11 @@ export function PlayerNav() {
 
   return (
     <nav className="sticky top-0 z-50 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-lg">
-      <div className="mx-auto flex max-w-4xl items-center gap-1 overflow-x-auto px-4 py-2">
+      <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-2">
+        <Link href="/" className="mr-1 shrink-0">
+          <AppLogo variant="icon" size="sm" />
+        </Link>
+        <div className="flex flex-1 items-center gap-1 overflow-x-auto">
         {navItems.map(({ href, icon: Icon, label }) => (
           <Link
             key={href}
@@ -47,6 +51,7 @@ export function PlayerNav() {
             <span className="hidden sm:inline">{label}</span>
           </Link>
         ))}
+        </div>
       </div>
     </nav>
   );

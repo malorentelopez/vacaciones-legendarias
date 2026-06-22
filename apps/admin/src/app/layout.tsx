@@ -7,6 +7,11 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Admin — Verano Legendario",
   description: "Panel de administración familiar",
+  icons: {
+    icon: "/logo-icon.png",
+    apple: "/logo-icon.png",
+  },
+  applicationName: "Verano Legendario",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

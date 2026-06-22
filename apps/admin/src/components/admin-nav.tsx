@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
   Clock, AlertTriangle, BarChart3, LogOut, Menu, X,
 } from "lucide-react";
-import { cn } from "@repo/ui";
+import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
 
 const mainNavItems = [
@@ -51,9 +51,12 @@ export function AdminNav({ userName }: { userName: string }) {
     <>
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur lg:hidden">
-        <div>
-          <p className="text-sm font-bold text-violet-400">Verano Legendario</p>
-          <p className="text-xs text-slate-500">{userName}</p>
+        <div className="flex items-center gap-2">
+          <AppLogo variant="icon" size="sm" />
+          <div>
+            <p className="text-xs font-semibold text-violet-300">Admin</p>
+            <p className="text-xs text-slate-500">{userName}</p>
+          </div>
         </div>
         <button
           type="button"
@@ -110,8 +113,8 @@ export function AdminNav({ userName }: { userName: string }) {
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 border-r border-slate-800 bg-slate-900 lg:block">
         <div className="sticky top-0 flex h-screen flex-col p-4">
-          <div className="mb-6 px-2">
-            <h1 className="text-lg font-bold text-violet-400">Verano Legendario</h1>
+          <div className="mb-6 px-1">
+            <AppLogo variant="full" size="sm" className="mb-2" />
             <p className="text-sm text-slate-400">Admin — {userName}</p>
           </div>
           <nav className="flex-1 space-y-1 overflow-y-auto">
