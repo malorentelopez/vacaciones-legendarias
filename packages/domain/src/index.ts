@@ -26,6 +26,7 @@ export {
   getThemeRoles,
   getThemeAvatars,
   getRoleName,
+  getRoleImage,
   normalizeRoleKey,
   type ThemeConfig,
   type ThemeAvatar,

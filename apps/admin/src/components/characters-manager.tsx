@@ -14,6 +14,7 @@ import {
   getTheme,
   getThemeRoles,
   getRoleName,
+  getRoleImage,
   normalizeRoleKey,
 } from "@repo/domain";
 import { Modal } from "@/components/ui/modal";
@@ -49,8 +50,8 @@ function CharacterAvatarDisplay({ character, size = "lg" }: { character: Charact
 
   return (
     <CharacterPortrait
-      roleKey={roleKey}
-      gender={genderKey}
+      imageSrc={getRoleImage(character.themeKey, genderKey, roleKey)}
+      alt={getRoleName(character.themeKey, genderKey, roleKey)}
       primaryColor={theme.colors.primary}
       secondaryColor={theme.colors.secondary}
       size={size === "xl" ? "xl" : "lg"}
@@ -91,8 +92,8 @@ function RolePicker({
             }`}
           >
             <CharacterPortrait
-              roleKey={role.key}
-              gender={genderKey}
+              imageSrc={getRoleImage(themeKey, genderKey, role.key)}
+              alt={name}
               primaryColor={theme.colors.primary}
               secondaryColor={theme.colors.secondary}
               size="sm"
@@ -252,7 +253,12 @@ export function CharactersManager({ characters: initial }: { characters: Charact
 
       {characters.length === 0 ? (
         <Card className="flex flex-col items-center justify-center p-12 text-center">
-          <CharacterPortrait roleKey="warrior" gender="girl" size="xl" className="mb-4 opacity-60" />
+          <CharacterPortrait
+            imageSrc={getRoleImage("adventure", "girl", "warrior")}
+            alt="Aventurero"
+            size="xl"
+            className="mb-4 opacity-60"
+          />
           <p className="text-slate-400">Aún no hay personajes. Crea el primero.</p>
           <Button className="mt-4" onClick={openCreate}>Crear personaje</Button>
         </Card>

@@ -2,7 +2,7 @@
 
 import { selectCharacter } from "@/actions/auth";
 import { Card, CardContent, CardHeader, CardTitle, Badge, CharacterPortrait } from "@repo/ui";
-import { getTheme, getRoleName, normalizeRoleKey } from "@repo/domain";
+import { getTheme, getRoleName, getRoleImage, normalizeRoleKey } from "@repo/domain";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -52,8 +52,8 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
                 />
                 <CardHeader className="flex-row items-center gap-4">
                   <CharacterPortrait
-                    roleKey={roleKey}
-                    gender={genderKey}
+                    imageSrc={getRoleImage(character.themeKey, genderKey, roleKey)}
+                    alt={roleName}
                     primaryColor={theme.colors.primary}
                     secondaryColor={theme.colors.secondary}
                     size="lg"

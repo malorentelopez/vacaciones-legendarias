@@ -2,8 +2,8 @@ export type CharacterGender = "boy" | "girl";
 
 export interface ThemeRole {
   key: string;
-  boy: { name: string };
-  girl: { name: string };
+  boy: { name: string; image: string };
+  girl: { name: string; image: string };
 }
 
 export interface ThemeAvatar {
@@ -26,6 +26,10 @@ export interface ThemeConfig {
     heading: string;
   };
   roles: ThemeRole[];
+}
+
+function avatarImage(theme: string, role: string, gender: CharacterGender): string {
+  return `/avatars/${theme}/${role}-${gender}.png`;
 }
 
 /** Maps legacy avatar keys to unified role keys */
@@ -77,11 +81,31 @@ export const THEMES: Record<string, ThemeConfig> = {
       heading: "#c4b5fd",
     },
     roles: [
-      { key: "warrior", boy: { name: "Caballero" }, girl: { name: "Guerrera" } },
-      { key: "wizard", boy: { name: "Mago" }, girl: { name: "Hechicera" } },
-      { key: "archer", boy: { name: "Arquero" }, girl: { name: "Arquera" } },
-      { key: "explorer", boy: { name: "Explorador" }, girl: { name: "Exploradora" } },
-      { key: "mystic", boy: { name: "Ninja" }, girl: { name: "Hada" } },
+      {
+        key: "warrior",
+        boy: { name: "Caballero", image: avatarImage("adventure", "warrior", "boy") },
+        girl: { name: "Guerrera", image: avatarImage("adventure", "warrior", "girl") },
+      },
+      {
+        key: "wizard",
+        boy: { name: "Mago", image: avatarImage("adventure", "wizard", "boy") },
+        girl: { name: "Hechicera", image: avatarImage("adventure", "wizard", "girl") },
+      },
+      {
+        key: "archer",
+        boy: { name: "Arquero", image: avatarImage("adventure", "archer", "boy") },
+        girl: { name: "Arquera", image: avatarImage("adventure", "archer", "girl") },
+      },
+      {
+        key: "explorer",
+        boy: { name: "Explorador", image: avatarImage("adventure", "explorer", "boy") },
+        girl: { name: "Exploradora", image: avatarImage("adventure", "explorer", "girl") },
+      },
+      {
+        key: "mystic",
+        boy: { name: "Ninja", image: avatarImage("adventure", "mystic", "boy") },
+        girl: { name: "Hada", image: avatarImage("adventure", "mystic", "girl") },
+      },
     ],
   },
   manga: {
@@ -99,11 +123,31 @@ export const THEMES: Record<string, ThemeConfig> = {
       heading: "#fbcfe8",
     },
     roles: [
-      { key: "hero", boy: { name: "Shōnen" }, girl: { name: "Chica mágica" } },
-      { key: "samurai", boy: { name: "Samurái" }, girl: { name: "Guerrera" } },
-      { key: "mecha", boy: { name: "Piloto Mecha" }, girl: { name: "Ídolo" } },
-      { key: "shinobi", boy: { name: "Shinobi" }, girl: { name: "Neko" } },
-      { key: "student", boy: { name: "Estudiante" }, girl: { name: "Colegiala" } },
+      {
+        key: "hero",
+        boy: { name: "Shōnen", image: avatarImage("manga", "hero", "boy") },
+        girl: { name: "Chica mágica", image: avatarImage("manga", "hero", "girl") },
+      },
+      {
+        key: "samurai",
+        boy: { name: "Samurái", image: avatarImage("manga", "samurai", "boy") },
+        girl: { name: "Guerrera", image: avatarImage("manga", "samurai", "girl") },
+      },
+      {
+        key: "mecha",
+        boy: { name: "Piloto Mecha", image: avatarImage("manga", "mecha", "boy") },
+        girl: { name: "Ídolo", image: avatarImage("manga", "mecha", "girl") },
+      },
+      {
+        key: "shinobi",
+        boy: { name: "Shinobi", image: avatarImage("manga", "shinobi", "boy") },
+        girl: { name: "Neko", image: avatarImage("manga", "shinobi", "girl") },
+      },
+      {
+        key: "student",
+        boy: { name: "Estudiante", image: avatarImage("manga", "student", "boy") },
+        girl: { name: "Colegiala", image: avatarImage("manga", "student", "girl") },
+      },
     ],
   },
   ocean: {
@@ -121,10 +165,26 @@ export const THEMES: Record<string, ThemeConfig> = {
       heading: "#7dd3fc",
     },
     roles: [
-      { key: "pirate", boy: { name: "Pirata" }, girl: { name: "Pirata" } },
-      { key: "captain", boy: { name: "Capitán" }, girl: { name: "Capitana" } },
-      { key: "diver", boy: { name: "Buzo" }, girl: { name: "Buzo" } },
-      { key: "angler", boy: { name: "Pescador" }, girl: { name: "Sirena" } },
+      {
+        key: "pirate",
+        boy: { name: "Pirata", image: avatarImage("ocean", "pirate", "boy") },
+        girl: { name: "Pirata", image: avatarImage("ocean", "pirate", "girl") },
+      },
+      {
+        key: "captain",
+        boy: { name: "Capitán", image: avatarImage("ocean", "captain", "boy") },
+        girl: { name: "Capitana", image: avatarImage("ocean", "captain", "girl") },
+      },
+      {
+        key: "diver",
+        boy: { name: "Buzo", image: avatarImage("ocean", "diver", "boy") },
+        girl: { name: "Buzo", image: avatarImage("ocean", "diver", "girl") },
+      },
+      {
+        key: "angler",
+        boy: { name: "Pescador", image: avatarImage("ocean", "angler", "boy") },
+        girl: { name: "Sirena", image: avatarImage("ocean", "angler", "girl") },
+      },
     ],
   },
 };
@@ -151,6 +211,12 @@ export function getRoleName(themeKey: string, gender: CharacterGender, roleKey: 
   const role = getTheme(themeKey).roles.find((r) => r.key === normalizeRoleKey(themeKey, roleKey));
   if (!role) return "Aventurero";
   return gender === "boy" ? role.boy.name : role.girl.name;
+}
+
+export function getRoleImage(themeKey: string, gender: CharacterGender, roleKey: string): string {
+  const role = getTheme(themeKey).roles.find((r) => r.key === normalizeRoleKey(themeKey, roleKey));
+  if (!role) return avatarImage("adventure", "warrior", gender);
+  return gender === "boy" ? role.boy.image : role.girl.image;
 }
 
 /** @deprecated Use getRoleName + CharacterPortrait instead */

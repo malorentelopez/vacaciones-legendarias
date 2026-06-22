@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, Button, Badge, CharacterPortrait } from "@repo/ui";
 import { updateAvatar } from "@/actions/game";
-import { THEME_LIST, getTheme, getThemeRoles, normalizeRoleKey, getRoleName } from "@repo/domain";
+import { THEME_LIST, getTheme, getThemeRoles, normalizeRoleKey, getRoleName, getRoleImage } from "@repo/domain";
 import { useRouter } from "next/navigation";
 
 interface CharacterProfile {
@@ -56,8 +56,8 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
 
       <Card className="p-8 text-center">
         <CharacterPortrait
-          roleKey={roleKey}
-          gender={genderKey}
+          imageSrc={getRoleImage(themeKey, genderKey, roleKey)}
+          alt={roleName}
           primaryColor={theme.colors.primary}
           secondaryColor={theme.colors.secondary}
           size="xl"
@@ -145,8 +145,8 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
                 }`}
               >
                 <CharacterPortrait
-                  roleKey={role.key}
-                  gender={genderKey}
+                  imageSrc={getRoleImage(themeKey, genderKey, role.key)}
+                  alt={name}
                   primaryColor={theme.colors.primary}
                   secondaryColor={theme.colors.secondary}
                   size="sm"

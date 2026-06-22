@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon, CharacterPortrait } from "@repo/ui";
 import { Gem, Star, Zap, Crown } from "lucide-react";
-import { getTheme, getRoleName, normalizeRoleKey } from "@repo/domain";
+import { getTheme, getRoleName, getRoleImage, normalizeRoleKey } from "@repo/domain";
 
 interface CharacterData {
   id: string;
@@ -45,8 +45,8 @@ export function DashboardView({
     <div className="space-y-6">
       <div className="text-center">
         <CharacterPortrait
-          roleKey={roleKey}
-          gender={genderKey}
+          imageSrc={getRoleImage(character.themeKey, genderKey, roleKey)}
+          alt={roleName}
           primaryColor={theme.colors.primary}
           secondaryColor={theme.colors.secondary}
           size="xl"
