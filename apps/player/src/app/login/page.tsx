@@ -30,7 +30,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md border-violet-500/30">
         <CardHeader className="text-center">
-          <AppLogo variant="full" size="xl" className="mx-auto mb-2" priority />
+          <div className="mx-auto mb-4 w-full max-w-xs px-2">
+            <AppLogo variant="full" fullWidth priority />
+          </div>
           <p className="text-slate-400">Introduce tu PIN para empezar la aventura</p>
         </CardHeader>
         <CardContent>

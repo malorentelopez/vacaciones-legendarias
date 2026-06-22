@@ -13,6 +13,8 @@ import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass, textareaClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
 import { ActionButtons } from "@/components/ui/action-buttons";
+import { EmojiPicker } from "@/components/ui/emoji-picker";
+import { isSingleEmoji } from "@/lib/emoji-data";
 import { Plus } from "lucide-react";
 
 interface Character {
@@ -125,6 +127,10 @@ export function ScheduleManager({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (form.icon && !isSingleEmoji(form.icon)) {
+      alert("El icono debe ser un único emoji.");
+      return;
+    }
     setLoading(true);
     try {
       const payload = {
@@ -311,26 +317,23 @@ export function ScheduleManager({
             />
           </FormField>
 
-          <div className="grid gap-4 sm:grid-cols-[auto_1fr]">
-            <FormField label="Icono">
-              <input
-                className={inputClass}
-                value={form.icon}
-                onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                placeholder="🚶"
-                maxLength={4}
-              />
-            </FormField>
-            <FormField label="Título">
-              <input
-                className={inputClass}
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Paseo con papá"
-                required
-              />
-            </FormField>
-          </div>
+          <FormField label="Título">
+            <input
+              className={inputClass}
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
+              placeholder="Paseo con papá"
+              required
+            />
+          </FormField>
+
+          <FormField label="Icono (opcional)" hint="Busca por palabra clave y elige un emoji">
+            <EmojiPicker
+              key={editingId ?? "new"}
+              value={form.icon}
+              onChange={(icon) => setForm({ ...form, icon })}
+            />
+          </FormField>
 
           <FormField label="Descripción (opcional)">
             <textarea

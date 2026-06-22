@@ -31,7 +31,9 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <AppLogo variant="full" size="md" className="mx-auto mb-3" priority />
+          <div className="mx-auto mb-4 w-full max-w-xs px-2">
+            <AppLogo variant="full" fullWidth priority />
+          </div>
           <p className="text-slate-400">Acceso para padres</p>
         </CardHeader>
         <CardContent>
