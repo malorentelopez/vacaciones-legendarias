@@ -209,9 +209,12 @@ Los archivos `apps/*/vercel.json` incluyen `"git.deploymentEnabled.development":
 **Error de conexión a BD**
 → Usa la URL **pooled** de Neon y `?sslmode=require`.
 
-**Login player devuelve 500 — `query_compiler_bg.wasm` o `libquery_engine` ENOENT**
-→ Usamos motor binario de Prisma (no `engineType = "client"`) + `@prisma/nextjs-monorepo-workaround-plugin`, que copia `libquery_engine-rhel-openssl-3.0.x.so.node` al bundle.
-→ `next.config.ts` incluye `outputFileTracingIncludes` para `.prisma/client/**`.
+**Build supera 250 MB o tarda >6 min**
+→ No usar `@prisma/nextjs-monorepo-workaround-plugin`: duplica el query engine en cada chunk serverless.
+→ Prisma usa `engineType = "client"` (~2 MB WASM) con tracing mínimo en `next.config.ts`.
+
+**Login player devuelve 500 — `query_compiler_bg.wasm` ENOENT**
+→ `serverExternalPackages` incluye `@prisma/client`; `outputFileTracingIncludes` lista solo `query_compiler_bg.wasm`, `.js` y `schema.prisma`.
 
 **Login player devuelve 500 (`digest:...`) o "No se pudo conectar con la base de datos"**
 → Si el log menciona `Query Engine for runtime "rhel-openssl-3.0.x"`: Prisma usa `engineType = "client"` con el driver HTTP de Neon (sin binario nativo).
