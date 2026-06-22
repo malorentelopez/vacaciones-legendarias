@@ -8,6 +8,7 @@ const prismaTracing = {
     "/*": [
       "../../node_modules/.pnpm/**/node_modules/.prisma/client/query_compiler_bg.wasm",
       "../../node_modules/.pnpm/**/node_modules/.prisma/client/query_compiler_bg.js",
+      "../../node_modules/.pnpm/**/node_modules/.prisma/client/wasm.js",
       "../../node_modules/.pnpm/**/node_modules/.prisma/client/schema.prisma",
     ],
   },
