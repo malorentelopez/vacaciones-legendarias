@@ -3,21 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Target, Sparkles, Trophy, ShoppingBag, Swords, Calendar, Clock, User,
+  Home, Map, Sparkles, Trophy, Gem, Swords, User,
 } from "lucide-react";
 import { cn, AppLogo } from "@repo/ui";
 import { useTheme } from "./theme-provider";
 
 const navItems = [
-  { href: "/", icon: Home, label: "Inicio" },
-  { href: "/missions", icon: Target, label: "Misiones" },
-  { href: "/skills", icon: Sparkles, label: "Skills" },
+  { href: "/", icon: Home, label: "Campamento" },
+  { href: "/ruta", icon: Map, label: "Ruta legendaria" },
+  { href: "/skills", icon: Sparkles, label: "Poderes" },
   { href: "/achievements", icon: Trophy, label: "Logros" },
-  { href: "/store", icon: ShoppingBag, label: "Tienda" },
+  { href: "/store", icon: Gem, label: "Cofre" },
   { href: "/boss-battles", icon: Swords, label: "Boss" },
-  { href: "/calendar", icon: Calendar, label: "Agenda" },
-  { href: "/timeline", icon: Clock, label: "Historia" },
-  { href: "/avatar", icon: User, label: "Avatar" },
+  { href: "/avatar", icon: User, label: "Héroe" },
 ];
 
 export function PlayerNav() {
@@ -31,26 +29,23 @@ export function PlayerNav() {
           <AppLogo variant="icon" size="sm" />
         </Link>
         <div className="flex flex-1 items-center gap-1 overflow-x-auto">
-        {navItems.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors",
-              pathname === href
-                ? "text-white"
-                : "text-slate-400 hover:bg-slate-800 hover:text-white"
-            )}
-            style={
-              pathname === href
-                ? { backgroundColor: theme.colors.navActive }
-                : undefined
-            }
-          >
-            <Icon className="h-4 w-4" />
-            <span className="hidden sm:inline">{label}</span>
-          </Link>
-        ))}
+          {navItems.map(({ href, icon: Icon, label }) => {
+            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors",
+                  active ? "text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                )}
+                style={active ? { backgroundColor: theme.colors.navActive } : undefined}
+              >
+                <Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{label}</span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </nav>

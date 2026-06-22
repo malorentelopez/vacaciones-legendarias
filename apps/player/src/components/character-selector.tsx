@@ -1,10 +1,10 @@
 "use client";
 
-import { selectCharacter } from "@/actions/auth";
+import { selectCharacter, syncPlayerSessionCookie } from "@/actions/auth";
 import { Card, CardContent, CardHeader, CardTitle, Badge, CharacterPortrait, AppLogo } from "@repo/ui";
-import { getTheme, getRoleName, getRoleImage, normalizeRoleKey } from "@repo/domain";
+import { getTheme, getRoleName, normalizeRoleKey, getCharacterPortraitSrc } from "@repo/domain";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface Character {
   id: string;
@@ -13,11 +13,16 @@ interface Character {
   gender: "BOY" | "GIRL";
   themeKey: string;
   avatarBase: string;
+  avatarConfig?: unknown;
 }
 
 export function CharacterSelector({ characters }: { characters: Character[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
+
+  useEffect(() => {
+    void syncPlayerSessionCookie();
+  }, []);
 
   async function handleSelect(characterId: string) {
     setLoading(characterId);
@@ -29,8 +34,8 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
     <div className="space-y-6 py-8">
       <div className="text-center">
         <AppLogo variant="full" size="2xl" className="mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-violet-300">¿Quién juega hoy?</h1>
-        <p className="text-slate-400">Elige tu personaje</p>
+        <h1 className="text-3xl font-bold text-violet-300">¿Quién entra en acción?</h1>
+        <p className="text-slate-400">Elige tu héroe para esta aventura</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {characters.map((character) => {
@@ -53,7 +58,7 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
                 />
                 <CardHeader className="flex-row items-center gap-4">
                   <CharacterPortrait
-                    imageSrc={getRoleImage(character.themeKey, genderKey, roleKey)}
+                    imageSrc={getCharacterPortraitSrc(character)}
                     alt={roleName}
                     primaryColor={theme.colors.primary}
                     secondaryColor={theme.colors.secondary}

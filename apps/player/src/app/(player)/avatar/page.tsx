@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
 import { AvatarCustomizer } from "@/components/avatar-customizer";
 
 export default async function AvatarPage() {
-  const session = await getSession();
+  const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
   const character = await getCharacter();
@@ -15,6 +15,7 @@ export default async function AvatarPage() {
         gender: character.gender,
         themeKey: character.themeKey,
         avatarBase: character.avatarBase,
+        avatarConfig: character.avatarConfig,
       }}
     />
   );

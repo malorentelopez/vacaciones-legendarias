@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getValidPlayerSession } from "@/lib/player-session";
 import { getAchievements } from "@/actions/game";
 import { AchievementBadge, Badge } from "@repo/ui";
 
 export default async function AchievementsPage() {
-  const session = await getSession();
+  const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
   const achievements = await getAchievements();

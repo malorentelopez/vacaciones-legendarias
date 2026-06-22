@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getValidPlayerSession } from "@/lib/player-session";
 import { getMissions } from "@/actions/game";
 import { MissionsList } from "@/components/missions-list";
 
 export default async function MissionsPage() {
-  const session = await getSession();
+  const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
   const missions = await getMissions();

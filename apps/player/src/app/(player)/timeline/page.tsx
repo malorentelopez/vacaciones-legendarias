@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getValidPlayerSession } from "@/lib/player-session";
 import { getTimeline } from "@/actions/game";
 import { Card, Badge } from "@repo/ui";
 
@@ -30,7 +30,7 @@ const eventVariants: Record<string, "default" | "success" | "warning" | "info"> 
 };
 
 export default async function TimelinePage() {
-  const session = await getSession();
+  const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
   const events = await getTimeline();

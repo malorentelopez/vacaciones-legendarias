@@ -1,6 +1,6 @@
 "use server";
 
-import { requireSession } from "@/lib/auth";
+import { requirePlayerSession } from "@/lib/player-session";
 import {
   CharacterService,
   MissionService,
@@ -21,52 +21,53 @@ const scheduleService = new ScheduleService();
 const gameEventRepo = new GameEventRepository();
 
 export async function getCharacter() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   return characterService.getCharacter(session.characterId);
 }
 
 export async function getFamilyCharacters() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   return characterService.getFamilyCharacters(session.familyId);
 }
 
 export async function getMissions() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   return missionService.getMissionsForCharacter(session.characterId, session.familyId);
 }
 
 export async function getAgenda() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   return scheduleService.getAgendaForCharacter(session.characterId);
 }
 
 export async function completeMission(missionId: string) {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   const result = await missionService.completeMission(missionId, session.characterId);
   revalidatePath("/");
   revalidatePath("/missions");
   revalidatePath("/calendar");
+  revalidatePath("/ruta");
   revalidatePath("/achievements");
   return result;
 }
 
 export async function getAchievements() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   return achievementService.getCharacterAchievements(session.characterId, session.familyId);
 }
 
 export async function getRewards() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   return rewardService.getRewards(session.familyId);
 }
 
 export async function purchaseReward(rewardId: string) {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   const result = await rewardService.purchaseReward(rewardId, session.characterId);
   revalidatePath("/store");
@@ -75,12 +76,12 @@ export async function purchaseReward(rewardId: string) {
 }
 
 export async function getBossBattles() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   return bossBattleService.getBossBattles(session.familyId);
 }
 
 export async function completeBossObjective(objectiveId: string) {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   const result = await bossBattleService.completeObjective(objectiveId, session.characterId);
   revalidatePath("/boss-battles");
@@ -89,7 +90,7 @@ export async function completeBossObjective(objectiveId: string) {
 }
 
 export async function getTimeline() {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   return gameEventRepo.findByCharacter(session.characterId);
 }
@@ -101,7 +102,7 @@ export async function updateAvatar(data: {
   avatarBase?: string;
   avatarConfig?: object;
 }) {
-  const session = await requireSession("CHILD");
+  const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   await characterService.updateCharacter(session.characterId, data);
   revalidatePath("/");

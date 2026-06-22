@@ -2,7 +2,7 @@
 
 import { prisma } from "@repo/database";
 import bcrypt from "bcryptjs";
-import { createSession, deleteSession } from "@/lib/auth";
+import { createSession, deleteSession, getSession, type SessionPayload } from "@/lib/auth";
 import { CharacterRepository } from "@repo/domain";
 import { redirect } from "next/navigation";
 
@@ -32,7 +32,7 @@ export async function selectCharacter(characterId: string) {
   const character = await prisma.character.findUnique({ where: { id: characterId } });
   if (!character) return { success: false, error: "Personaje no encontrado" };
 
-  const session = await import("@/lib/auth").then((m) => m.getSession());
+  const session = await getSession();
   if (!session || session.familyId !== character.familyId) {
     return { success: false, error: "Acceso denegado" };
   }
@@ -44,6 +44,22 @@ export async function selectCharacter(characterId: string) {
   });
 
   return { success: true };
+}
+
+/** Server Action: remove stale characterId from the session cookie. */
+export async function syncPlayerSessionCookie() {
+  const session = await getSession();
+  if (!session?.characterId) return;
+
+  const character = await prisma.character.findFirst({
+    where: { id: session.characterId, familyId: session.familyId },
+    select: { id: true },
+  });
+
+  if (character) return;
+
+  const { characterId: _removed, ...rest } = session;
+  await createSession(rest as SessionPayload);
 }
 
 export async function logout() {

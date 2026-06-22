@@ -27,6 +27,12 @@ export {
   DAY_NAMES,
   MONTH_NAMES,
 } from "./utils/schedule";
+export {
+  parseAvatarConfig,
+  getCharacterPortraitSrc,
+  hasCustomAvatar,
+  type AvatarConfig,
+} from "./utils/avatar";
 
 export {
   THEMES,

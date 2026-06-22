@@ -1,17 +1,18 @@
 import { redirect } from "next/navigation";
-import { getSession } from "@/lib/auth";
+import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
 import { Card, SkillIcon, Progress, Badge } from "@repo/ui";
 
 export default async function SkillsPage() {
-  const session = await getSession();
+  const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
   const character = await getCharacter();
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-violet-300">Habilidades</h1>
+      <h1 className="text-3xl font-bold text-violet-300">Tus poderes</h1>
+      <p className="text-slate-400">Entrena cada habilidad para hacerte más fuerte</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {character.skills.map((cs) => (
           <Card key={cs.id} className="p-6">
