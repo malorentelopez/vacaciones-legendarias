@@ -69,13 +69,15 @@ openssl rand -base64 32
 
 3. El archivo `apps/player/vercel.json` ya define install/build del monorepo.
 
-4. **Environment Variables** (Production + Preview):
+4. **Environment Variables** — añádelas para **Production** y **Preview**:
 
-   | Variable | Valor |
-   |----------|-------|
-   | `DATABASE_URL` | Connection string de Neon |
-   | `AUTH_SECRET` | El secreto generado |
-   | `BLOB_READ_WRITE_TOKEN` | Ver paso 5 |
+   | Variable | Valor | Obligatoria |
+   |----------|-------|-------------|
+   | `DATABASE_URL` | Connection string **pooled** de Neon | Sí |
+   | `AUTH_SECRET` | El secreto generado | Sí |
+   | `BLOB_READ_WRITE_TOKEN` | Auto al conectar Blob (paso 5) | Solo avatares |
+
+   > Si el build muestra `[warn] DATABASE_URL`, la variable **no está definida** en ese proyecto Vercel. Sin `DATABASE_URL` el login fallará con error 500.
 
 5. Deploy.
 
@@ -174,6 +176,21 @@ pnpm db:push
 
 **Error de conexión a BD**
 → Usa la URL **pooled** de Neon y `?sslmode=require`.
+
+**Login player devuelve 500 (`digest:...`)**
+→ Casi siempre: Prisma no encuentra el query engine en el bundle de Vercel (monorepo). `next.config.ts` debe incluir `outputFileTracingRoot` apuntando a la raíz del repo.
+→ También: `DATABASE_URL` mal configurada, o no se ejecutó `pnpm db:push` / `pnpm db:seed` contra Neon.
+→ En Vercel → proyecto Player → **Settings → Environment Variables** → comprueba `DATABASE_URL` (URL **pooled** con `-pooler` en el host).
+→ Desde tu Mac:
+```bash
+export DATABASE_URL="postgresql://...tu-url-pooled-de-neon..."
+pnpm db:push
+pnpm db:seed
+```
+→ Redeploy del player. Si falla, revisa **Deployments → Functions → Logs** al intentar login.
+
+**Build: `no output files found for @repo/database#build`**
+→ Aviso inofensivo: esos paquetes no generan `.next/` ni `dist/`. Turbo los tiene con `cache: false`.
 
 ---
 
