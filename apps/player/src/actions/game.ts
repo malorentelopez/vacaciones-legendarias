@@ -7,6 +7,7 @@ import {
   AchievementService,
   RewardService,
   BossBattleService,
+  ScheduleService,
   GameEventRepository,
 } from "@repo/domain";
 import { revalidatePath } from "next/cache";
@@ -16,6 +17,7 @@ const missionService = new MissionService();
 const achievementService = new AchievementService();
 const rewardService = new RewardService();
 const bossBattleService = new BossBattleService();
+const scheduleService = new ScheduleService();
 const gameEventRepo = new GameEventRepository();
 
 export async function getCharacter() {
@@ -35,12 +37,19 @@ export async function getMissions() {
   return missionService.getMissionsForCharacter(session.characterId, session.familyId);
 }
 
+export async function getAgenda() {
+  const session = await requireSession("CHILD");
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+  return scheduleService.getAgendaForCharacter(session.characterId);
+}
+
 export async function completeMission(missionId: string) {
   const session = await requireSession("CHILD");
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   const result = await missionService.completeMission(missionId, session.characterId);
   revalidatePath("/");
   revalidatePath("/missions");
+  revalidatePath("/calendar");
   revalidatePath("/achievements");
   return result;
 }

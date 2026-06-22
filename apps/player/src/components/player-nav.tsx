@@ -15,7 +15,7 @@ const navItems = [
   { href: "/achievements", icon: Trophy, label: "Logros" },
   { href: "/store", icon: ShoppingBag, label: "Tienda" },
   { href: "/boss-battles", icon: Swords, label: "Boss" },
-  { href: "/calendar", icon: Calendar, label: "Calendario" },
+  { href: "/calendar", icon: Calendar, label: "Agenda" },
   { href: "/timeline", icon: Clock, label: "Historia" },
   { href: "/avatar", icon: User, label: "Avatar" },
 ];

@@ -212,6 +212,133 @@ async function main() {
     skipDuplicates: true,
   });
 
+  const character = await prisma.character.findFirst({
+    where: { familyId: family.id, name: "Aventurero" },
+  });
+
+  if (character) {
+    const existingSchedule = await prisma.scheduleBlock.findFirst({
+      where: { characterId: character.id },
+    });
+
+    if (!existingSchedule) {
+      const bedMission = seededMissions.find((m) => m.title.includes("cama"));
+      const readMission = seededMissions.find((m) => m.title.includes("Leer"));
+      const creativeMission = seededMissions.find((m) => m.title.includes("creativo"));
+
+      const weekdayBlocks = [
+        {
+          order: 0,
+          section: "Mañana",
+          startTime: "08:00",
+          endTime: "08:30",
+          icon: "🚶",
+          title: "Paseo con papá",
+          description: "Algunos días podéis hacer pequeñas variaciones: escuchar música, identificar plantas, hablar sobre un tema, planificar el día, etc.",
+        },
+        {
+          order: 1,
+          startTime: "08:30",
+          endTime: "09:00",
+          title: "Desayuno y aseo",
+        },
+        {
+          order: 2,
+          startTime: "09:00",
+          endTime: "09:15",
+          title: "Hacer la cama y ordenar la habitación",
+          missionIds: bedMission ? [bedMission.id] : [],
+        },
+        {
+          order: 3,
+          startTime: "09:15",
+          endTime: "10:00",
+          title: "Lectura",
+          missionIds: readMission ? [readMission.id] : [],
+        },
+        {
+          order: 4,
+          startTime: "10:00",
+          endTime: "10:45",
+          title: "Francés",
+        },
+        {
+          order: 5,
+          startTime: "10:45",
+          endTime: "11:15",
+          title: "Descanso",
+        },
+        {
+          order: 6,
+          startTime: "11:15",
+          endTime: "12:45",
+          title: "Dibujo manga y creatividad",
+          missionIds: creativeMission ? [creativeMission.id] : [],
+        },
+        {
+          order: 7,
+          startTime: "12:45",
+          endTime: "13:15",
+          title: "Tareas de casa",
+        },
+        {
+          order: 8,
+          section: "Tardes",
+          startTime: "13:15",
+          endTime: null,
+          title: "Tiempo libre",
+        },
+      ] as const;
+
+      for (const block of weekdayBlocks) {
+        const { missionIds = [], ...blockData } = block as typeof block & { missionIds?: string[] };
+        const created = await prisma.scheduleBlock.create({
+          data: {
+            characterId: character.id,
+            dayType: "WEEKDAY",
+            ...blockData,
+            endTime: blockData.endTime ?? undefined,
+          },
+        });
+        if (missionIds.length > 0) {
+          await prisma.scheduleBlockMission.createMany({
+            data: missionIds.map((missionId, order) => ({
+              scheduleBlockId: created.id,
+              missionId,
+              order,
+            })),
+          });
+        }
+      }
+
+      await prisma.scheduleBlock.create({
+        data: {
+          characterId: character.id,
+          dayType: "WEEKEND",
+          section: "Mañana",
+          order: 0,
+          startTime: "09:00",
+          endTime: "10:00",
+          icon: "🌅",
+          title: "Despertar tranquilo",
+          description: "Sin prisas: desayuno, aseo y preparar la habitación.",
+        },
+      });
+
+      await prisma.scheduleBlock.create({
+        data: {
+          characterId: character.id,
+          dayType: "WEEKEND",
+          section: "Tardes",
+          order: 1,
+          startTime: "13:00",
+          endTime: null,
+          title: "Tiempo libre y actividades familiares",
+        },
+      });
+    }
+  }
+
   console.log("✅ Seed completed");
   console.log(`   Parent: parent@demo.com / parent123`);
   console.log(`   Child PIN: 1234`);

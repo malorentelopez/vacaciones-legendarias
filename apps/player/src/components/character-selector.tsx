@@ -28,7 +28,7 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
   return (
     <div className="space-y-6 py-8">
       <div className="text-center">
-        <AppLogo variant="full" size="md" className="mx-auto mb-4" />
+        <AppLogo variant="full" size="2xl" className="mx-auto mb-4" />
         <h1 className="text-3xl font-bold text-violet-300">¿Quién juega hoy?</h1>
         <p className="text-slate-400">Elige tu personaje</p>
       </div>

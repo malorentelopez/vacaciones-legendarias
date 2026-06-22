@@ -13,9 +13,11 @@
     "db:studio": "pnpm --filter @repo/database db:studio",
     "avatars:download": "node scripts/download-avatars.mjs",
     "avatars:sync": "node scripts/sync-avatars.mjs",
-    "branding:sync": "node scripts/sync-branding.mjs"
+    "branding:sync": "node scripts/sync-branding.mjs",
+    "branding:process": "node scripts/process-branding.mjs && node scripts/sync-branding.mjs"
   },
   "devDependencies": {
+    "sharp": "^0.35.2",
     "turbo": "^2.5.4",
     "typescript": "^5.8.3"
   },

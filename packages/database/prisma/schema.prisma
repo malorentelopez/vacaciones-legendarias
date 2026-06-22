@@ -64,6 +64,11 @@ enum CharacterGender {
   GIRL
 }
 
+enum DayScheduleType {
+  WEEKDAY
+  WEEKEND
+}
+
 model Family {
   id        String   @id @default(cuid())
   name      String
@@ -117,6 +122,7 @@ model Character {
   weeklyPenalties     WeeklyPenalty[]
   crystalTransactions CrystalTransaction[]
   gameEvents          GameEvent[]
+  scheduleBlocks      ScheduleBlock[]
 
   @@index([familyId])
 }
@@ -166,6 +172,7 @@ model Mission {
   skill              Skill?              @relation(fields: [skillId], references: [id], onDelete: SetNull)
   progress           MissionProgress[]
   achievementMissions AchievementMission[]
+  scheduleBlocks     ScheduleBlockMission[]
 }
 
 model MissionProgress {
@@ -385,4 +392,37 @@ model AvatarAccessory {
   isDefault      Boolean             @default(false)
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
+}
+
+model ScheduleBlock {
+  id          String          @id @default(cuid())
+  characterId String
+  dayType     DayScheduleType
+  title       String
+  description String?
+  icon        String?
+  startTime   String
+  endTime     String?
+  section     String?
+  order       Int             @default(0)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  character Character              @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  missions  ScheduleBlockMission[]
+
+  @@index([characterId, dayType, order])
+}
+
+model ScheduleBlockMission {
+  id              String @id @default(cuid())
+  scheduleBlockId String
+  missionId       String
+  order           Int    @default(0)
+
+  scheduleBlock ScheduleBlock @relation(fields: [scheduleBlockId], references: [id], onDelete: Cascade)
+  mission       Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleBlockId, missionId])
 }

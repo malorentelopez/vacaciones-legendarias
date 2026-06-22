@@ -11,8 +11,8 @@ export const metadata: Metadata = {
   title: "Verano Legendario",
   description: "Tu aventura de verano — misiones, XP y recompensas en familia",
   icons: {
-    icon: "/logo-icon.png",
-    apple: "/logo-icon.png",
+    icon: "/logo-favicon.png",
+    apple: "/logo-favicon.png",
   },
   applicationName: "Verano Legendario",
 };

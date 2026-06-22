@@ -8,12 +8,13 @@ import {
   RewardService,
   WeeklyPointsService,
   BossBattleService,
+  ScheduleService,
   SkillRepository,
   ConfigurationRepository,
   GameEventRepository,
 } from "@repo/domain";
 import { prisma } from "@repo/database";
-import type { MissionFrequency, MissionType, RewardStatus } from "@repo/database";
+import type { MissionFrequency, MissionType, RewardStatus, DayScheduleType } from "@repo/database";
 import { revalidatePath } from "next/cache";
 import bcrypt from "bcryptjs";
 
@@ -23,6 +24,7 @@ const achievementService = new AchievementService();
 const rewardService = new RewardService();
 const weeklyPointsService = new WeeklyPointsService();
 const bossBattleService = new BossBattleService();
+const scheduleService = new ScheduleService();
 const skillRepo = new SkillRepository();
 const configRepo = new ConfigurationRepository();
 const gameEventRepo = new GameEventRepository();
@@ -314,4 +316,72 @@ export async function addBossObjective(bossBattleId: string, data: { title: stri
     targetDate: data.targetDate ? new Date(data.targetDate) : undefined,
   });
   revalidatePath("/bosses");
+}
+
+async function assertFamilyCharacter(characterId: string) {
+  const session = await requireSession();
+  const character = await prisma.character.findFirst({
+    where: { id: characterId, familyId: session.familyId },
+  });
+  if (!character) throw new Error("Personaje no encontrado");
+  return character;
+}
+
+export async function getScheduleBlocks(characterId: string, dayType: DayScheduleType) {
+  await assertFamilyCharacter(characterId);
+  return scheduleService.getBlocksForCharacter(characterId, dayType);
+}
+
+export async function createScheduleBlock(data: {
+  characterId: string;
+  dayType: DayScheduleType;
+  title: string;
+  description?: string;
+  icon?: string;
+  startTime: string;
+  endTime?: string;
+  section?: string;
+  order?: number;
+  missionIds?: string[];
+}) {
+  await assertFamilyCharacter(data.characterId);
+  const { missionIds, ...blockData } = data;
+  const block = await scheduleService.createBlock(blockData);
+  if (missionIds?.length) {
+    await scheduleService.setBlockMissions(block.id, missionIds);
+  }
+  revalidatePath("/schedule");
+  return scheduleService.getBlocksForCharacter(data.characterId, data.dayType);
+}
+
+export async function updateScheduleBlock(
+  id: string,
+  characterId: string,
+  dayType: DayScheduleType,
+  data: {
+    title?: string;
+    description?: string | null;
+    icon?: string | null;
+    startTime?: string;
+    endTime?: string | null;
+    section?: string | null;
+    order?: number;
+    missionIds?: string[];
+  }
+) {
+  await assertFamilyCharacter(characterId);
+  const { missionIds, ...blockData } = data;
+  await scheduleService.updateBlock(id, blockData);
+  if (missionIds !== undefined) {
+    await scheduleService.setBlockMissions(id, missionIds);
+  }
+  revalidatePath("/schedule");
+  return scheduleService.getBlocksForCharacter(characterId, dayType);
+}
+
+export async function deleteScheduleBlock(id: string, characterId: string, dayType: DayScheduleType) {
+  await assertFamilyCharacter(characterId);
+  await scheduleService.deleteBlock(id);
+  revalidatePath("/schedule");
+  return scheduleService.getBlocksForCharacter(characterId, dayType);
 }

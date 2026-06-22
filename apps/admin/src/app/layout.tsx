@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   title: "Admin — Verano Legendario",
   description: "Panel de administración familiar",
   icons: {
-    icon: "/logo-icon.png",
-    apple: "/logo-icon.png",
+    icon: "/logo-favicon.png",
+    apple: "/logo-favicon.png",
   },
   applicationName: "Verano Legendario",
 };

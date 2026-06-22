@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
-  Clock, AlertTriangle, BarChart3, LogOut, Menu, X,
+  Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays,
 } from "lucide-react";
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
@@ -19,6 +19,7 @@ const mainNavItems = [
 
 const allNavItems = [
   ...mainNavItems,
+  { href: "/schedule", icon: CalendarDays, label: "Agenda" },
   { href: "/rewards", icon: Gift, label: "Recompensas" },
   { href: "/bosses", icon: Swords, label: "Retos del mes" },
   { href: "/levels", icon: BarChart3, label: "Niveles" },
@@ -26,6 +27,27 @@ const allNavItems = [
   { href: "/screen-time", icon: Settings, label: "Tiempo pantalla" },
   { href: "/timeline", icon: Clock, label: "Timeline" },
 ];
+
+function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutClick?: () => void }) {
+  return (
+    <div className="border-t border-slate-800 pt-4">
+      <div className="mb-2 px-3">
+        <p className="truncate text-sm font-medium text-slate-200">{userName}</p>
+        <p className="text-xs text-slate-500">Administrador</p>
+      </div>
+      <form action={logout}>
+        <button
+          type="submit"
+          onClick={onLogoutClick}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Cerrar sesión
+        </button>
+      </form>
+    </div>
+  );
+}
 
 export function AdminNav({ userName }: { userName: string }) {
   const pathname = usePathname();
@@ -51,17 +73,12 @@ export function AdminNav({ userName }: { userName: string }) {
     <>
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur lg:hidden">
-        <div className="flex items-center gap-2">
-          <AppLogo variant="icon" size="sm" />
-          <div>
-            <p className="text-xs font-semibold text-violet-300">Admin</p>
-            <p className="text-xs text-slate-500">{userName}</p>
-          </div>
-        </div>
+        <AppLogo variant="icon" size="sm" />
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
           className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"
+          aria-label="Abrir menú"
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -72,9 +89,9 @@ export function AdminNav({ userName }: { userName: string }) {
         <div className="fixed inset-0 z-50 lg:hidden">
           <div className="absolute inset-0 bg-black/60" onClick={() => setMobileOpen(false)} />
           <aside className="absolute right-0 top-0 flex h-full w-72 flex-col bg-slate-900 p-4 shadow-xl">
-            <div className="mb-4 flex items-center justify-between">
-              <span className="font-bold">Menú</span>
-              <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-1.5 hover:bg-slate-800">
+            <div className="mb-4 flex items-center justify-between gap-2">
+              <AppLogo variant="full" fullWidth className="min-w-0 flex-1" />
+              <button type="button" onClick={() => setMobileOpen(false)} className="shrink-0 rounded-lg p-1.5 hover:bg-slate-800">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -83,12 +100,7 @@ export function AdminNav({ userName }: { userName: string }) {
                 <NavLink key={item.href} {...item} />
               ))}
             </nav>
-            <form action={logout} className="mt-4 border-t border-slate-800 pt-4">
-              <button type="submit" className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800">
-                <LogOut className="h-4 w-4" />
-                Cerrar sesión
-              </button>
-            </form>
+            <UserFooter userName={userName} onLogoutClick={() => setMobileOpen(false)} />
           </aside>
         </div>
       )}
@@ -112,25 +124,16 @@ export function AdminNav({ userName }: { userName: string }) {
 
       {/* Desktop sidebar */}
       <aside className="hidden w-64 shrink-0 border-r border-slate-800 bg-slate-900 lg:block">
-        <div className="sticky top-0 flex h-screen flex-col p-4">
+        <div className="sticky top-0 flex h-screen flex-col px-3 py-4">
           <div className="mb-6 px-1">
-            <AppLogo variant="full" size="sm" className="mb-2" />
-            <p className="text-sm text-slate-400">Admin — {userName}</p>
+            <AppLogo variant="full" fullWidth />
           </div>
           <nav className="flex-1 space-y-1 overflow-y-auto">
             {allNavItems.map((item) => (
               <NavLink key={item.href} {...item} />
             ))}
           </nav>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 hover:bg-slate-800 hover:text-white"
-            >
-              <LogOut className="h-4 w-4" />
-              Cerrar sesión
-            </button>
-          </form>
+          <UserFooter userName={userName} />
         </div>
       </aside>
     </>
