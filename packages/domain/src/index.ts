@@ -81,6 +81,8 @@ export {
   mergeAvatarConfig,
   getUnlockedAccessoryKeys,
   getEquippedHatEmoji,
+  getEquippedPetEmoji,
+  getUnlockedPetKeys,
   type AvatarConfig,
   type SecretProgress,
 } from "./utils/avatar";

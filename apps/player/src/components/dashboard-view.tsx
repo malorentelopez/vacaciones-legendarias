@@ -7,6 +7,7 @@ import {
   normalizeRoleKey,
   getCharacterPortraitSrc,
   getEquippedHatEmoji,
+  getEquippedPetEmoji,
 } from "@repo/domain";
 import { PowerGauge } from "@/components/power-gauge";
 import { MagicalEnergyGauge } from "@/components/magical-energy-gauge";
@@ -68,6 +69,7 @@ export function DashboardView({
   sideQuestsPreview,
   dragonChestStatus,
   chapter,
+  isFreeDay = false,
 }: {
   character: CharacterData;
   familyCharacters?: FamilyCharacter[];
@@ -75,6 +77,7 @@ export function DashboardView({
   sideQuestsPreview?: SideQuestsPreview;
   dragonChestStatus?: DragonChestStatus;
   chapter?: SummerChapter;
+  isFreeDay?: boolean;
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
@@ -83,6 +86,7 @@ export function DashboardView({
   const roleName = getRoleName(character.themeKey, genderKey, roleKey);
   const portraitSrc = getCharacterPortraitSrc(character);
   const hatEmoji = getEquippedHatEmoji(character.avatarConfig);
+  const petEmoji = getEquippedPetEmoji(character.avatarConfig);
   const chestStatus = dragonChestStatus ?? { eligible: false, discovered: false, completed: false };
   const showRoute = routePreview && routePreview.totalStages > 0;
   const showSideQuests = sideQuestsPreview && sideQuestsPreview.totalSideQuests > 0;
@@ -110,6 +114,8 @@ export function DashboardView({
               discovered={chestStatus.discovered}
               completed={chestStatus.completed}
               hatEmoji={hatEmoji}
+              petEmoji={petEmoji}
+              petMood={isFreeDay ? "sleep" : undefined}
             />
           </div>
           <div className="min-w-0 flex-1">

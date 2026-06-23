@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type CSSProperties } fr
 import type { ThemeConfig } from "@repo/domain/client";
 import { getTheme } from "@repo/domain/client";
 import { CelebrationProvider } from "@/components/celebration-provider";
+import { PetReactionProvider } from "@/components/pet-reaction-provider";
 
 const ThemeContext = createContext<ThemeConfig>(getTheme("adventure"));
 const ThemeKeyContext = createContext<{
@@ -26,9 +27,11 @@ function themeVars(theme: ThemeConfig): CSSProperties {
 
 export function PlayerThemeShell({
   initialThemeKey,
+  petEmoji = null,
   children,
 }: {
   initialThemeKey: string;
+  petEmoji?: string | null;
   children: React.ReactNode;
 }) {
   const [themeKey, setThemeKey] = useState(initialThemeKey);
@@ -47,7 +50,9 @@ export function PlayerThemeShell({
           style={themeVars(theme)}
           className="min-h-screen bg-gradient-to-b from-[var(--theme-bg-from)] via-[var(--theme-bg-via)]/20 to-[var(--theme-bg-to)]"
         >
-          <CelebrationProvider>{children}</CelebrationProvider>
+          <PetReactionProvider petEmoji={petEmoji}>
+            <CelebrationProvider>{children}</CelebrationProvider>
+          </PetReactionProvider>
         </div>
       </ThemeContext.Provider>
     </ThemeKeyContext.Provider>

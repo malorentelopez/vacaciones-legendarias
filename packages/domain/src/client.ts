@@ -19,6 +19,8 @@ export {
   getCharacterPortraitSrc,
   hasCustomAvatar,
   getEquippedHatEmoji,
+  getEquippedPetEmoji,
+  getUnlockedPetKeys,
   getUnlockedAccessoryKeys,
   mergeAvatarConfig,
   type AvatarConfig,

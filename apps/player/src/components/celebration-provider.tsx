@@ -12,6 +12,7 @@ import {
 import type { BossVictoryInfo, LevelUpInfo } from "@repo/domain/client";
 import { LevelUpCelebration } from "@/components/level-up-celebration";
 import { BossVictoryCelebration } from "@/components/boss-victory-celebration";
+import { usePetReactionsOptional } from "@/components/pet-reaction-provider";
 
 type CelebrationItem =
   | { type: "levelUp"; data: LevelUpInfo }
@@ -31,6 +32,7 @@ const CelebrationContext = createContext<CelebrationContextValue | null>(null);
 export function CelebrationProvider({ children }: { children: ReactNode }) {
   const queueRef = useRef<CelebrationItem[]>([]);
   const [current, setCurrent] = useState<CelebrationItem | null>(null);
+  const petReactions = usePetReactionsOptional();
 
   const showNext = useCallback(() => {
     queueRef.current.shift();
@@ -46,8 +48,11 @@ export function CelebrationProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const celebrateLevelUp = useCallback(
-    (info: LevelUpInfo) => enqueue({ type: "levelUp", data: info }),
-    [enqueue]
+    (info: LevelUpInfo) => {
+      petReactions?.triggerReaction("spin");
+      enqueue({ type: "levelUp", data: info });
+    },
+    [enqueue, petReactions]
   );
 
   const celebrateBossVictory = useCallback(

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CharacterPortrait } from "@repo/ui";
+import { PetCompanion } from "@/components/pet-companion";
 import { CrystalCounter } from "@/components/crystal-counter";
 import { MangaHudBar } from "@/components/manga/manga-hud-bar";
 import { MANGA_COPY } from "@/lib/manga-copy";
@@ -16,6 +17,7 @@ export interface HeroHudData {
   portraitSrc: string;
   xpProgress: number;
   streak?: number;
+  petEmoji?: string | null;
 }
 
 export function HeroHud({ hero }: { hero: HeroHudData }) {
@@ -24,7 +26,7 @@ export function HeroHud({ hero }: { hero: HeroHudData }) {
   return (
     <div className="manga-hero-hud mx-auto w-full max-w-4xl px-3 py-2 md:px-4">
       <div className="flex items-center gap-2 sm:gap-3">
-        <Link href="/avatar" className="shrink-0">
+        <Link href="/avatar" className="relative shrink-0">
           <CharacterPortrait
             imageSrc={hero.portraitSrc}
             alt={hero.roleName}
@@ -33,6 +35,7 @@ export function HeroHud({ hero }: { hero: HeroHudData }) {
             size="sm"
             className="theme-ring ring-2"
           />
+          {hero.petEmoji && <PetCompanion emoji={hero.petEmoji} size="sm" />}
         </Link>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">

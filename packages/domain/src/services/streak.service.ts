@@ -69,12 +69,16 @@ export class StreakService {
       streak: streakFeedback?.nextStreak ?? config.streak,
       combos: morningCombo?.nextCombos ?? config.combos,
       unlockedAccessories: streakFeedback?.unlockedAccessories ?? config.unlockedAccessories,
+      equipped: streakFeedback?.equippedPet
+        ? { ...config.equipped, pet: streakFeedback.equippedPet }
+        : config.equipped,
     });
 
     if (
       nextConfig.streak !== config.streak ||
       nextConfig.combos !== config.combos ||
-      nextConfig.unlockedAccessories !== config.unlockedAccessories
+      nextConfig.unlockedAccessories !== config.unlockedAccessories ||
+      nextConfig.equipped?.pet !== config.equipped?.pet
     ) {
       await this.characterRepo.update(characterId, { avatarConfig: nextConfig });
     }
@@ -107,6 +111,7 @@ export class StreakService {
     let milestone: StreakFeedback["milestone"];
     const milestonesAwarded = [...(update.streak.milestonesAwarded ?? [])];
     let unlockedAccessories = [...(config.unlockedAccessories ?? [])];
+    let equippedPet: string | undefined;
 
     for (const days of [3, 7] as const) {
       if (update.streak.current < days || milestonesAwarded.includes(days)) continue;
@@ -139,6 +144,9 @@ export class StreakService {
         if (!unlockedAccessories.includes(accessory)) {
           unlockedAccessories = [...unlockedAccessories, accessory];
         }
+        if (!config.equipped?.pet || config.equipped.pet === "default") {
+          equippedPet = accessory;
+        }
       }
 
       milestonesAwarded.push(days);
@@ -161,6 +169,7 @@ export class StreakService {
       } satisfies StreakFeedback,
       nextStreak,
       unlockedAccessories,
+      equippedPet,
     };
   }
 

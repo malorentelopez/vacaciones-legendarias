@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CharacterPortrait } from "@repo/ui";
 import { discoverDragonChest } from "@/actions/secrets";
+import { PetCompanion } from "@/components/pet-companion";
 import { SecretDiscoveryModal } from "./secret-discovery-modal";
 
 const TAP_WINDOW_MS = 3000;
@@ -18,6 +19,8 @@ interface SecretPortraitTriggerProps {
   discovered: boolean;
   completed: boolean;
   hatEmoji?: string | null;
+  petEmoji?: string | null;
+  petMood?: "sleep";
 }
 
 export function SecretPortraitTrigger({
@@ -29,6 +32,8 @@ export function SecretPortraitTrigger({
   discovered,
   completed,
   hatEmoji,
+  petEmoji,
+  petMood,
 }: SecretPortraitTriggerProps) {
   const router = useRouter();
   const tapTimesRef = useRef<number[]>([]);
@@ -97,6 +102,13 @@ export function SecretPortraitTrigger({
           >
             {hatEmoji}
           </span>
+        )}
+        {petEmoji && (
+          <PetCompanion
+            emoji={petEmoji}
+            size="md"
+            reaction={petMood === "sleep" ? "sleep" : undefined}
+          />
         )}
       </button>
 

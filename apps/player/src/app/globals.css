@@ -405,6 +405,86 @@
   box-shadow: 0 0 10px color-mix(in srgb, #fb923c 25%, transparent);
 }
 
+.pet-companion {
+  z-index: 2;
+}
+
+.pet-companion-heart {
+  position: absolute;
+  top: -0.65rem;
+  right: -0.35rem;
+  font-size: 0.75rem;
+  animation: pet-heart-pop 0.75s ease-out forwards;
+}
+
+.pet-companion-zzz {
+  position: absolute;
+  top: -0.85rem;
+  right: -0.15rem;
+}
+
+.pet-reaction-jump {
+  animation: pet-jump 0.75s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.pet-reaction-spin {
+  animation: pet-spin 0.85s ease-in-out;
+}
+
+.pet-reaction-fire {
+  animation: pet-fire 0.8s ease-in-out;
+  box-shadow: 0 0 12px color-mix(in srgb, #fb923c 55%, transparent);
+}
+
+.pet-reaction-sleep {
+  opacity: 0.85;
+  filter: saturate(0.75);
+}
+
+@keyframes pet-jump {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px) scale(1.08);
+  }
+}
+
+@keyframes pet-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pet-fire {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes pet-heart-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.9);
+  }
+}
+
 .merchant-hero {
   background: linear-gradient(
     135deg,
@@ -564,7 +644,11 @@
   .route-map-node-current,
   .manga-dialogue-overlay,
   .manga-energy-high .manga-hud-bar-fill,
-  .manga-energy-badge-pulse {
+  .manga-energy-badge-pulse,
+  .pet-reaction-jump,
+  .pet-reaction-spin,
+  .pet-reaction-fire,
+  .pet-companion-heart {
     animation: none !important;
   }
 }

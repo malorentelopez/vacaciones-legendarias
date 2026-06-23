@@ -143,6 +143,23 @@ export function getEquippedHatEmoji(config: unknown): string | null {
   return "🎩";
 }
 
+const PET_EMOJI: Record<string, string> = {
+  pet_cat: "🐱",
+};
+
+export function getUnlockedPetKeys(
+  config: unknown,
+  options: { level: number; secretCompleted?: boolean; streakCurrent?: number }
+): string[] {
+  return getUnlockedAccessoryKeys(config, options).filter((key) => key.startsWith("pet_"));
+}
+
+export function getEquippedPetEmoji(config: unknown): string | null {
+  const pet = parseAvatarConfig(config).equipped?.pet;
+  if (!pet || pet === "default") return null;
+  return PET_EMOJI[pet] ?? "🐾";
+}
+
 export function getCharacterPortraitSrc(character: {
   themeKey: string;
   gender: "BOY" | "GIRL";

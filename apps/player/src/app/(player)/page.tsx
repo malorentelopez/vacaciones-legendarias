@@ -101,6 +101,7 @@ export default async function DashboardPage() {
       }
       dragonChestStatus={dragonChestStatus}
       chapter={chapter}
+      isFreeDay={agenda?.isFreeDay ?? false}
     />
     </>
   );

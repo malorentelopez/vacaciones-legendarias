@@ -9,11 +9,14 @@ import { useCelebrations } from "@/components/celebration-provider";
 import { useMissionRewardFx } from "@/hooks/use-mission-reward-fx";
 import { useTheme } from "@/components/theme-provider";
 import { buildMissionRewardPayload } from "@/lib/mission-complete-fx";
+import { triggerMissionPetReactions } from "@/lib/pet-reactions";
+import { usePetReactions } from "@/components/pet-reaction-provider";
 
 export function MissionsList({ missions }: { missions: PlayerMission[] }) {
   const router = useRouter();
   const theme = useTheme();
   const { applyGameFeedback } = useCelebrations();
+  const { triggerReaction } = usePetReactions();
   const { activeFx, triggerMissionFx, clearMissionFx } = useMissionRewardFx();
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -28,6 +31,7 @@ export function MissionsList({ missions }: { missions: PlayerMission[] }) {
           morningCombo: result.morningCombo,
         })
       );
+      triggerMissionPetReactions(triggerReaction, { streak: result.streak });
       applyGameFeedback({ levelUp: result.levelUp });
       router.refresh();
     } catch (e) {
