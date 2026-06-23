@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, Badge } from "@repo/ui";
+import { Card, CardContent, Badge } from "@repo/ui";
 import { purchaseReward } from "@/actions/game";
 import { MangaActionButton } from "@/components/manga/manga-action-button";
+import { StorePurchaseFx } from "@/components/store-purchase-fx";
 import { MANGA_COPY } from "@/lib/manga-copy";
-import { Gift, CheckCircle2 } from "lucide-react";
+import { getRewardEmoji } from "@/lib/reward-display";
+import { CheckCircle2, Store } from "lucide-react";
 
 interface Reward {
   id: string;
@@ -31,6 +33,8 @@ export function StoreView({
   const router = useRouter();
   const [loading, setLoading] = useState<string | null>(null);
   const [items, setItems] = useState(rewards);
+  const [purchaseFxId, setPurchaseFxId] = useState<string | null>(null);
+  const [purchaseNote, setPurchaseNote] = useState(false);
 
   useEffect(() => {
     setItems(rewards);
@@ -55,8 +59,9 @@ export function StoreView({
           )
         );
       }
+      setPurchaseFxId(rewardId);
+      setPurchaseNote(true);
       router.refresh();
-      alert("¡Compra solicitada! Espera la aprobación de tus padres.");
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error");
     }
@@ -65,36 +70,62 @@ export function StoreView({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="theme-page-title font-display tracking-wide">Mercader del verano</h1>
-        <Badge variant="warning" className="text-base px-4 py-1">
-          💎 {crystals} cristales
-        </Badge>
-      </div>
+      <Card className="merchant-hero manga-panel manga-panel-quest overflow-hidden">
+        <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="merchant-hero-icon theme-surface-strong flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl">
+              🏪
+            </div>
+            <div>
+              <div className="theme-eyebrow mb-1 flex items-center gap-2">
+                <Store className="h-4 w-4" />
+                <span>Puesto del mercader</span>
+              </div>
+              <h1 className="theme-page-title font-display tracking-wide">{MANGA_COPY.merchantTitle}</h1>
+              <p className="mt-1 text-sm italic text-slate-300">“{MANGA_COPY.merchantTagline}”</p>
+            </div>
+          </div>
+          <Badge variant="warning" className="self-start px-4 py-2 text-base sm:self-center">
+            💎 {crystals} cristales
+          </Badge>
+        </CardContent>
+      </Card>
+
+      {purchaseNote && (
+        <Card className="manga-panel border-emerald-500/40 bg-emerald-950/30 p-4 text-sm text-emerald-100">
+          {MANGA_COPY.merchantPurchaseNote}
+        </Card>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2">
         {items.map((reward) => {
           const canAfford = crystals >= reward.crystalCost;
           const isDisabled =
             reward.isExhausted || reward.isLevelLocked || !canAfford || loading === reward.id;
+          const emoji = getRewardEmoji(reward.title);
 
           return (
             <Card
               key={reward.id}
-              className={`manga-panel manga-panel-quest bg-slate-900/80 ${reward.isExhausted || reward.isLevelLocked ? "opacity-60" : ""}`}
+              className={`merchant-vitrine manga-panel manga-panel-quest relative overflow-hidden bg-slate-900/80 ${
+                reward.isExhausted || reward.isLevelLocked ? "opacity-60" : ""
+              }`}
             >
-              <CardHeader className="flex-row items-center gap-3">
-                <div className="theme-surface-strong rounded-xl p-3">
-                  <Gift className="theme-icon h-6 w-6" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">{reward.title}</CardTitle>
+              {purchaseFxId === reward.id && (
+                <StorePurchaseFx onComplete={() => setPurchaseFxId(null)} />
+              )}
+              <CardContent className="space-y-4 p-5">
+                <div className="merchant-vitrine-display flex flex-col items-center gap-2 py-2 text-center">
+                  <span className="merchant-vitrine-emoji text-5xl" aria-hidden>
+                    {emoji}
+                  </span>
+                  <h2 className="font-display text-xl tracking-wide text-white">{reward.title}</h2>
                   {reward.description && (
                     <p className="text-sm text-slate-400">{reward.description}</p>
                   )}
                 </div>
-              </CardHeader>
-              <CardContent className="flex items-center justify-between">
-                <div className="flex flex-wrap items-center gap-2">
+
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   <Badge variant="warning">💎 {reward.crystalCost}</Badge>
                   {reward.requiredLevel != null && (
                     <Badge variant={reward.isLevelLocked ? "default" : "info"}>
@@ -105,31 +136,38 @@ export function StoreView({
                     <Badge variant="info">Solo una vez</Badge>
                   )}
                 </div>
-                {reward.isExhausted ? (
-                  <span className="inline-flex items-center gap-1 text-sm text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4" />
-                    Ya canjeada
-                  </span>
-                ) : reward.isLevelLocked ? (
-                  <span className="text-sm text-slate-400">
-                    Nivel {level}/{reward.requiredLevel}
-                  </span>
-                ) : (
-                  <MangaActionButton
-                    size="sm"
-                    onClick={() => handlePurchase(reward.id, reward.crystalCost)}
-                    disabled={isDisabled}
-                  >
-                    {loading === reward.id ? "..." : MANGA_COPY.redeemTreasure}
-                  </MangaActionButton>
-                )}
+
+                <div className="flex justify-center">
+                  {reward.isExhausted ? (
+                    <span className="inline-flex items-center gap-1 text-sm text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Ya canjeada
+                    </span>
+                  ) : reward.isLevelLocked ? (
+                    <span className="text-sm text-slate-400">
+                      Nivel {level}/{reward.requiredLevel}
+                    </span>
+                  ) : (
+                    <MangaActionButton
+                      size="sm"
+                      onClick={() => handlePurchase(reward.id, reward.crystalCost)}
+                      disabled={isDisabled}
+                    >
+                      {loading === reward.id ? "..." : MANGA_COPY.redeemTreasure}
+                    </MangaActionButton>
+                  )}
+                </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
       {items.length === 0 && (
-        <p className="text-center text-slate-400">La tienda está vacía</p>
+        <Card className="manga-panel p-8 text-center text-slate-400">
+          <p className="font-display text-2xl text-amber-200">El mercader está descansando</p>
+          <p className="mt-2 text-sm">Vuelve más tarde para ver nuevos tesoros.</p>
+        </Card>
       )}
     </div>
   );

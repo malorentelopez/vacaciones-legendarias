@@ -391,6 +391,55 @@
   transition: width 0.5s ease;
 }
 
+.manga-energy-high .manga-hud-bar-fill {
+  animation: manga-energy-pulse 1.6s ease-in-out infinite;
+}
+
+.manga-energy-badge-pulse {
+  animation: manga-panel-pulse 1.8s ease-in-out infinite;
+}
+
+.merchant-hero {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 16%, #0f172a) 0%,
+    color-mix(in srgb, var(--theme-secondary) 10%, #0f172a) 45%,
+    #0f172a 100%
+  );
+}
+
+.merchant-hero-icon {
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--theme-primary) 30%, #0f172a);
+}
+
+.merchant-vitrine {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary) 8%, #0f172a) 0%,
+    #0f172a 65%
+  );
+}
+
+.merchant-vitrine-display {
+  border: 2px dashed color-mix(in srgb, var(--theme-primary) 25%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--theme-primary) 6%, #0f172a);
+}
+
+.merchant-vitrine-emoji {
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+
+@keyframes manga-energy-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
 .manga-action-btn {
   box-shadow: 3px 3px 0 color-mix(in srgb, var(--theme-primary) 35%, #0f172a);
 }
@@ -507,7 +556,9 @@
   .manga-burst-overlay,
   .manga-float-reward,
   .route-map-node-current,
-  .manga-dialogue-overlay {
+  .manga-dialogue-overlay,
+  .manga-energy-high .manga-hud-bar-fill,
+  .manga-energy-badge-pulse {
     animation: none !important;
   }
 }

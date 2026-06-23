@@ -9,6 +9,7 @@ import {
   getEquippedHatEmoji,
 } from "@repo/domain";
 import { PowerGauge } from "@/components/power-gauge";
+import { MagicalEnergyGauge } from "@/components/magical-energy-gauge";
 import { MANGA_COPY } from "@/lib/manga-copy";
 import { formatSummerChapter, type SummerChapter } from "@repo/domain";
 import { themeProgressBar } from "@/lib/theme-ui";
@@ -136,6 +137,8 @@ export function DashboardView({
           </div>
         </CardContent>
       </Card>
+
+      <MagicalEnergyGauge weeklyPoints={character.weeklyPoints} />
 
       <div className={`grid gap-4 ${showProgressCards ? "lg:grid-cols-2 lg:gap-6" : ""}`}>
         {showRoute && routePreview && (

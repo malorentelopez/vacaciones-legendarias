@@ -89,6 +89,8 @@ const EVENT_LABELS: Record<EventType, string> = {
   WEEKLY_RESET: "Reset semanal",
   CHARACTER_CREATED: "Personaje creado",
   QUESTIONNAIRE_COMPLETED: "Cuestionario aprobado",
+  SECRET_DISCOVERED: "Secreto descubierto",
+  SECRET_COMPLETED: "Secreto completado",
 };
 
 function getGreeting(hour: number) {
@@ -122,6 +124,10 @@ function formatEventDetail(type: EventType, payload: unknown): string {
       return String(p.name ?? "");
     case "QUESTIONNAIRE_COMPLETED":
       return String(p.questionnaireTitle ?? p.missionTitle ?? "");
+    case "SECRET_DISCOVERED":
+    case "SECRET_COMPLETED":
+      if (p.secretKey === "dragon-chest") return "Cofre del dragón";
+      return String(p.secretKey ?? "");
     default:
       return "";
   }
