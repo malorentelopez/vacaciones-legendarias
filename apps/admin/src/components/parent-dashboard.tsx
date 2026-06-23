@@ -129,6 +129,8 @@ function formatEventDetail(type: EventType, payload: unknown): string {
     case "SECRET_DISCOVERED":
     case "SECRET_COMPLETED":
       if (p.secretKey === "dragon-chest") return "Cofre del dragón";
+      if (p.secretKey === "manga-power-combo") return "Combo de poder manga";
+      if (p.secretKey === "ocean-fishing") return "Pesca relámpago";
       return String(p.secretKey ?? "");
     case "STREAK_MILESTONE":
       return `${p.days ?? "?"} días · +${p.crystals ?? 0} 💎`;

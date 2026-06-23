@@ -65,6 +65,8 @@ async function main() {
       { key: "hat_star", name: "Gorro Estrella", type: "HAT", icon: "star", requiredLevel: 3 },
       { key: "pet_cat", name: "Gato Compañero", type: "PET", icon: "cat", requiredLevel: 5 },
       { key: "hat_dragon", name: "Gorro del Dragón", type: "HAT", icon: "flame" },
+      { key: "bandana_hero", name: "Bandana del Héroe", type: "HAT", icon: "sparkles" },
+      { key: "pet_fish", name: "Pececito Compañero", type: "PET", icon: "fish" },
     ],
     skipDuplicates: true,
   });
@@ -233,6 +235,38 @@ async function main() {
         description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
         icon: "secret-dragon-chest",
         crystalReward: 30,
+        familyId: family.id,
+        isHidden: true,
+      },
+    });
+  }
+
+  const existingMangaCombo = await prisma.achievement.findFirst({
+    where: { icon: "secret-manga-combo", familyId: family.id },
+  });
+  if (!existingMangaCombo) {
+    await prisma.achievement.create({
+      data: {
+        title: "Maestro del Combo",
+        description: "Despertaste el combo de poder oculto en la barra POWER",
+        icon: "secret-manga-combo",
+        crystalReward: 20,
+        familyId: family.id,
+        isHidden: true,
+      },
+    });
+  }
+
+  const existingOceanFishing = await prisma.achievement.findFirst({
+    where: { icon: "secret-ocean-fishing", familyId: family.id },
+  });
+  if (!existingOceanFishing) {
+    await prisma.achievement.create({
+      data: {
+        title: "Pescador relámpago",
+        description: "Atrapaste la pesca secreta cuando los cristales brillaron en 42",
+        icon: "secret-ocean-fishing",
+        crystalReward: 25,
         familyId: family.id,
         isHidden: true,
       },
@@ -480,20 +514,43 @@ async function main() {
 
   const allFamilies = await prisma.family.findMany({ select: { id: true } });
   for (const { id: familyId } of allFamilies) {
-    const existing = await prisma.achievement.findFirst({
-      where: { icon: "secret-dragon-chest", familyId },
-    });
-    if (!existing) {
-      await prisma.achievement.create({
-        data: {
-          title: "Guardián del Cofre",
-          description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
-          icon: "secret-dragon-chest",
-          crystalReward: 30,
-          familyId,
-          isHidden: true,
-        },
+    const secretAchievements = [
+      {
+        icon: "secret-dragon-chest",
+        title: "Guardián del Cofre",
+        description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
+        crystalReward: 30,
+      },
+      {
+        icon: "secret-manga-combo",
+        title: "Maestro del Combo",
+        description: "Despertaste el combo de poder oculto en la barra POWER",
+        crystalReward: 20,
+      },
+      {
+        icon: "secret-ocean-fishing",
+        title: "Pescador relámpago",
+        description: "Atrapaste la pesca secreta cuando los cristales brillaron en 42",
+        crystalReward: 25,
+      },
+    ] as const;
+
+    for (const achievement of secretAchievements) {
+      const existing = await prisma.achievement.findFirst({
+        where: { icon: achievement.icon, familyId },
       });
+      if (!existing) {
+        await prisma.achievement.create({
+          data: {
+            title: achievement.title,
+            description: achievement.description,
+            icon: achievement.icon,
+            crystalReward: achievement.crystalReward,
+            familyId,
+            isHidden: true,
+          },
+        });
+      }
     }
   }
 

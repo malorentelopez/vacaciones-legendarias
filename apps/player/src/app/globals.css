@@ -298,6 +298,38 @@
   animation: secret-portrait-pulse 2.5s ease-in-out infinite;
 }
 
+.secret-power-glow {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-primary) 45%, transparent);
+}
+
+.secret-crystal-glow {
+  animation: secret-crystal-pulse 1.8s ease-in-out infinite;
+}
+
+.fishing-fish {
+  animation: fishing-fish-bob 1.2s ease-in-out infinite;
+}
+
+@keyframes secret-crystal-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 color-mix(in srgb, #38bdf8 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px color-mix(in srgb, #38bdf8 55%, transparent);
+  }
+}
+
+@keyframes fishing-fish-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
 /* ── Manga / shōnen UI ── */
 
 .font-display {

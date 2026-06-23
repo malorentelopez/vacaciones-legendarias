@@ -19,6 +19,7 @@ import {
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
 import { CrystalCounter } from "@/components/crystal-counter";
+import { SecretCrystalTrigger } from "@/components/secrets/secret-crystal-trigger";
 import { HeroHud, type HeroHudData } from "@/components/hero-hud";
 import { MANGA_COPY } from "@/lib/manga-copy";
 import { useTheme } from "./theme-provider";
@@ -77,7 +78,21 @@ function NavLink({
   );
 }
 
-export function PlayerNav({ crystals, hero }: { crystals: number; hero?: HeroHudData }) {
+export function PlayerNav({
+  crystals,
+  hero,
+  themeKey,
+  oceanFishing,
+}: {
+  crystals: number;
+  hero?: HeroHudData;
+  themeKey?: string;
+  oceanFishing?: {
+    eligible: boolean;
+    discovered: boolean;
+    completed: boolean;
+  };
+}) {
   const pathname = usePathname();
   const theme = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -87,6 +102,25 @@ export function PlayerNav({ crystals, hero }: { crystals: number; hero?: HeroHud
   useEffect(() => {
     setMoreOpen(false);
   }, [pathname]);
+
+  const showOceanFishing = themeKey === "ocean" && oceanFishing;
+
+  function renderCrystalCounter(compact?: boolean) {
+    const counter = <CrystalCounter crystals={crystals} compact={compact} />;
+    if (!showOceanFishing) return counter;
+
+    return (
+      <div className="relative">
+        <SecretCrystalTrigger
+          eligible={oceanFishing.eligible}
+          discovered={oceanFishing.discovered}
+          completed={oceanFishing.completed}
+        >
+          {counter}
+        </SecretCrystalTrigger>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -150,7 +184,7 @@ export function PlayerNav({ crystals, hero }: { crystals: number; hero?: HeroHud
               )}
             </div>
           </div>
-          <CrystalCounter crystals={crystals} />
+          {renderCrystalCounter()}
           <form action={logout} className="shrink-0">
             <button
               type="submit"
@@ -175,7 +209,7 @@ export function PlayerNav({ crystals, hero }: { crystals: number; hero?: HeroHud
           <AppLogo variant="full" size="sm" />
         </Link>
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <CrystalCounter crystals={crystals} compact />
+          {renderCrystalCounter(true)}
         </div>
       </header>
       {hero && (

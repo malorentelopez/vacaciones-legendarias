@@ -26,7 +26,7 @@ export {
   type AvatarConfig,
 } from "./utils/avatar";
 
-export { DRAGON_CHEST_SECRET, MEMORY_PAIRS_BY_THEME, ACCESSORY_DISPLAY } from "./config/secrets";
+export { DRAGON_CHEST_SECRET, MANGA_POWER_COMBO_SECRET, OCEAN_FISHING_SECRET, MEMORY_PAIRS_BY_THEME, POWER_COMBO_ICONS, ACCESSORY_DISPLAY } from "./config/secrets";
 
 export {
   getDayScheduleType,

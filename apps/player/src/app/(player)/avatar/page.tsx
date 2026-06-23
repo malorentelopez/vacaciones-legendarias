@@ -14,6 +14,8 @@ export default async function AvatarPage() {
     getDragonChestStatus().catch(() => ({ completed: false })),
   ]);
 
+  const secrets = parseAvatarConfig(character.avatarConfig).secrets;
+
   return (
     <AvatarCustomizer
       character={{
@@ -23,7 +25,10 @@ export default async function AvatarPage() {
         avatarBase: character.avatarBase,
         avatarConfig: character.avatarConfig,
         level: character.level,
-        secretCompleted: dragonStatus.completed || !!parseAvatarConfig(character.avatarConfig).secrets?.["dragon-chest"]?.completedAt,
+        secretCompleted:
+          dragonStatus.completed ||
+          !!secrets?.["dragon-chest"]?.completedAt ||
+          !!secrets?.["manga-power-combo"]?.completedAt,
       }}
     />
   );

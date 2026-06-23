@@ -5,6 +5,7 @@ import { CharacterPortrait } from "@repo/ui";
 import { PetCompanion } from "@/components/pet-companion";
 import { CrystalCounter } from "@/components/crystal-counter";
 import { MangaHudBar } from "@/components/manga/manga-hud-bar";
+import { SecretPowerBarTrigger } from "@/components/secrets/secret-power-bar-trigger";
 import { MANGA_COPY } from "@/lib/manga-copy";
 import { useTheme } from "@/components/theme-provider";
 import { themeProgressBar } from "@/lib/theme-ui";
@@ -18,10 +19,27 @@ export interface HeroHudData {
   xpProgress: number;
   streak?: number;
   petEmoji?: string | null;
+  themeKey?: string;
+  mangaPowerCombo?: {
+    eligible: boolean;
+    discovered: boolean;
+    completed: boolean;
+  };
 }
 
 export function HeroHud({ hero }: { hero: HeroHudData }) {
   const theme = useTheme();
+  const showMangaCombo = hero.themeKey === "manga" && hero.mangaPowerCombo;
+
+  const powerBar = (
+    <MangaHudBar
+      value={hero.xpProgress}
+      label={MANGA_COPY.hudPower}
+      barStyle={themeProgressBar(theme)}
+      showValue={false}
+      className="mt-1"
+    />
+  );
 
   return (
     <div className="manga-hero-hud mx-auto w-full max-w-4xl px-3 py-2 md:px-4">
@@ -51,13 +69,17 @@ export function HeroHud({ hero }: { hero: HeroHudData }) {
               </span>
             )}
           </div>
-          <MangaHudBar
-            value={hero.xpProgress}
-            label={MANGA_COPY.hudPower}
-            barStyle={themeProgressBar(theme)}
-            showValue={false}
-            className="mt-1"
-          />
+          {showMangaCombo ? (
+            <SecretPowerBarTrigger
+              eligible={hero.mangaPowerCombo!.eligible}
+              discovered={hero.mangaPowerCombo!.discovered}
+              completed={hero.mangaPowerCombo!.completed}
+            >
+              {powerBar}
+            </SecretPowerBarTrigger>
+          ) : (
+            powerBar
+          )}
         </div>
         <CrystalCounter crystals={hero.crystals} compact />
       </div>

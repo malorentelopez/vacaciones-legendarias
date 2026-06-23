@@ -1,4 +1,5 @@
 import { getRoleImage, normalizeRoleKey } from "../config/themes";
+import { MANGA_POWER_COMBO_SECRET, OCEAN_FISHING_SECRET } from "../config/secrets";
 
 export interface SecretProgress {
   discoveredAt?: string;
@@ -131,6 +132,9 @@ export function getUnlockedAccessoryKeys(
     unlocked.add("pet_cat");
   }
   if (options.secretCompleted) unlocked.add("hat_dragon");
+  const secrets = parsed.secrets;
+  if (secrets?.[MANGA_POWER_COMBO_SECRET.key]?.completedAt) unlocked.add("bandana_hero");
+  if (secrets?.[OCEAN_FISHING_SECRET.key]?.completedAt) unlocked.add("pet_fish");
 
   return [...unlocked];
 }
@@ -140,11 +144,13 @@ export function getEquippedHatEmoji(config: unknown): string | null {
   if (!hat || hat === "default") return null;
   if (hat === "hat_dragon") return "🐉";
   if (hat === "hat_star") return "⭐";
+  if (hat === "bandana_hero") return "🥷";
   return "🎩";
 }
 
 const PET_EMOJI: Record<string, string> = {
   pet_cat: "🐱",
+  pet_fish: "🐟",
 };
 
 export function getUnlockedPetKeys(
