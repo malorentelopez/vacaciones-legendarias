@@ -467,7 +467,76 @@
   .manga-badge-active,
   .manga-sfx,
   .manga-burst-overlay,
-  .manga-float-reward {
+  .manga-float-reward,
+  .route-map-node-current {
     animation: none !important;
+  }
+}
+
+/* ── Legendary route map ── */
+
+.route-map-connector {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--theme-primary) 55%, transparent),
+    color-mix(in srgb, var(--theme-secondary) 35%, transparent)
+  );
+  border-radius: 999px;
+}
+
+.route-map-node-current {
+  animation: route-node-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-primary) 55%, transparent);
+}
+
+.route-map-panel-current {
+  position: relative;
+  overflow: hidden;
+}
+
+.route-map-panel-current::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    color-mix(in srgb, var(--theme-primary) 6%, transparent) 8px,
+    color-mix(in srgb, var(--theme-primary) 6%, transparent) 16px
+  );
+  pointer-events: none;
+}
+
+.route-map-panel-completed {
+  border-color: color-mix(in srgb, #34d399 50%, var(--theme-primary));
+}
+
+.route-map-banner-friday {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #f59e0b 22%, #0f172a),
+    color-mix(in srgb, var(--theme-primary) 18%, #0f172a)
+  );
+}
+
+.route-map-active-callout {
+  animation: route-node-pulse 2.2s ease-in-out infinite;
+}
+
+.route-map-badge {
+  border: 1px solid color-mix(in srgb, #fbbf24 50%, transparent);
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+
+@keyframes route-node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-primary) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px 3px color-mix(in srgb, var(--theme-primary) 40%, transparent);
   }
 }

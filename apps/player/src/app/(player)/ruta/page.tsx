@@ -21,6 +21,7 @@ export default async function RutaPage() {
     <DailyAgenda
       dateLabel={formatAgendaDate(new Date())}
       dayTypeLabel={dayTypeLabel}
+      dayType={agenda.dayType}
       blocks={agenda.blocks}
       completedQuests={completedQuests}
       totalQuests={totalQuests}
