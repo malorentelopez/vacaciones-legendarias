@@ -15,6 +15,7 @@ export interface HeroHudData {
   crystals: number;
   portraitSrc: string;
   xpProgress: number;
+  streak?: number;
 }
 
 export function HeroHud({ hero }: { hero: HeroHudData }) {
@@ -41,6 +42,11 @@ export function HeroHud({ hero }: { hero: HeroHudData }) {
             <span className="font-display shrink-0 text-xs font-bold text-[var(--theme-heading)] sm:text-sm">
               Nv.{hero.level}
             </span>
+            {hero.streak != null && hero.streak > 0 && (
+              <span className="manga-streak-badge shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold text-orange-200 sm:text-xs">
+                🔥 x{hero.streak}
+              </span>
+            )}
           </div>
           <MangaHudBar
             value={hero.xpProgress}

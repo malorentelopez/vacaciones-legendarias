@@ -6,6 +6,7 @@ import {
   getCharacterPortraitSrc,
   getRoleName,
   normalizeRoleKey,
+  parseAvatarConfig,
 } from "@repo/domain";
 import type { HeroHudData } from "@/components/hero-hud";
 
@@ -32,6 +33,7 @@ export default async function PlayerLayout({ children }: { children: React.React
         crystals: character.crystals,
         portraitSrc: getCharacterPortraitSrc(character),
         xpProgress: character.xpProgress.progress,
+        streak: parseAvatarConfig(character.avatarConfig).streak?.current ?? 0,
       };
     } catch {
       // Personaje no disponible; el layout mostrará el selector sin nav.

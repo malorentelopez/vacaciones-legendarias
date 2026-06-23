@@ -19,6 +19,19 @@ export interface AvatarConfig {
   unlockedAccessories?: string[];
   secrets?: Record<string, SecretProgress>;
   dialoguesSeen?: Record<string, boolean>;
+  streak?: StreakProgress;
+  combos?: ComboProgress;
+}
+
+export interface StreakProgress {
+  current: number;
+  lastActiveDate: string;
+  best: number;
+  milestonesAwarded?: number[];
+}
+
+export interface ComboProgress {
+  morningBonusDate?: string;
 }
 
 export function parseAvatarConfig(config: unknown): AvatarConfig {
@@ -50,6 +63,29 @@ export function parseAvatarConfig(config: unknown): AvatarConfig {
     }
   }
 
+  let streak: StreakProgress | undefined;
+  if (c.streak && typeof c.streak === "object") {
+    const entry = c.streak as Record<string, unknown>;
+    const current = typeof entry.current === "number" ? entry.current : 0;
+    const lastActiveDate = typeof entry.lastActiveDate === "string" ? entry.lastActiveDate : "";
+    const best = typeof entry.best === "number" ? entry.best : 0;
+    const milestonesAwarded = Array.isArray(entry.milestonesAwarded)
+      ? entry.milestonesAwarded.filter((item): item is number => typeof item === "number")
+      : undefined;
+    if (lastActiveDate) {
+      streak = { current, lastActiveDate, best, milestonesAwarded };
+    }
+  }
+
+  let combos: ComboProgress | undefined;
+  if (c.combos && typeof c.combos === "object") {
+    const entry = c.combos as Record<string, unknown>;
+    combos = {
+      morningBonusDate:
+        typeof entry.morningBonusDate === "string" ? entry.morningBonusDate : undefined,
+    };
+  }
+
   return {
     base: typeof c.base === "string" ? c.base : undefined,
     customImage: typeof c.customImage === "string" ? c.customImage : null,
@@ -60,6 +96,8 @@ export function parseAvatarConfig(config: unknown): AvatarConfig {
       : undefined,
     secrets: Object.keys(secrets).length > 0 ? secrets : undefined,
     dialoguesSeen: Object.keys(dialoguesSeen).length > 0 ? dialoguesSeen : undefined,
+    streak,
+    combos,
   };
 }
 
@@ -76,18 +114,22 @@ export function mergeAvatarConfig(current: unknown, patch: Partial<AvatarConfig>
     unlockedAccessories: patch.unlockedAccessories ?? parsed.unlockedAccessories,
     secrets: { ...parsed.secrets, ...patch.secrets },
     dialoguesSeen: { ...parsed.dialoguesSeen, ...patch.dialoguesSeen },
+    streak: patch.streak ?? parsed.streak,
+    combos: { ...parsed.combos, ...patch.combos },
   };
 }
 
 export function getUnlockedAccessoryKeys(
   config: unknown,
-  options: { level: number; secretCompleted?: boolean }
+  options: { level: number; secretCompleted?: boolean; streakCurrent?: number }
 ): string[] {
   const parsed = parseAvatarConfig(config);
   const unlocked = new Set<string>(["default", ...(parsed.unlockedAccessories ?? [])]);
 
   if (options.level >= 3) unlocked.add("hat_star");
-  if (options.level >= 5) unlocked.add("pet_cat");
+  if (options.level >= 5 || (options.streakCurrent ?? parsed.streak?.current ?? 0) >= 7) {
+    unlocked.add("pet_cat");
+  }
   if (options.secretCompleted) unlocked.add("hat_dragon");
 
   return [...unlocked];

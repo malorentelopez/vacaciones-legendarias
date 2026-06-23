@@ -8,19 +8,26 @@ import { FloatingRewardFx } from "@/components/manga/floating-reward-fx";
 import { useCelebrations } from "@/components/celebration-provider";
 import { useMissionRewardFx } from "@/hooks/use-mission-reward-fx";
 import { useTheme } from "@/components/theme-provider";
+import { buildMissionRewardPayload } from "@/lib/mission-complete-fx";
 
 export function SideQuestsList({ sideQuests }: { sideQuests: PlayerMission[] }) {
   const router = useRouter();
   const theme = useTheme();
   const { applyGameFeedback } = useCelebrations();
-  const { activeFx, triggerMissionFx, clearMissionFx } = useMissionRewardFx(theme.key);
+  const { activeFx, triggerMissionFx, clearMissionFx } = useMissionRewardFx();
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleComplete(mission: PlayerMission) {
     setLoading(mission.id);
     try {
       const result = await completeMission(mission.id);
-      triggerMissionFx(mission.id, mission.type, mission.xpReward, mission.crystalReward);
+      triggerMissionFx(
+        mission.id,
+        buildMissionRewardPayload(mission, theme.key, {
+          streak: result.streak,
+          morningCombo: result.morningCombo,
+        })
+      );
       applyGameFeedback({ levelUp: result.levelUp });
       router.refresh();
     } catch (e) {

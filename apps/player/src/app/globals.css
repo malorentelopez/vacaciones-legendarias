@@ -399,6 +399,12 @@
   animation: manga-panel-pulse 1.8s ease-in-out infinite;
 }
 
+.manga-streak-badge {
+  border: 1px solid color-mix(in srgb, #fb923c 55%, transparent);
+  background: color-mix(in srgb, #fb923c 18%, #0f172a);
+  box-shadow: 0 0 10px color-mix(in srgb, #fb923c 25%, transparent);
+}
+
 .merchant-hero {
   background: linear-gradient(
     135deg,

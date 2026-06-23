@@ -109,10 +109,11 @@ export async function equipHat(hatKey: string) {
   }
 
   const character = await characterService.getCharacter(session.characterId);
-  const dragonCompleted = !!parseAvatarConfig(character.avatarConfig).secrets?.["dragon-chest"]?.completedAt;
+  const config = parseAvatarConfig(character.avatarConfig);
   const unlocked = getUnlockedAccessoryKeys(character.avatarConfig, {
     level: character.level,
-    secretCompleted: dragonCompleted,
+    secretCompleted: !!config.secrets?.["dragon-chest"]?.completedAt,
+    streakCurrent: config.streak?.current ?? 0,
   });
 
   if (!unlocked.includes(hatKey)) {

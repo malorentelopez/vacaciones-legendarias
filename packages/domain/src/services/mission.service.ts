@@ -2,11 +2,14 @@ import { MissionRepository } from "../repositories/mission.repository";
 import { QuestionnaireRepository } from "../repositories/questionnaire.repository";
 import { CharacterService } from "./character.service";
 import { AchievementService } from "./achievement.service";
+import { StreakService } from "./streak.service";
 import { GameEventRepository } from "../repositories/game-event.repository";
 import { getPeriodKey } from "../utils/period";
 import type { QuestionnaireState } from "../types/questionnaire";
 
 export class MissionService {
+  private _streakService?: StreakService;
+
   constructor(
     private missionRepo = new MissionRepository(),
     private questionnaireRepo = new QuestionnaireRepository(),
@@ -14,6 +17,10 @@ export class MissionService {
     private achievementService = new AchievementService(),
     private gameEventRepo = new GameEventRepository()
   ) {}
+
+  private get streakService() {
+    return (this._streakService ??= new StreakService());
+  }
 
   async getMissions(familyId?: string) {
     return this.missionRepo.findAll(familyId);
@@ -149,6 +156,15 @@ export class MissionService {
 
     await this.achievementService.evaluateAchievements(characterId);
 
-    return { progress, levelUp };
+    const { streak, morningCombo } = await this.streakService.evaluateAfterRouteMission(
+      characterId,
+      missionId,
+      {
+        isSideQuest: resolvedMission.isSideQuest,
+        frequency: resolvedMission.frequency,
+      }
+    );
+
+    return { progress, levelUp, streak, morningCombo };
   }
 }

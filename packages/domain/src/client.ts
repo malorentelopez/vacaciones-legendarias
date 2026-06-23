@@ -67,4 +67,4 @@ export {
 } from "./utils/questionnaire-import";
 
 export type { QuestionnaireState } from "./types/questionnaire";
-export type { LevelUpInfo, BossVictoryInfo } from "./types/game-feedback";
+export type { LevelUpInfo, BossVictoryInfo, StreakFeedback, MorningComboFeedback, MissionCompleteFeedback } from "./types/game-feedback";

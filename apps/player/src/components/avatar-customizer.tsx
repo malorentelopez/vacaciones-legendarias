@@ -66,6 +66,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
   const unlockedHats = getUnlockedAccessoryKeys(avatarConfig, {
     level: character.level,
     secretCompleted: character.secretCompleted,
+    streakCurrent: initialConfig.streak?.current ?? 0,
   }).filter((key) => key === "default" || key.startsWith("hat_"));
 
   function handleThemeChange(newThemeKey: string) {

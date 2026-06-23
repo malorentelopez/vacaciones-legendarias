@@ -91,6 +91,8 @@ const EVENT_LABELS: Record<EventType, string> = {
   QUESTIONNAIRE_COMPLETED: "Cuestionario aprobado",
   SECRET_DISCOVERED: "Secreto descubierto",
   SECRET_COMPLETED: "Secreto completado",
+  STREAK_MILESTONE: "Hito de racha",
+  COMBO_MORNING: "Combo matinal",
 };
 
 function getGreeting(hour: number) {
@@ -128,6 +130,10 @@ function formatEventDetail(type: EventType, payload: unknown): string {
     case "SECRET_COMPLETED":
       if (p.secretKey === "dragon-chest") return "Cofre del dragón";
       return String(p.secretKey ?? "");
+    case "STREAK_MILESTONE":
+      return `${p.days ?? "?"} días · +${p.crystals ?? 0} 💎`;
+    case "COMBO_MORNING":
+      return `+${p.crystals ?? 0} 💎`;
     default:
       return "";
   }

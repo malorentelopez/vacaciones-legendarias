@@ -239,6 +239,21 @@ async function main() {
     });
   }
 
+  const existingStreakSpirit = await prisma.achievement.findFirst({
+    where: { icon: "streak-spirit", familyId: family.id },
+  });
+  if (!existingStreakSpirit) {
+    await prisma.achievement.create({
+      data: {
+        title: "Espíritu constante",
+        description: "Mantén una racha de 3 días cumpliendo la ruta legendaria",
+        icon: "streak-spirit",
+        crystalReward: 0,
+        familyId: family.id,
+      },
+    });
+  }
+
   const dragonHat = await prisma.avatarAccessory.findUnique({ where: { key: "hat_dragon" } });
   const secretAchievement = await prisma.achievement.findFirst({
     where: { icon: "secret-dragon-chest", familyId: family.id },
