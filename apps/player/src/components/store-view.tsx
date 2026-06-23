@@ -33,7 +33,7 @@ export function StoreView({ rewards, crystals }: { rewards: Reward[]; crystals: 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-violet-300">Cofre del tesoro</h1>
+        <h1 className="theme-page-title">Cofre del tesoro</h1>
         <Badge variant="warning" className="text-base px-4 py-1">
           💎 {crystals} cristales
         </Badge>
@@ -42,8 +42,8 @@ export function StoreView({ rewards, crystals }: { rewards: Reward[]; crystals: 
         {rewards.map((reward) => (
           <Card key={reward.id}>
             <CardHeader className="flex-row items-center gap-3">
-              <div className="rounded-xl bg-violet-500/20 p-3">
-                <Gift className="h-6 w-6 text-violet-400" />
+              <div className="theme-surface-strong rounded-xl p-3">
+                <Gift className="theme-icon h-6 w-6" />
               </div>
               <div>
                 <CardTitle className="text-lg">{reward.title}</CardTitle>

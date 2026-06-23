@@ -37,7 +37,7 @@ export default async function TimelinePage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-violet-300">Tu Historia</h1>
+      <h1 className="theme-page-title">Tu Historia</h1>
       <div className="space-y-3">
         {events.map((event) => (
           <Card key={event.id} className="p-4">

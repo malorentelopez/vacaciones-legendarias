@@ -32,7 +32,7 @@ export function MissionsList({ missions }: { missions: Mission[] }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-violet-300">Misiones</h1>
+      <h1 className="theme-page-title">Misiones</h1>
 
       {pending.length > 0 && (
         <section className="space-y-3">

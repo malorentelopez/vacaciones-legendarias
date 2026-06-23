@@ -21,8 +21,20 @@ export class BossBattleService {
     return this.bossRepo.update(id, data);
   }
 
+  async deleteBossBattle(id: string) {
+    return this.bossRepo.delete(id);
+  }
+
   async addObjective(bossBattleId: string, data: { title: string; description?: string; targetDate?: Date; order?: number }) {
     return this.bossRepo.addObjective(bossBattleId, data);
+  }
+
+  async updateObjective(id: string, data: { title?: string; description?: string | null }) {
+    return this.bossRepo.updateObjective(id, data);
+  }
+
+  async deleteObjective(id: string) {
+    return this.bossRepo.deleteObjective(id);
   }
 
   async completeObjective(objectiveId: string, characterId: string) {

@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Card, Badge, Button } from "@repo/ui";
-import { createAchievement } from "@/actions/admin";
+import { createAchievement, updateAchievement, deleteAchievement } from "@/actions/admin";
 import { Modal } from "@/components/ui/modal";
-import { FormField, inputClass, textareaClass } from "@/components/ui/form-field";
+import { FormField, inputClass, textareaClass, selectClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
-import { Trophy, Target, Star } from "lucide-react";
+import { ActionButtons } from "@/components/ui/action-buttons";
+import { Trophy, Target, Star, Repeat } from "lucide-react";
 
 interface Mission {
   id: string;
@@ -24,11 +25,15 @@ interface Achievement {
   description: string | null;
   requiredLevel: number | null;
   requiredMissions: number | null;
+  targetMissionId: string | null;
+  targetMissionCompletions: number | null;
   crystalReward: number;
+  familyId: string | null;
   missions: AchievementMission[];
+  targetMission?: { id: string; title: string } | null;
 }
 
-type AchievementType = "missions" | "level";
+type AchievementType = "missions" | "level" | "mission_count";
 
 const emptyForm = {
   title: "",
@@ -36,25 +41,48 @@ const emptyForm = {
   crystalReward: 10,
   requiredLevel: 3,
   selectedMissionIds: [] as string[],
+  targetMissionId: "",
+  targetMissionCompletions: 5,
 };
 
 export function AchievementsManager({
   achievements: initial,
   missions,
+  familyId,
 }: {
   achievements: Achievement[];
   missions: Mission[];
+  familyId: string;
 }) {
   const [achievements, setAchievements] = useState(initial);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [achievementType, setAchievementType] = useState<AchievementType>("missions");
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   function openCreate() {
+    setEditingId(null);
     setForm(emptyForm);
     setAchievementType("missions");
+    setError("");
+    setModalOpen(true);
+  }
+
+  function openEdit(a: Achievement) {
+    const type = getAchievementType(a);
+    setEditingId(a.id);
+    setAchievementType(type);
+    setForm({
+      title: a.title,
+      description: a.description ?? "",
+      crystalReward: a.crystalReward,
+      requiredLevel: a.requiredLevel ?? 3,
+      selectedMissionIds: a.missions.map((m) => m.missionId),
+      targetMissionId: a.targetMissionId ?? a.targetMission?.id ?? "",
+      targetMissionCompletions: a.targetMissionCompletions ?? 5,
+    });
     setError("");
     setModalOpen(true);
   }
@@ -68,7 +96,7 @@ export function AchievementsManager({
     }));
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -76,24 +104,66 @@ export function AchievementsManager({
       setError("Selecciona al menos una misión");
       return;
     }
+    if (achievementType === "mission_count") {
+      if (!form.targetMissionId) {
+        setError("Selecciona una misión");
+        return;
+      }
+      if (form.targetMissionCompletions < 1) {
+        setError("El número de veces debe ser al menos 1");
+        return;
+      }
+    }
 
     setLoading(true);
-    const achievement = await createAchievement({
-      title: form.title,
-      description: form.description || undefined,
-      crystalReward: form.crystalReward,
-      ...(achievementType === "missions"
-        ? { missionIds: form.selectedMissionIds }
-        : { requiredLevel: form.requiredLevel }),
-    });
-    setAchievements([...achievements, achievement]);
-    setModalOpen(false);
-    setLoading(false);
+    try {
+      const payload = {
+        title: form.title,
+        description: form.description || undefined,
+        crystalReward: form.crystalReward,
+        ...(achievementType === "missions"
+          ? { missionIds: form.selectedMissionIds }
+          : achievementType === "level"
+            ? { requiredLevel: form.requiredLevel }
+            : {
+                targetMissionId: form.targetMissionId,
+                targetMissionCompletions: form.targetMissionCompletions,
+              }),
+      };
+
+      if (editingId) {
+        const updated = await updateAchievement(editingId, payload);
+        setAchievements(achievements.map((a) => (a.id === editingId ? (updated as Achievement) : a)));
+      } else {
+        const created = await createAchievement(payload);
+        setAchievements([...achievements, created as Achievement]);
+      }
+      setModalOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al guardar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("¿Eliminar este logro? Los jugadores que ya lo desbloquearon perderán el registro.")) return;
+    try {
+      await deleteAchievement(id);
+      setAchievements(achievements.filter((a) => a.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al eliminar");
+    }
   }
 
   function getAchievementType(a: Achievement): AchievementType {
     if (a.requiredLevel) return "level";
+    if (a.targetMissionId) return "mission_count";
     return "missions";
+  }
+
+  function canManage(a: Achievement) {
+    return a.familyId === familyId;
   }
 
   return (
@@ -121,7 +191,15 @@ export function AchievementsManager({
                     <Trophy className="h-6 w-6 text-amber-400" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold">{a.title}</h3>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="font-bold">{a.title}</h3>
+                      {canManage(a) && (
+                        <ActionButtons
+                          onEdit={() => openEdit(a)}
+                          onDelete={() => handleDelete(a.id)}
+                        />
+                      )}
+                    </div>
                     {a.description && (
                       <p className="mt-0.5 text-sm text-slate-400">{a.description}</p>
                     )}
@@ -137,6 +215,12 @@ export function AchievementsManager({
                         <Badge variant="default">
                           <Target className="mr-1 inline h-3 w-3" />
                           {a.missions.length} misión{a.missions.length !== 1 ? "es" : ""}
+                        </Badge>
+                      )}
+                      {type === "mission_count" && a.targetMissionCompletions && (
+                        <Badge variant="default">
+                          <Repeat className="mr-1 inline h-3 w-3" />
+                          {a.targetMissionCompletions}× {a.targetMission?.title ?? "misión"}
                         </Badge>
                       )}
                     </div>
@@ -158,14 +242,15 @@ export function AchievementsManager({
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Nuevo logro"
+        title={editingId ? "Editar logro" : "Nuevo logro"}
         description="Elige si se desbloquea por misiones o por subir de nivel."
         size="lg"
       >
-        <form onSubmit={handleCreate} className="space-y-4">
-          <div className="grid grid-cols-2 gap-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             {([
               { value: "missions" as const, label: "Por misiones", icon: Target },
+              { value: "mission_count" as const, label: "Repetir tarea", icon: Repeat },
               { value: "level" as const, label: "Por nivel", icon: Star },
             ]).map(({ value, label, icon: Icon }) => (
               <button
@@ -228,6 +313,32 @@ export function AchievementsManager({
                 className={inputClass}
               />
             </FormField>
+          ) : achievementType === "mission_count" ? (
+            <>
+              <FormField label="Misión" required hint="La tarea que el jugador debe repetir.">
+                <select
+                  className={selectClass}
+                  value={form.targetMissionId}
+                  onChange={(e) => setForm({ ...form, targetMissionId: e.target.value })}
+                  required
+                >
+                  <option value="">Selecciona una misión</option>
+                  {missions.map((m) => (
+                    <option key={m.id} value={m.id}>{m.title}</option>
+                  ))}
+                </select>
+              </FormField>
+              <FormField label="Veces completada" htmlFor="ach-count" required>
+                <input
+                  id="ach-count"
+                  type="number"
+                  min={1}
+                  value={form.targetMissionCompletions}
+                  onChange={(e) => setForm({ ...form, targetMissionCompletions: Number(e.target.value) })}
+                  className={inputClass}
+                />
+              </FormField>
+            </>
           ) : (
             <FormField
               label={`Misiones requeridas (${form.selectedMissionIds.length})`}
@@ -263,7 +374,7 @@ export function AchievementsManager({
               Cancelar
             </Button>
             <Button type="submit" className="flex-1" disabled={loading}>
-              {loading ? "Creando..." : "Crear logro"}
+              {loading ? "Guardando..." : editingId ? "Guardar" : "Crear logro"}
             </Button>
           </div>
         </form>

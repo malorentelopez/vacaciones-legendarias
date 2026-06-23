@@ -11,7 +11,7 @@ export default async function SkillsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-violet-300">Tus poderes</h1>
+      <h1 className="theme-page-title">Tus poderes</h1>
       <p className="text-slate-400">Entrena cada habilidad para hacerte más fuerte</p>
       <div className="grid gap-4 sm:grid-cols-2">
         {character.skills.map((cs) => (

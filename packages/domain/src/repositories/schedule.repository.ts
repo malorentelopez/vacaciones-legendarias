@@ -104,4 +104,29 @@ export class ScheduleRepository {
       orderBy: { order: "asc" },
     });
   }
+
+  async reorderBlocks(characterId: string, dayType: DayScheduleType, orderedIds: string[]) {
+    const existing = await prisma.scheduleBlock.findMany({
+      where: { characterId, dayType, isActive: true },
+      select: { id: true },
+      orderBy: [{ order: "asc" }, { startTime: "asc" }],
+    });
+
+    const existingIds = new Set(existing.map((b) => b.id));
+    if (
+      orderedIds.length !== existing.length ||
+      orderedIds.some((id) => !existingIds.has(id))
+    ) {
+      throw new Error("Lista de bloques inválida");
+    }
+
+    await prisma.$transaction(
+      orderedIds.map((id, order) =>
+        prisma.scheduleBlock.update({
+          where: { id },
+          data: { order },
+        })
+      )
+    );
+  }
 }

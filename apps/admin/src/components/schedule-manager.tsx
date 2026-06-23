@@ -8,6 +8,7 @@ import {
   updateScheduleBlock,
   deleteScheduleBlock,
   getScheduleBlocks,
+  reorderScheduleBlocks,
 } from "@/actions/admin";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass, textareaClass } from "@/components/ui/form-field";
@@ -15,7 +16,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { ActionButtons } from "@/components/ui/action-buttons";
 import { EmojiPicker } from "@/components/ui/emoji-picker";
 import { isSingleEmoji } from "@/lib/emoji-data";
-import { Plus } from "lucide-react";
+import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 
 interface Character {
   id: string;
@@ -46,8 +47,9 @@ interface ScheduleBlock {
 }
 
 const DAY_TYPES: { value: DayScheduleType; label: string }[] = [
-  { value: "WEEKDAY", label: "Entre semana (L–V)" },
-  { value: "WEEKEND", label: "Fin de semana (S–D)" },
+  { value: "WEEKDAY", label: "Lunes a jueves" },
+  { value: "FRIDAY", label: "Viernes" },
+  { value: "WEEKEND", label: "Fin de semana" },
 ];
 
 const emptyForm = {
@@ -62,6 +64,13 @@ const emptyForm = {
 
 function formatTimeRange(start: string, end: string | null) {
   return end ? `${start} – ${end}` : `${start} en adelante`;
+}
+
+function reorderBlocksList(blocks: ScheduleBlock[], fromIndex: number, toIndex: number) {
+  const next = [...blocks];
+  const [item] = next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, item);
+  return next;
 }
 
 export function ScheduleManager({
@@ -84,6 +93,9 @@ export function ScheduleManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [reorderLoading, setReorderLoading] = useState(false);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
   async function loadBlocks(charId: string, dt: DayScheduleType) {
     setLoading(true);
@@ -192,13 +204,63 @@ export function ScheduleManager({
     }));
   }
 
+  async function persistOrder(nextBlocks: ScheduleBlock[]) {
+    setBlocks(nextBlocks);
+    setReorderLoading(true);
+    try {
+      const updated = await reorderScheduleBlocks(
+        characterId,
+        dayType,
+        nextBlocks.map((b) => b.id)
+      );
+      setBlocks(updated as ScheduleBlock[]);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al reordenar");
+      await loadBlocks(characterId, dayType);
+    } finally {
+      setReorderLoading(false);
+    }
+  }
+
+  async function moveBlock(index: number, direction: -1 | 1) {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= blocks.length) return;
+    await persistOrder(reorderBlocksList(blocks, index, targetIndex));
+  }
+
+  function handleDragStart(blockId: string) {
+    setDraggingId(blockId);
+  }
+
+  function handleDragOver(e: React.DragEvent, blockId: string) {
+    e.preventDefault();
+    if (draggingId && draggingId !== blockId) {
+      setDropTargetId(blockId);
+    }
+  }
+
+  async function handleDrop(targetId: string) {
+    if (!draggingId || draggingId === targetId) return;
+    const fromIndex = blocks.findIndex((b) => b.id === draggingId);
+    const toIndex = blocks.findIndex((b) => b.id === targetId);
+    if (fromIndex === -1 || toIndex === -1) return;
+    setDraggingId(null);
+    setDropTargetId(null);
+    await persistOrder(reorderBlocksList(blocks, fromIndex, toIndex));
+  }
+
+  function handleDragEnd() {
+    setDraggingId(null);
+    setDropTargetId(null);
+  }
+
   let lastSection: string | null = null;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Agenda semanal"
-        description="Define el horario diario de cada personaje. Asigna misiones a bloques concretos como tareas de casa."
+        description="Define el horario por tipo de día. El viernes tiene su propia agenda para tareas semanales."
         actionLabel="Nuevo bloque"
         onAction={characterId ? openCreate : undefined}
       />
@@ -244,9 +306,15 @@ export function ScheduleManager({
         </Card>
       ) : (
         <div className="space-y-3">
-          {blocks.map((block) => {
+          <p className="text-xs text-slate-500">
+            Arrastra los bloques para cambiar el orden, o usa las flechas.
+            {reorderLoading && <span className="ml-2 text-violet-400">Guardando orden…</span>}
+          </p>
+          {blocks.map((block, index) => {
             const showSection = block.section && block.section !== lastSection;
             if (showSection) lastSection = block.section;
+            const isDragging = draggingId === block.id;
+            const isDropTarget = dropTargetId === block.id;
 
             return (
               <div key={block.id}>
@@ -255,29 +323,77 @@ export function ScheduleManager({
                     {block.section}
                   </h3>
                 )}
-                <Card className="p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <Badge variant="default">{formatTimeRange(block.startTime, block.endTime)}</Badge>
-                        {block.icon && <span className="text-lg">{block.icon}</span>}
-                        <h4 className="font-semibold text-white">{block.title}</h4>
-                      </div>
-                      {block.description && (
-                        <p className="text-sm text-slate-400">{block.description}</p>
-                      )}
-                      {block.missions.length > 0 && (
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          {block.missions.map(({ mission }) => (
-                            <Badge key={mission.id} variant="warning">{mission.title}</Badge>
-                          ))}
-                        </div>
-                      )}
+                <Card
+                  className={`p-4 transition-opacity ${isDragging ? "opacity-40" : ""} ${
+                    isDropTarget ? "ring-2 ring-violet-500" : ""
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, block.id)}
+                  onDrop={() => handleDrop(block.id)}
+                  onDragLeave={() => {
+                    if (dropTargetId === block.id) setDropTargetId(null);
+                  }}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="flex shrink-0 flex-col items-center gap-0.5 pt-0.5">
+                      <button
+                        type="button"
+                        draggable
+                        onDragStart={(e) => {
+                          e.dataTransfer.effectAllowed = "move";
+                          e.dataTransfer.setData("text/plain", block.id);
+                          handleDragStart(block.id);
+                        }}
+                        onDragEnd={handleDragEnd}
+                        disabled={reorderLoading}
+                        className="cursor-grab rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-slate-300 active:cursor-grabbing disabled:opacity-40"
+                        aria-label="Arrastrar para reordenar"
+                        title="Arrastrar para reordenar"
+                      >
+                        <GripVertical className="h-5 w-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveBlock(index, -1)}
+                        disabled={index === 0 || reorderLoading}
+                        className="rounded p-0.5 text-slate-500 hover:bg-slate-800 hover:text-white disabled:opacity-30"
+                        aria-label="Subir bloque"
+                      >
+                        <ChevronUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveBlock(index, 1)}
+                        disabled={index === blocks.length - 1 || reorderLoading}
+                        className="rounded p-0.5 text-slate-500 hover:bg-slate-800 hover:text-white disabled:opacity-30"
+                        aria-label="Bajar bloque"
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </button>
                     </div>
-                    <ActionButtons
-                      onEdit={() => openEdit(block)}
-                      onDelete={() => handleDelete(block.id)}
-                    />
+
+                    <div className="flex min-w-0 flex-1 items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <Badge variant="default">{formatTimeRange(block.startTime, block.endTime)}</Badge>
+                          {block.icon && <span className="text-lg">{block.icon}</span>}
+                          <h4 className="font-semibold text-white">{block.title}</h4>
+                        </div>
+                        {block.description && (
+                          <p className="text-sm text-slate-400">{block.description}</p>
+                        )}
+                        {block.missions.length > 0 && (
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {block.missions.map(({ mission }) => (
+                              <Badge key={mission.id} variant="warning">{mission.title}</Badge>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <ActionButtons
+                        onEdit={() => openEdit(block)}
+                        onDelete={() => handleDelete(block.id)}
+                      />
+                    </div>
                   </div>
                 </Card>
               </div>

@@ -39,6 +39,7 @@ enum EventType {
   XP_GAINED
   LEVEL_UP
   ACHIEVEMENT_UNLOCKED
+  ACHIEVEMENT_CLAIMED
   CRYSTALS_GAINED
   CRYSTALS_SPENT
   BOSS_COMPLETED
@@ -67,6 +68,7 @@ enum CharacterGender {
 
 enum DayScheduleType {
   WEEKDAY
+  FRIDAY
   WEEKEND
 }
 
@@ -78,6 +80,7 @@ model Family {
 
   users      User[]
   characters Character[]
+  freeDays   FreeDay[]
 }
 
 model User {
@@ -173,6 +176,7 @@ model Mission {
   skill              Skill?              @relation(fields: [skillId], references: [id], onDelete: SetNull)
   progress           MissionProgress[]
   achievementMissions AchievementMission[]
+  achievementTargets Achievement[]       @relation("AchievementTargetMission")
   scheduleBlocks     ScheduleBlockMission[]
 }
 
@@ -194,21 +198,24 @@ model MissionProgress {
 }
 
 model Achievement {
-  id              String   @id @default(cuid())
-  title           String
-  description     String?
-  icon            String   @default("trophy")
-  requiredLevel   Int?
-  requiredMissions Int?
-  requiredSkillId String?
-  requiredSkillXp Int?
-  crystalReward   Int      @default(0)
-  isActive        Boolean  @default(true)
-  familyId        String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id                       String   @id @default(cuid())
+  title                    String
+  description              String?
+  icon                     String   @default("trophy")
+  requiredLevel            Int?
+  requiredMissions         Int?
+  requiredSkillId          String?
+  requiredSkillXp          Int?
+  targetMissionId          String?
+  targetMissionCompletions Int?
+  crystalReward            Int      @default(0)
+  isActive                 Boolean  @default(true)
+  familyId                 String?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
 
   requiredSkill Skill?                 @relation(fields: [requiredSkillId], references: [id], onDelete: SetNull)
+  targetMission Mission?               @relation("AchievementTargetMission", fields: [targetMissionId], references: [id], onDelete: SetNull)
   unlocks       CharacterAchievement[]
   missions      AchievementMission[]
 }
@@ -225,10 +232,11 @@ model AchievementMission {
 }
 
 model CharacterAchievement {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   characterId   String
   achievementId String
-  unlockedAt    DateTime @default(now())
+  unlockedAt    DateTime  @default(now())
+  claimedAt     DateTime?
 
   character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
   achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
@@ -426,4 +434,17 @@ model ScheduleBlockMission {
   mission       Mission       @relation(fields: [missionId], references: [id], onDelete: Cascade)
 
   @@unique([scheduleBlockId, missionId])
+}
+
+model FreeDay {
+  id        String   @id @default(cuid())
+  familyId  String
+  date      DateTime @db.Date
+  label     String?
+  createdAt DateTime @default(now())
+
+  family Family @relation(fields: [familyId], references: [id], onDelete: Cascade)
+
+  @@unique([familyId, date])
+  @@index([familyId, date])
 }

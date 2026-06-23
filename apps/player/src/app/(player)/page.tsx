@@ -3,7 +3,6 @@ import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter, getFamilyCharacters, getAgenda } from "@/actions/game";
 import { CharacterSelector } from "@/components/character-selector";
 import { DashboardView } from "@/components/dashboard-view";
-import { PlayerHeader } from "@/components/player-header";
 
 export default async function DashboardPage() {
   const session = await getValidPlayerSession();
@@ -28,30 +27,20 @@ export default async function DashboardPage() {
   const totalQuests = agenda?.blocks.reduce((sum, block) => sum + block.missions.length, 0) ?? 0;
 
   return (
-    <>
-      <PlayerHeader
-        name={character.name}
-        level={character.level}
-        themeKey={character.themeKey}
-        gender={character.gender}
-        avatarBase={character.avatarBase}
-        avatarConfig={character.avatarConfig}
-      />
-      <DashboardView
-        character={character}
-        familyCharacters={familyCharacters}
-        routePreview={
-          agenda
-            ? {
-                currentBlockTitle: currentBlock?.title,
-                currentBlockIcon: currentBlock?.icon,
-                completedQuests,
-                totalQuests,
-                totalStages: agenda.blocks.length,
-              }
-            : undefined
-        }
-      />
-    </>
+    <DashboardView
+      character={character}
+      familyCharacters={familyCharacters}
+      routePreview={
+        agenda
+          ? {
+              currentBlockTitle: currentBlock?.title,
+              currentBlockIcon: currentBlock?.icon,
+              completedQuests,
+              totalQuests,
+              totalStages: agenda.blocks.length,
+            }
+          : undefined
+      }
+    />
   );
 }

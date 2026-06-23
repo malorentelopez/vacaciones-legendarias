@@ -108,6 +108,8 @@ export class BossBattleRepository {
     data: Partial<{
       title: string;
       description: string;
+      month: number;
+      year: number;
       xpReward: number;
       crystalReward: number;
       isActive: boolean;
@@ -116,8 +118,12 @@ export class BossBattleRepository {
     return prisma.bossBattle.update({
       where: { id },
       data,
-      include: { objectives: true },
+      include: { objectives: { orderBy: { order: "asc" } } },
     });
+  }
+
+  async delete(id: string) {
+    return prisma.bossBattle.delete({ where: { id } });
   }
 
   async completeObjective(objectiveId: string) {
@@ -131,5 +137,16 @@ export class BossBattleRepository {
     return prisma.bossObjective.create({
       data: { bossBattleId, ...data },
     });
+  }
+
+  async updateObjective(
+    id: string,
+    data: Partial<{ title: string; description: string | null }>
+  ) {
+    return prisma.bossObjective.update({ where: { id }, data });
+  }
+
+  async deleteObjective(id: string) {
+    return prisma.bossObjective.delete({ where: { id } });
   }
 }

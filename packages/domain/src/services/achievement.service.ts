@@ -19,31 +19,56 @@ export class AchievementService {
   async getCharacterAchievements(characterId: string, familyId?: string) {
     const all = await this.achievementRepo.findAll(familyId);
     const unlocked = await this.achievementRepo.getCharacterAchievements(characterId);
-    const unlockedIds = new Set(unlocked.map((u) => u.achievementId));
+    const unlockedById = new Map(unlocked.map((u) => [u.achievementId, u]));
 
     const completedMissionIds = new Set(
       (
         await prisma.missionProgress.findMany({
           where: { characterId, completed: true },
           select: { missionId: true },
+          distinct: ["missionId"],
         })
       ).map((p) => p.missionId)
     );
 
+    const missionCompletionCounts = new Map<string, number>();
+    const completionRows = await prisma.missionProgress.groupBy({
+      by: ["missionId"],
+      where: { characterId, completed: true },
+      _count: { _all: true },
+    });
+    for (const row of completionRows) {
+      missionCompletionCounts.set(row.missionId, row._count._all);
+    }
+
     return all.map((achievement) => {
+      const record = unlockedById.get(achievement.id);
       const requiredMissionIds = achievement.missions.map((m) => m.missionId);
       const completedRequired = requiredMissionIds.filter((id) =>
         completedMissionIds.has(id)
       ).length;
 
+      let progress: { completed: number; total: number } | undefined;
+      if (requiredMissionIds.length > 0) {
+        progress = { completed: completedRequired, total: requiredMissionIds.length };
+      } else if (achievement.targetMissionId && achievement.targetMissionCompletions) {
+        progress = {
+          completed: missionCompletionCounts.get(achievement.targetMissionId) ?? 0,
+          total: achievement.targetMissionCompletions,
+        };
+      }
+
+      const isUnlocked = !!record;
+      const isClaimed = !!record?.claimedAt;
+
       return {
         ...achievement,
-        unlocked: unlockedIds.has(achievement.id),
-        unlockedAt: unlocked.find((u) => u.achievementId === achievement.id)?.unlockedAt,
-        progress:
-          requiredMissionIds.length > 0
-            ? { completed: completedRequired, total: requiredMissionIds.length }
-            : undefined,
+        unlocked: isUnlocked,
+        claimed: isClaimed,
+        claimable: isUnlocked && !isClaimed && achievement.crystalReward > 0,
+        unlockedAt: record?.unlockedAt,
+        claimedAt: record?.claimedAt,
+        progress,
       };
     });
   }
@@ -60,6 +85,26 @@ export class AchievementService {
     return this.achievementRepo.delete(id);
   }
 
+  async claimAchievement(characterId: string, achievementId: string) {
+    const record = await this.achievementRepo.claim(characterId, achievementId);
+
+    if (record.achievement.crystalReward > 0) {
+      await this.characterService.addCrystals(
+        characterId,
+        record.achievement.crystalReward,
+        `Logro reclamado: ${record.achievement.title}`
+      );
+    }
+
+    await this.gameEventRepo.create(characterId, "ACHIEVEMENT_CLAIMED", {
+      achievementId,
+      title: record.achievement.title,
+      crystals: record.achievement.crystalReward,
+    });
+
+    return record;
+  }
+
   private async hasCompletedRequiredMissions(
     characterId: string,
     missionIds: string[]
@@ -73,6 +118,12 @@ export class AchievementService {
     });
 
     return completed.length >= missionIds.length;
+  }
+
+  private async getMissionCompletionCount(characterId: string, missionId: string) {
+    return prisma.missionProgress.count({
+      where: { characterId, missionId, completed: true },
+    });
   }
 
   async evaluateAchievements(characterId: string) {
@@ -93,7 +144,10 @@ export class AchievementService {
       let qualifies = true;
       const requiredMissionIds = achievement.missions.map((m) => m.missionId);
 
-      if (requiredMissionIds.length > 0) {
+      if (achievement.targetMissionId && achievement.targetMissionCompletions) {
+        const count = await this.getMissionCompletionCount(characterId, achievement.targetMissionId);
+        qualifies = count >= achievement.targetMissionCompletions;
+      } else if (requiredMissionIds.length > 0) {
         qualifies = await this.hasCompletedRequiredMissions(characterId, requiredMissionIds);
       } else if (achievement.requiredMissions) {
         qualifies = completedMissionsCount >= achievement.requiredMissions;
@@ -116,15 +170,6 @@ export class AchievementService {
           achievementId: achievement.id,
           title: achievement.title,
         });
-
-        if (achievement.crystalReward > 0) {
-          await this.characterService.addCrystals(
-            characterId,
-            achievement.crystalReward,
-            `Logro desbloqueado: ${achievement.title}`
-          );
-        }
-
         newlyUnlocked.push(unlocked);
       }
     }

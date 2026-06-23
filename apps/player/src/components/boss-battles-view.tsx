@@ -41,7 +41,7 @@ export function BossBattlesView({ bosses }: { bosses: BossBattle[] }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-violet-300">Boss Battles</h1>
+      <h1 className="theme-page-title">Boss Battles</h1>
       {bosses.map((boss) => (
         <Card key={boss.id} className="border-red-500/30">
           <CardHeader>

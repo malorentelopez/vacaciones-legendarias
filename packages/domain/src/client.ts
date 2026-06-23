@@ -23,9 +23,12 @@ export {
 
 export {
   getDayScheduleType,
+  getDayScheduleTypeLabel,
   parseTimeToMinutes,
   isTimeInBlock,
   formatAgendaDate,
+  toLocalDateKey,
+  parseLocalDateKey,
   DAY_NAMES,
   MONTH_NAMES,
 } from "./utils/schedule";

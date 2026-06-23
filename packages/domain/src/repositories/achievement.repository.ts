@@ -1,5 +1,11 @@
 import { prisma } from "@repo/database";
 
+const achievementInclude = {
+  requiredSkill: true,
+  targetMission: true,
+  missions: { include: { mission: true } },
+} as const;
+
 export class AchievementRepository {
   async findAll(familyId?: string) {
     return prisma.achievement.findMany({
@@ -7,10 +13,7 @@ export class AchievementRepository {
         isActive: true,
         OR: [{ familyId }, { familyId: null }],
       },
-      include: {
-        requiredSkill: true,
-        missions: { include: { mission: true } },
-      },
+      include: achievementInclude,
       orderBy: { createdAt: "asc" },
     });
   }
@@ -18,10 +21,7 @@ export class AchievementRepository {
   async findById(id: string) {
     return prisma.achievement.findUnique({
       where: { id },
-      include: {
-        requiredSkill: true,
-        missions: { include: { mission: true } },
-      },
+      include: achievementInclude,
     });
   }
 
@@ -33,6 +33,8 @@ export class AchievementRepository {
     requiredMissions?: number;
     requiredSkillId?: string;
     requiredSkillXp?: number;
+    targetMissionId?: string;
+    targetMissionCompletions?: number;
     crystalReward?: number;
     familyId?: string;
     missionIds?: string[];
@@ -46,10 +48,7 @@ export class AchievementRepository {
           ? { create: missionIds.map((missionId) => ({ missionId })) }
           : undefined,
       },
-      include: {
-        requiredSkill: true,
-        missions: { include: { mission: true } },
-      },
+      include: achievementInclude,
     });
   }
 
@@ -63,6 +62,8 @@ export class AchievementRepository {
       requiredMissions: number | null;
       requiredSkillId: string | null;
       requiredSkillXp: number | null;
+      targetMissionId: string | null;
+      targetMissionCompletions: number | null;
       crystalReward: number;
       isActive: boolean;
     }> & { missionIds?: string[] }
@@ -81,10 +82,7 @@ export class AchievementRepository {
     return prisma.achievement.update({
       where: { id },
       data: updateData,
-      include: {
-        requiredSkill: true,
-        missions: { include: { mission: true } },
-      },
+      include: achievementInclude,
     });
   }
 
@@ -95,7 +93,7 @@ export class AchievementRepository {
   async getCharacterAchievements(characterId: string) {
     return prisma.characterAchievement.findMany({
       where: { characterId },
-      include: { achievement: { include: { missions: { include: { mission: true } } } } },
+      include: { achievement: { include: achievementInclude } },
       orderBy: { unlockedAt: "desc" },
     });
   }
@@ -107,7 +105,25 @@ export class AchievementRepository {
       },
       update: {},
       create: { characterId, achievementId },
-      include: { achievement: { include: { missions: { include: { mission: true } } } } },
+      include: { achievement: { include: achievementInclude } },
+    });
+  }
+
+  async claim(characterId: string, achievementId: string) {
+    const record = await prisma.characterAchievement.findUnique({
+      where: {
+        characterId_achievementId: { characterId, achievementId },
+      },
+      include: { achievement: true },
+    });
+
+    if (!record) throw new Error("Logro no completado");
+    if (record.claimedAt) throw new Error("Logro ya reclamado");
+
+    return prisma.characterAchievement.update({
+      where: { id: record.id },
+      data: { claimedAt: new Date() },
+      include: { achievement: { include: achievementInclude } },
     });
   }
 
@@ -118,5 +134,15 @@ export class AchievementRepository {
       },
     });
     return !!record;
+  }
+
+  async isClaimed(characterId: string, achievementId: string) {
+    const record = await prisma.characterAchievement.findUnique({
+      where: {
+        characterId_achievementId: { characterId, achievementId },
+      },
+      select: { claimedAt: true },
+    });
+    return !!record?.claimedAt;
   }
 }
