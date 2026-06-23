@@ -185,7 +185,11 @@ export class QuestionnaireService {
       description: questionnaire.description,
       missionId: mission.id,
       missionTitle: mission.title,
-      questions: stripCorrectAnswers(questionnaire.questions),
+      questions: stripCorrectAnswers(questionnaire.questions).map((q) => ({
+        id: q.id,
+        text: q.text,
+        options: q.options as unknown as QuestionOption[],
+      })),
     };
   }
 
