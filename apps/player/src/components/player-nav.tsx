@@ -19,6 +19,8 @@ import {
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
 import { CrystalCounter } from "@/components/crystal-counter";
+import { HeroHud, type HeroHudData } from "@/components/hero-hud";
+import { MANGA_COPY } from "@/lib/manga-copy";
 import { useTheme } from "./theme-provider";
 
 const primaryNavItems = [
@@ -28,7 +30,7 @@ const primaryNavItems = [
 ] as const;
 
 const moreNavItems = [
-  { href: "/side-quests", icon: Scroll, label: "Side Quests" },
+  { href: "/side-quests", icon: Scroll, label: MANGA_COPY.sideQuestsNav },
   { href: "/skills", icon: Sparkles, label: "Habilidades" },
   { href: "/store", icon: Gem, label: "Mercader" },
   { href: "/boss-battles", icon: Swords, label: "Boss" },
@@ -75,7 +77,7 @@ function NavLink({
   );
 }
 
-export function PlayerNav({ crystals }: { crystals: number }) {
+export function PlayerNav({ crystals, hero }: { crystals: number; hero?: HeroHudData }) {
   const pathname = usePathname();
   const theme = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -161,6 +163,11 @@ export function PlayerNav({ crystals }: { crystals: number }) {
           </form>
         </div>
       </nav>
+      {hero && (
+        <div className="theme-nav-border hidden border-b md:block">
+          <HeroHud hero={{ ...hero, crystals }} />
+        </div>
+      )}
 
       {/* Móvil: logo y cristales arriba */}
       <header className="theme-nav-border relative flex items-center justify-center border-b bg-slate-900/60 px-4 py-3 backdrop-blur-lg md:hidden">
@@ -171,6 +178,11 @@ export function PlayerNav({ crystals }: { crystals: number }) {
           <CrystalCounter crystals={crystals} compact />
         </div>
       </header>
+      {hero && (
+        <div className="theme-nav-border border-b md:hidden">
+          <HeroHud hero={{ ...hero, crystals }} />
+        </div>
+      )}
 
       {/* Móvil: menú expandido */}
       {moreOpen && (

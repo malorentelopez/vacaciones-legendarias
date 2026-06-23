@@ -297,3 +297,177 @@
 .secret-portrait-glow {
   animation: secret-portrait-pulse 2.5s ease-in-out infinite;
 }
+
+/* ── Manga / shōnen UI ── */
+
+.font-display {
+  font-family: var(--font-display), var(--font-game), system-ui, sans-serif;
+}
+
+.manga-panel {
+  border: 3px solid color-mix(in srgb, var(--theme-primary) 55%, #1e1b4b);
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a);
+  border-radius: 0.85rem;
+}
+
+.manga-panel-quest {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 10%, #0f172a) 0%,
+    #0f172a 55%
+  );
+}
+
+.manga-panel-power {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-secondary) 12%, #0f172a) 0%,
+    #0f172a 60%
+  );
+}
+
+.manga-panel-active {
+  animation: manga-panel-pulse 1.8s ease-in-out infinite;
+}
+
+.manga-panel-completed {
+  opacity: 0.82;
+}
+
+.manga-hero-hud {
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 25%, transparent);
+  background: color-mix(in srgb, var(--theme-primary) 8%, #0f172a);
+}
+
+.manga-hud-bar {
+  height: 0.85rem;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--theme-primary) 70%, transparent);
+  background: #0f172a;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 0 100%);
+}
+
+.manga-hud-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+  transition: width 0.5s ease;
+}
+
+.manga-action-btn {
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--theme-primary) 35%, #0f172a);
+}
+
+.manga-action-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 color-mix(in srgb, var(--theme-primary) 35%, #0f172a);
+}
+
+.manga-sfx {
+  font-family: var(--font-display), var(--font-game), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: #fef08a;
+  text-shadow:
+    2px 2px 0 #1e1b4b,
+    -1px -1px 0 #fb7185;
+  animation: manga-sfx-pop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.manga-burst-overlay {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--theme-accent, #fbbf24) 35%, transparent) 0%,
+    transparent 65%
+  );
+  animation: manga-burst-flash 0.45s ease-out forwards;
+}
+
+.manga-float-reward {
+  animation: manga-float-up 0.85s ease-out forwards;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.manga-float-reward-delay {
+  animation-delay: 0.08s;
+}
+
+.manga-quest-stamp {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.65rem;
+  rotate: -12deg;
+  border: 2px solid #34d399;
+  padding: 0.1rem 0.45rem;
+  font-family: var(--font-display), var(--font-game), system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: #6ee7b7;
+  opacity: 0.9;
+}
+
+.manga-badge-active {
+  animation: manga-panel-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes manga-panel-pulse {
+  0%,
+  100% {
+    box-shadow:
+      4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a),
+      0 0 0 0 color-mix(in srgb, var(--theme-primary) 0%, transparent);
+  }
+  50% {
+    box-shadow:
+      4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a),
+      0 0 14px 2px color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  }
+}
+
+@keyframes manga-sfx-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.25) rotate(4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes manga-burst-flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes manga-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.8);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -36px) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manga-panel-active,
+  .manga-badge-active,
+  .manga-sfx,
+  .manga-burst-overlay,
+  .manga-float-reward {
+    animation: none !important;
+  }
+}

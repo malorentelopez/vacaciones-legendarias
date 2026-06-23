@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle, Badge } from "@repo/ui";
 import { purchaseReward } from "@/actions/game";
+import { MangaActionButton } from "@/components/manga/manga-action-button";
+import { MANGA_COPY } from "@/lib/manga-copy";
 import { Gift, CheckCircle2 } from "lucide-react";
 
 interface Reward {
@@ -64,7 +66,7 @@ export function StoreView({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="theme-page-title">Mercader</h1>
+        <h1 className="theme-page-title font-display tracking-wide">Mercader del verano</h1>
         <Badge variant="warning" className="text-base px-4 py-1">
           💎 {crystals} cristales
         </Badge>
@@ -78,7 +80,7 @@ export function StoreView({
           return (
             <Card
               key={reward.id}
-              className={reward.isExhausted || reward.isLevelLocked ? "opacity-60" : undefined}
+              className={`manga-panel manga-panel-quest bg-slate-900/80 ${reward.isExhausted || reward.isLevelLocked ? "opacity-60" : ""}`}
             >
               <CardHeader className="flex-row items-center gap-3">
                 <div className="theme-surface-strong rounded-xl p-3">
@@ -113,13 +115,13 @@ export function StoreView({
                     Nivel {level}/{reward.requiredLevel}
                   </span>
                 ) : (
-                  <Button
+                  <MangaActionButton
                     size="sm"
                     onClick={() => handlePurchase(reward.id, reward.crystalCost)}
                     disabled={isDisabled}
                   >
-                    {loading === reward.id ? "..." : "Canjear"}
-                  </Button>
+                    {loading === reward.id ? "..." : MANGA_COPY.redeemTreasure}
+                  </MangaActionButton>
                 )}
               </CardContent>
             </Card>

@@ -2,12 +2,15 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, Badge, Progress } from "@repo/ui";
+import { Card, Badge } from "@repo/ui";
 import { completeMission } from "@/actions/game";
 import { PlayerMissionCard, type PlayerMission } from "@/components/player-mission-card";
+import { FloatingRewardFx } from "@/components/manga/floating-reward-fx";
+import { MangaHudBar } from "@/components/manga/manga-hud-bar";
 import { themeGlow, themeProgressBar } from "@/lib/theme-ui";
 import { useTheme } from "@/components/theme-provider";
 import { useCelebrations } from "@/components/celebration-provider";
+import { useMissionRewardFx } from "@/hooks/use-mission-reward-fx";
 import { Clock, MapPin, Scroll } from "lucide-react";
 
 interface AgendaMission extends PlayerMission {}
@@ -48,12 +51,14 @@ export function DailyAgenda({
   const router = useRouter();
   const theme = useTheme();
   const { applyGameFeedback } = useCelebrations();
+  const { activeFx, triggerMissionFx, clearMissionFx } = useMissionRewardFx(theme.key);
   const [loading, setLoading] = useState<string | null>(null);
 
-  async function handleComplete(missionId: string) {
-    setLoading(missionId);
+  async function handleComplete(mission: AgendaMission) {
+    setLoading(mission.id);
     try {
-      const result = await completeMission(missionId);
+      const result = await completeMission(mission.id);
+      triggerMissionFx(mission.id, mission.type, mission.xpReward, mission.crystalReward);
       applyGameFeedback({ levelUp: result.levelUp });
       router.refresh();
     } catch (e) {
@@ -96,7 +101,7 @@ export function DailyAgenda({
           <MapPin className="h-5 w-5" />
           <span>Ruta legendaria</span>
         </div>
-        <h1 className="theme-page-title">Mapa del día</h1>
+        <h1 className="theme-page-title font-display tracking-wide">Mapa del día</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <p className="text-slate-300">{dateLabel}</p>
           <Badge variant="default">{dayTypeLabel}</Badge>
@@ -104,12 +109,12 @@ export function DailyAgenda({
       </header>
 
       {totalQuests > 0 && (
-        <Card className="p-4">
+        <Card className="manga-panel manga-panel-power p-4">
           <div className="mb-2 flex items-center justify-between text-sm">
-            <span className="font-medium text-slate-300">Quests del día</span>
-            <span className="theme-stat-muted font-medium">{completedQuests}/{totalQuests} completadas</span>
+            <span className="font-display font-medium uppercase tracking-wide text-slate-300">Quests del día</span>
+            <span className="theme-stat-muted font-medium">{completedQuests}/{totalQuests}</span>
           </div>
-          <Progress value={questProgress} barStyle={themeProgressBar(theme)} />
+          <MangaHudBar value={questProgress} barStyle={themeProgressBar(theme)} showValue={false} />
         </Card>
       )}
 
@@ -183,12 +188,17 @@ export function DailyAgenda({
                     <div className="mt-3 space-y-2 border-t border-slate-700/50 pt-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-amber-400/90">Quests de la etapa</p>
                       {block.missions.map((mission) => (
-                        <PlayerMissionCard
-                          key={mission.id}
-                          mission={mission}
-                          onComplete={mission.completed ? undefined : () => handleComplete(mission.id)}
-                          loading={loading === mission.id}
-                        />
+                        <div key={mission.id} className="relative">
+                          <PlayerMissionCard
+                            mission={mission}
+                            active={block.isCurrent && !mission.completed}
+                            onComplete={mission.completed ? undefined : () => handleComplete(mission)}
+                            loading={loading === mission.id}
+                          />
+                          {activeFx?.missionId === mission.id && (
+                            <FloatingRewardFx {...activeFx.payload} onComplete={clearMissionFx} />
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}

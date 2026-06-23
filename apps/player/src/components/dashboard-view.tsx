@@ -8,6 +8,8 @@ import {
   getCharacterPortraitSrc,
   getEquippedHatEmoji,
 } from "@repo/domain";
+import { PowerGauge } from "@/components/power-gauge";
+import { MANGA_COPY } from "@/lib/manga-copy";
 import { themeProgressBar } from "@/lib/theme-ui";
 import { SecretPortraitTrigger } from "@/components/secrets/secret-portrait-trigger";
 
@@ -172,7 +174,7 @@ export function DashboardView({
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Sparkles className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
-                  Side Quests
+                  {MANGA_COPY.sideQuestsNav}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -191,27 +193,22 @@ export function DashboardView({
                     barStyle={themeProgressBar(theme)}
                   />
                 </div>
-                <p className="theme-link text-sm">Ver Side Quests →</p>
+                <p className="theme-link text-sm">Ver misiones extra →</p>
               </CardContent>
             </Card>
           </Link>
         )}
 
-        <Card className={`h-full ${!showProgressCards ? "lg:max-w-xl" : showRoute && showSideQuests ? "lg:col-span-2" : ""}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Scroll className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
-              Experiencia de héroe
-            </CardTitle>
-            <p className="text-sm text-slate-400">
-              {character.xpProgress.xpInLevel} / {character.xpProgress.xpNeeded} XP → Nv.{" "}
-              {character.level + 1}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Progress value={character.xpProgress.progress} barStyle={themeProgressBar(theme)} />
-          </CardContent>
-        </Card>
+        <div
+          className={`h-full ${!showProgressCards ? "lg:max-w-xl" : showRoute && showSideQuests ? "lg:col-span-2" : ""}`}
+        >
+          <PowerGauge
+            level={character.level}
+            xpInLevel={character.xpProgress.xpInLevel}
+            xpNeeded={character.xpProgress.xpNeeded}
+            progress={character.xpProgress.progress}
+          />
+        </div>
       </div>
 
       <div>

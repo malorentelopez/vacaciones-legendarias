@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@repo/ui";
 import { completeBossObjective } from "@/actions/game";
 import { useCelebrations } from "@/components/celebration-provider";
+import { MANGA_COPY } from "@/lib/manga-copy";
 import { Swords, CheckCircle2 } from "lucide-react";
 
 interface BossObjective {
@@ -56,7 +57,7 @@ export function BossBattlesView({ bosses }: { bosses: BossBattle[] }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="theme-page-title">Boss Battles</h1>
+      <h1 className="theme-page-title font-display tracking-wide">Boss Battles</h1>
       {bosses.map((boss) => (
         <Card key={boss.id} className="border-red-500/30">
           <CardHeader>
@@ -95,7 +96,7 @@ export function BossBattlesView({ bosses }: { bosses: BossBattle[] }) {
                 </div>
                 {!obj.completed && (
                   <Button size="sm" onClick={() => handleComplete(obj.id)} disabled={loading === obj.id}>
-                    {loading === obj.id ? "..." : "Completar"}
+                    {loading === obj.id ? "..." : MANGA_COPY.bossStrike}
                   </Button>
                 )}
               </div>
