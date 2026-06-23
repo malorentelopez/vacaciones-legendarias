@@ -48,6 +48,10 @@ enum EventType {
   WEEKLY_RESET
   CHARACTER_CREATED
   QUESTIONNAIRE_COMPLETED
+  SECRET_DISCOVERED
+  SECRET_COMPLETED
+  STREAK_MILESTONE
+  COMBO_MORNING
 }
 
 enum PenaltyType {
@@ -216,6 +220,7 @@ model Achievement {
   crystalReward            Int      @default(0)
   isActive                 Boolean  @default(true)
   isManual                 Boolean  @default(false)
+  isHidden                 Boolean  @default(false)
   familyId                 String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt

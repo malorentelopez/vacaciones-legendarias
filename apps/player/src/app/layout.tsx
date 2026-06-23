@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Nunito } from "next/font/google";
+import { Bangers, Nunito } from "next/font/google";
 import "./globals.css";
 
 const nunito = Nunito({
   subsets: ["latin"],
   variable: "--font-game",
+});
+
+const bangers = Bangers({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
 });
 
 export const metadata: Metadata = {
@@ -20,7 +26,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className="dark">
-      <body className={`${nunito.variable} font-game min-h-screen`}>{children}</body>
+      <body className={`${nunito.variable} ${bangers.variable} font-game min-h-screen`}>{children}</body>
     </html>
   );
 }

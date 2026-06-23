@@ -68,10 +68,12 @@ export class AchievementService {
         claimable: isUnlocked && !isClaimed && achievement.crystalReward > 0,
         unlockedAt: record?.unlockedAt,
         claimedAt: record?.claimedAt,
-        progress: achievement.isManual ? undefined : progress,
+        progress: achievement.isManual || achievement.isHidden ? undefined : progress,
         isManual: achievement.isManual,
+        isHidden: achievement.isHidden,
       };
-    });
+    })
+    .filter((achievement) => !achievement.isHidden || achievement.unlocked);
   }
 
   async createAchievement(data: Parameters<AchievementRepository["create"]>[0]) {
@@ -167,7 +169,7 @@ export class AchievementService {
     });
 
     for (const achievement of achievements) {
-      if (achievement.isManual) continue;
+      if (achievement.isManual || achievement.isHidden) continue;
 
       const isUnlocked = await this.achievementRepo.isUnlocked(characterId, achievement.id);
       if (isUnlocked) continue;

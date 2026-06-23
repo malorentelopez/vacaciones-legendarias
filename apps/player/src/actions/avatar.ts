@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CharacterService, parseAvatarConfig } from "@repo/domain";
+import { CharacterService, parseAvatarConfig, mergeAvatarConfig, getUnlockedAccessoryKeys, getUnlockedPetKeys } from "@repo/domain";
 import { requirePlayerSession } from "@/lib/player-session";
 import { removeStoredAvatar, storeAvatarImage } from "@/lib/avatar-storage";
 
@@ -97,6 +97,65 @@ export async function setAvatarMode(mode: "custom" | "role") {
       ...current,
       useCustom: mode === "custom",
     },
+  });
+
+  return { success: true as const };
+}
+
+export async function equipHat(hatKey: string) {
+  const session = await requirePlayerSession();
+  if (!session.characterId) {
+    return { success: false as const, error: "Sin personaje seleccionado" };
+  }
+
+  const character = await characterService.getCharacter(session.characterId);
+  const config = parseAvatarConfig(character.avatarConfig);
+  const unlocked = getUnlockedAccessoryKeys(character.avatarConfig, {
+    level: character.level,
+    secretCompleted: !!config.secrets?.["dragon-chest"]?.completedAt,
+    streakCurrent: config.streak?.current ?? 0,
+  });
+
+  if (!unlocked.includes(hatKey)) {
+    return { success: false as const, error: "Aún no has desbloqueado este accesorio" };
+  }
+
+  const current = parseAvatarConfig(character.avatarConfig);
+  await characterService.updateCharacter(session.characterId, {
+    avatarConfig: mergeAvatarConfig(current, {
+      equipped: { ...current.equipped, hat: hatKey },
+    }),
+  });
+
+  revalidatePath("/");
+  revalidatePath("/avatar");
+
+  return { success: true as const };
+}
+
+export async function equipPet(petKey: string) {
+  const session = await requirePlayerSession();
+  if (!session.characterId) {
+    return { success: false as const, error: "Sin personaje seleccionado" };
+  }
+
+  const character = await characterService.getCharacter(session.characterId);
+  const config = parseAvatarConfig(character.avatarConfig);
+  const unlocked = getUnlockedPetKeys(character.avatarConfig, {
+    level: character.level,
+    secretCompleted: !!config.secrets?.["dragon-chest"]?.completedAt,
+    streakCurrent: config.streak?.current ?? 0,
+  });
+
+  if (!unlocked.includes(petKey)) {
+    return { success: false as const, error: "Aún no has desbloqueado este compañero" };
+  }
+
+  const current = parseAvatarConfig(character.avatarConfig);
+  await characterService.updateCharacter(session.characterId, {
+    avatarConfig: mergeAvatarConfig(current, {
+      equipped: { ...current.equipped, pet: petKey },
+    }),
   });
 
   revalidatePath("/");

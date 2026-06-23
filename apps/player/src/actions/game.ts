@@ -106,6 +106,7 @@ export async function submitQuestionnaire(
     totalCount: result.totalCount,
     passed: result.passed,
     missionCompleted: result.missionCompleted,
+    levelUp: result.levelUp,
     xpReward: result.xpReward,
     crystalReward: result.crystalReward,
   };

@@ -1,8 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { MissionCard, Badge } from "@repo/ui";
+import { Badge } from "@repo/ui";
 import type { QuestionnaireState } from "@repo/domain/client";
+import { QuestCard } from "@/components/quest-card";
+import { MANGA_COPY } from "@/lib/manga-copy";
 
 export interface PlayerMission {
   id: string;
@@ -21,23 +23,27 @@ export function PlayerMissionCard({
   mission,
   onComplete,
   loading,
+  active,
 }: {
   mission: PlayerMission;
   onComplete?: () => void;
   loading?: boolean;
+  active?: boolean;
 }) {
   const isQuestionnaire = mission.type === "QUESTIONNAIRE";
 
   if (!isQuestionnaire) {
     return (
-      <MissionCard
+      <QuestCard
         title={mission.title}
         description={mission.description}
+        type={mission.type}
         xpReward={mission.xpReward}
         crystalReward={mission.crystalReward}
         skillIcon={mission.skill?.icon}
         skillColor={mission.skill?.color}
         completed={mission.completed}
+        active={active}
         onComplete={mission.completed ? undefined : onComplete}
         loading={loading}
       />
@@ -46,9 +52,10 @@ export function PlayerMissionCard({
 
   if (mission.completed) {
     return (
-      <MissionCard
+      <QuestCard
         title={mission.title}
         description={mission.description}
+        type={mission.type}
         xpReward={mission.xpReward}
         crystalReward={mission.crystalReward}
         skillIcon={mission.skill?.icon}
@@ -60,7 +67,7 @@ export function PlayerMissionCard({
 
   if (mission.questionnaireState === "waiting") {
     return (
-      <div className="rounded-xl border border-slate-700/50 bg-slate-900/50 p-4">
+      <div className="manga-panel relative overflow-hidden bg-slate-900/80 p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h3 className="text-lg font-semibold text-white">{mission.title}</h3>
@@ -89,7 +96,7 @@ export function PlayerMissionCard({
     : mission.description;
 
   return (
-    <div className="rounded-xl border border-violet-500/30 bg-violet-500/5 p-4">
+    <div className="manga-panel border-violet-500/40 bg-violet-500/5 p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold text-white">{mission.title}</h3>
@@ -105,9 +112,9 @@ export function PlayerMissionCard({
       {questionnaireId && (
         <Link
           href={`/missions/${mission.id}/questionnaire`}
-          className="mt-4 inline-flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500 sm:w-auto"
+          className="font-display mt-4 inline-flex w-full items-center justify-center rounded-lg bg-violet-600 px-4 py-2 text-sm font-medium uppercase tracking-wide text-white hover:bg-violet-500 sm:w-auto"
         >
-          Hacer cuestionario
+          {MANGA_COPY.acceptChallenge}
         </Link>
       )}
     </div>

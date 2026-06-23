@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Card, Button, Badge, CharacterPortrait } from "@repo/ui";
 import { updateAvatar } from "@/actions/game";
-import { uploadCustomAvatar, removeCustomAvatar, setAvatarMode } from "@/actions/avatar";
+import { uploadCustomAvatar, removeCustomAvatar, setAvatarMode, equipHat, equipPet } from "@/actions/avatar";
 import {
   THEME_LIST,
   getTheme,
@@ -14,10 +14,17 @@ import {
   getCharacterPortraitSrc,
   parseAvatarConfig,
   hasCustomAvatar,
+  getEquippedHatEmoji,
+  getEquippedPetEmoji,
+  getUnlockedAccessoryKeys,
+  getUnlockedPetKeys,
+  ACCESSORY_DISPLAY,
+  mergeAvatarConfig,
 } from "@repo/domain/client";
 import { useRouter } from "next/navigation";
 import { Upload, Trash2, Shield, ImageIcon } from "lucide-react";
 import { useThemePreview } from "@/components/theme-provider";
+import { PetCompanion } from "@/components/pet-companion";
 
 interface CharacterProfile {
   name: string;
@@ -25,6 +32,8 @@ interface CharacterProfile {
   themeKey: string;
   avatarBase: string;
   avatarConfig?: unknown;
+  level: number;
+  secretCompleted?: boolean;
 }
 
 const GENDER_OPTIONS: { value: "BOY" | "GIRL"; label: string }[] = [
@@ -56,6 +65,18 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
   const previewCharacter = { themeKey, gender, avatarBase, avatarConfig };
   const portraitSrc = getCharacterPortraitSrc(previewCharacter);
   const customAvailable = hasCustomAvatar({ avatarConfig });
+  const hatEmoji = getEquippedHatEmoji(avatarConfig);
+  const unlockedHats = getUnlockedAccessoryKeys(avatarConfig, {
+    level: character.level,
+    secretCompleted: character.secretCompleted,
+    streakCurrent: initialConfig.streak?.current ?? 0,
+  }).filter((key) => key === "default" || key.startsWith("hat_"));
+  const unlockedPets = getUnlockedPetKeys(avatarConfig, {
+    level: character.level,
+    secretCompleted: character.secretCompleted,
+    streakCurrent: initialConfig.streak?.current ?? 0,
+  });
+  const petEmoji = getEquippedPetEmoji(avatarConfig);
 
   function handleThemeChange(newThemeKey: string) {
     setThemeKey(newThemeKey);
@@ -65,6 +86,34 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
     if (!newRoles.some((r) => r.key === normalized)) {
       setAvatarBase(newRoles[0]?.key ?? "warrior");
     }
+  }
+
+  async function handleEquipHat(hatKey: string) {
+    setLoading(true);
+    const result = await equipHat(hatKey);
+    if (result.success) {
+      setAvatarConfig(
+        mergeAvatarConfig(avatarConfig, {
+          equipped: { ...parseAvatarConfig(avatarConfig).equipped, hat: hatKey },
+        })
+      );
+      router.refresh();
+    }
+    setLoading(false);
+  }
+
+  async function handleEquipPet(petKey: string) {
+    setLoading(true);
+    const result = await equipPet(petKey);
+    if (result.success) {
+      setAvatarConfig(
+        mergeAvatarConfig(avatarConfig, {
+          equipped: { ...parseAvatarConfig(avatarConfig).equipped, pet: petKey },
+        })
+      );
+      router.refresh();
+    }
+    setLoading(false);
   }
 
   async function handleSave() {
@@ -130,14 +179,22 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
       </div>
 
       <Card className="p-8 text-center">
-        <CharacterPortrait
-          imageSrc={portraitSrc}
-          alt={roleName}
-          primaryColor={theme.colors.primary}
-          secondaryColor={theme.colors.secondary}
-          size="xl"
-          className="theme-ring mx-auto mb-4 ring-2"
-        />
+        <div className="relative mx-auto mb-4 w-fit">
+          <CharacterPortrait
+            imageSrc={portraitSrc}
+            alt={roleName}
+            primaryColor={theme.colors.primary}
+            secondaryColor={theme.colors.secondary}
+            size="xl"
+            className="theme-ring mx-auto ring-2"
+          />
+          {hatEmoji && (
+            <span className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-slate-900/90 text-xl shadow-lg ring-2 ring-amber-400/50">
+              {hatEmoji}
+            </span>
+          )}
+          {petEmoji && <PetCompanion emoji={petEmoji} size="md" />}
+        </div>
         <p className="text-lg" style={{ color: theme.colors.heading }}>
           {name || "Sin nombre"}
         </p>
@@ -202,6 +259,60 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
 
         {uploadError && <p className="text-sm text-red-400">{uploadError}</p>}
       </Card>
+
+      {unlockedPets.length > 0 && (
+        <Card className="space-y-4 p-4">
+          <h2 className="font-semibold text-white">Compañeros</h2>
+          <p className="text-sm text-slate-400">Elige un compañero que te acompañe en la aventura.</p>
+          <div className="flex flex-wrap gap-2">
+            {unlockedPets.map((petKey) => {
+              const display = ACCESSORY_DISPLAY[petKey] ?? { emoji: "🐾", label: petKey };
+              const equipped = parseAvatarConfig(avatarConfig).equipped?.pet === petKey;
+              return (
+                <button
+                  key={petKey}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleEquipPet(petKey)}
+                  className={`rounded-xl border px-4 py-3 text-left transition-all ${
+                    equipped ? "theme-selected" : "border-slate-700 hover:border-slate-500"
+                  }`}
+                >
+                  <span className="text-2xl">{display.emoji}</span>
+                  <p className="mt-1 text-sm font-medium">{display.label}</p>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {unlockedHats.length > 1 && (
+        <Card className="space-y-4 p-4">
+          <h2 className="font-semibold text-white">Gorros desbloqueados</h2>
+          <p className="text-sm text-slate-400">Elige un gorro para tu héroe.</p>
+          <div className="flex flex-wrap gap-2">
+            {unlockedHats.map((hatKey) => {
+              const display = ACCESSORY_DISPLAY[hatKey] ?? { emoji: "🎩", label: hatKey };
+              const equipped = parseAvatarConfig(avatarConfig).equipped?.hat === hatKey;
+              return (
+                <button
+                  key={hatKey}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleEquipHat(hatKey)}
+                  className={`rounded-xl border px-4 py-3 text-left transition-all ${
+                    equipped ? "theme-selected" : "border-slate-700 hover:border-slate-500"
+                  }`}
+                >
+                  <span className="text-2xl">{display.emoji}</span>
+                  <p className="mt-1 text-sm font-medium">{display.label}</p>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card className="space-y-4 p-4">
         <div>

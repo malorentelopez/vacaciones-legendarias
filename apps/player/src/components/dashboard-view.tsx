@@ -1,13 +1,20 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon, CharacterPortrait } from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon } from "@repo/ui";
 import { Gem, Star, Zap, Crown, Map, Scroll, Sparkles } from "lucide-react";
 import {
   getTheme,
   getRoleName,
   normalizeRoleKey,
   getCharacterPortraitSrc,
+  getEquippedHatEmoji,
+  getEquippedPetEmoji,
 } from "@repo/domain";
+import { PowerGauge } from "@/components/power-gauge";
+import { MagicalEnergyGauge } from "@/components/magical-energy-gauge";
+import { MANGA_COPY } from "@/lib/manga-copy";
+import { formatSummerChapter, type SummerChapter } from "@repo/domain";
 import { themeProgressBar } from "@/lib/theme-ui";
+import { SecretPortraitTrigger } from "@/components/secrets/secret-portrait-trigger";
 
 interface CharacterData {
   id: string;
@@ -49,16 +56,28 @@ interface SideQuestsPreview {
   totalSideQuests: number;
 }
 
+interface DragonChestStatus {
+  eligible: boolean;
+  discovered: boolean;
+  completed: boolean;
+}
+
 export function DashboardView({
   character,
   familyCharacters = [],
   routePreview,
   sideQuestsPreview,
+  dragonChestStatus,
+  chapter,
+  isFreeDay = false,
 }: {
   character: CharacterData;
   familyCharacters?: FamilyCharacter[];
   routePreview?: RoutePreview;
   sideQuestsPreview?: SideQuestsPreview;
+  dragonChestStatus?: DragonChestStatus;
+  chapter?: SummerChapter;
+  isFreeDay?: boolean;
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
@@ -66,25 +85,39 @@ export function DashboardView({
   const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
   const roleName = getRoleName(character.themeKey, genderKey, roleKey);
   const portraitSrc = getCharacterPortraitSrc(character);
+  const hatEmoji = getEquippedHatEmoji(character.avatarConfig);
+  const petEmoji = getEquippedPetEmoji(character.avatarConfig);
+  const chestStatus = dragonChestStatus ?? { eligible: false, discovered: false, completed: false };
   const showRoute = routePreview && routePreview.totalStages > 0;
   const showSideQuests = sideQuestsPreview && sideQuestsPreview.totalSideQuests > 0;
   const showProgressCards = showRoute || showSideQuests;
 
   return (
     <div className="space-y-8">
+      {chapter && chapter.number > 0 && (
+        <p className="theme-eyebrow font-display text-sm tracking-wide">
+          {formatSummerChapter(chapter)}
+        </p>
+      )}
       <Card
         className="theme-card-border overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${theme.colors.primary}18 0%, transparent 60%)` }}
       >
         <CardContent className="flex items-center gap-4 p-4 sm:gap-5 sm:p-5">
-          <CharacterPortrait
-            imageSrc={portraitSrc}
-            alt={roleName}
-            primaryColor={theme.colors.primary}
-            secondaryColor={theme.colors.secondary}
-            size="lg"
-            className="theme-ring shrink-0 ring-2"
-          />
+          <div className="flex flex-col items-center">
+            <SecretPortraitTrigger
+              imageSrc={portraitSrc}
+              alt={roleName}
+              primaryColor={theme.colors.primary}
+              secondaryColor={theme.colors.secondary}
+              eligible={chestStatus.eligible}
+              discovered={chestStatus.discovered}
+              completed={chestStatus.completed}
+              hatEmoji={hatEmoji}
+              petEmoji={petEmoji}
+              petMood={isFreeDay ? "sleep" : undefined}
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <p className="theme-label text-[10px] sm:text-xs">Tu héroe</p>
             <h1 className="truncate text-2xl font-bold sm:text-3xl" style={{ color: theme.colors.heading }}>
@@ -110,6 +143,8 @@ export function DashboardView({
           </div>
         </CardContent>
       </Card>
+
+      <MagicalEnergyGauge weeklyPoints={character.weeklyPoints} />
 
       <div className={`grid gap-4 ${showProgressCards ? "lg:grid-cols-2 lg:gap-6" : ""}`}>
         {showRoute && routePreview && (
@@ -156,7 +191,7 @@ export function DashboardView({
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <Sparkles className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
-                  Side Quests
+                  {MANGA_COPY.sideQuestsNav}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -175,27 +210,22 @@ export function DashboardView({
                     barStyle={themeProgressBar(theme)}
                   />
                 </div>
-                <p className="theme-link text-sm">Ver Side Quests →</p>
+                <p className="theme-link text-sm">Ver misiones extra →</p>
               </CardContent>
             </Card>
           </Link>
         )}
 
-        <Card className={`h-full ${!showProgressCards ? "lg:max-w-xl" : showRoute && showSideQuests ? "lg:col-span-2" : ""}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Scroll className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
-              Experiencia de héroe
-            </CardTitle>
-            <p className="text-sm text-slate-400">
-              {character.xpProgress.xpInLevel} / {character.xpProgress.xpNeeded} XP → Nv.{" "}
-              {character.level + 1}
-            </p>
-          </CardHeader>
-          <CardContent>
-            <Progress value={character.xpProgress.progress} barStyle={themeProgressBar(theme)} />
-          </CardContent>
-        </Card>
+        <div
+          className={`h-full ${!showProgressCards ? "lg:max-w-xl" : showRoute && showSideQuests ? "lg:col-span-2" : ""}`}
+        >
+          <PowerGauge
+            level={character.level}
+            xpInLevel={character.xpProgress.xpInLevel}
+            xpNeeded={character.xpProgress.xpNeeded}
+            progress={character.xpProgress.progress}
+          />
+        </div>
       </div>
 
       <div>

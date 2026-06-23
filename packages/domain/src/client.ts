@@ -18,8 +18,15 @@ export {
   parseAvatarConfig,
   getCharacterPortraitSrc,
   hasCustomAvatar,
+  getEquippedHatEmoji,
+  getEquippedPetEmoji,
+  getUnlockedPetKeys,
+  getUnlockedAccessoryKeys,
+  mergeAvatarConfig,
   type AvatarConfig,
 } from "./utils/avatar";
+
+export { DRAGON_CHEST_SECRET, MANGA_POWER_COMBO_SECRET, OCEAN_FISHING_SECRET, MEMORY_PAIRS_BY_THEME, POWER_COMBO_ICONS, ACCESSORY_DISPLAY } from "./config/secrets";
 
 export {
   getDayScheduleType,
@@ -34,6 +41,15 @@ export {
   DAY_NAMES,
   MONTH_NAMES,
 } from "./utils/schedule";
+
+export {
+  getSummerWeek,
+  getSummerChapter,
+  formatSummerChapter,
+  DEFAULT_SUMMER_START,
+  type SummerChapter,
+  type SummerStartDate,
+} from "./utils/summer-chapters";
 
 export { getPeriodKey, getWeekKey, calculateXpForNextLevel } from "./utils/period";
 
@@ -53,3 +69,4 @@ export {
 } from "./utils/questionnaire-import";
 
 export type { QuestionnaireState } from "./types/questionnaire";
+export type { LevelUpInfo, BossVictoryInfo, StreakFeedback, MorningComboFeedback, MissionCompleteFeedback } from "./types/game-feedback";

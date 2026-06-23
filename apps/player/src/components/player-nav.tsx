@@ -19,6 +19,9 @@ import {
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
 import { CrystalCounter } from "@/components/crystal-counter";
+import { SecretCrystalTrigger } from "@/components/secrets/secret-crystal-trigger";
+import { HeroHud, type HeroHudData } from "@/components/hero-hud";
+import { MANGA_COPY } from "@/lib/manga-copy";
 import { useTheme } from "./theme-provider";
 
 const primaryNavItems = [
@@ -28,7 +31,7 @@ const primaryNavItems = [
 ] as const;
 
 const moreNavItems = [
-  { href: "/side-quests", icon: Scroll, label: "Side Quests" },
+  { href: "/side-quests", icon: Scroll, label: MANGA_COPY.sideQuestsNav },
   { href: "/skills", icon: Sparkles, label: "Habilidades" },
   { href: "/store", icon: Gem, label: "Mercader" },
   { href: "/boss-battles", icon: Swords, label: "Boss" },
@@ -75,7 +78,21 @@ function NavLink({
   );
 }
 
-export function PlayerNav({ crystals }: { crystals: number }) {
+export function PlayerNav({
+  crystals,
+  hero,
+  themeKey,
+  oceanFishing,
+}: {
+  crystals: number;
+  hero?: HeroHudData;
+  themeKey?: string;
+  oceanFishing?: {
+    eligible: boolean;
+    discovered: boolean;
+    completed: boolean;
+  };
+}) {
   const pathname = usePathname();
   const theme = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -85,6 +102,25 @@ export function PlayerNav({ crystals }: { crystals: number }) {
   useEffect(() => {
     setMoreOpen(false);
   }, [pathname]);
+
+  const showOceanFishing = themeKey === "ocean" && oceanFishing;
+
+  function renderCrystalCounter(compact?: boolean) {
+    const counter = <CrystalCounter crystals={crystals} compact={compact} />;
+    if (!showOceanFishing) return counter;
+
+    return (
+      <div className="relative">
+        <SecretCrystalTrigger
+          eligible={oceanFishing.eligible}
+          discovered={oceanFishing.discovered}
+          completed={oceanFishing.completed}
+        >
+          {counter}
+        </SecretCrystalTrigger>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -148,7 +184,7 @@ export function PlayerNav({ crystals }: { crystals: number }) {
               )}
             </div>
           </div>
-          <CrystalCounter crystals={crystals} />
+          {renderCrystalCounter()}
           <form action={logout} className="shrink-0">
             <button
               type="submit"
@@ -161,6 +197,11 @@ export function PlayerNav({ crystals }: { crystals: number }) {
           </form>
         </div>
       </nav>
+      {hero && (
+        <div className="theme-nav-border hidden border-b md:block">
+          <HeroHud hero={{ ...hero, crystals }} />
+        </div>
+      )}
 
       {/* Móvil: logo y cristales arriba */}
       <header className="theme-nav-border relative flex items-center justify-center border-b bg-slate-900/60 px-4 py-3 backdrop-blur-lg md:hidden">
@@ -168,9 +209,14 @@ export function PlayerNav({ crystals }: { crystals: number }) {
           <AppLogo variant="full" size="sm" />
         </Link>
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
-          <CrystalCounter crystals={crystals} compact />
+          {renderCrystalCounter(true)}
         </div>
       </header>
+      {hero && (
+        <div className="theme-nav-border border-b md:hidden">
+          <HeroHud hero={{ ...hero, crystals }} />
+        </div>
+      )}
 
       {/* Móvil: menú expandido */}
       {moreOpen && (

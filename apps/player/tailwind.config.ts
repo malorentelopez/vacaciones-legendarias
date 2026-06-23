@@ -17,6 +17,7 @@ const config: Config = {
       },
       fontFamily: {
         game: ["var(--font-game)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-game)", "system-ui", "sans-serif"],
       },
     },
   },

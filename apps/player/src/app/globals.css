@@ -283,3 +283,545 @@
 .crystal-counter-bump {
   animation: crystal-counter-bump 0.65s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
+@keyframes secret-portrait-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, #fbbf24 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 12px 2px color-mix(in srgb, #fbbf24 35%, transparent);
+  }
+}
+
+.secret-portrait-glow {
+  animation: secret-portrait-pulse 2.5s ease-in-out infinite;
+}
+
+.secret-power-glow {
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-primary) 45%, transparent);
+}
+
+.secret-crystal-glow {
+  animation: secret-crystal-pulse 1.8s ease-in-out infinite;
+}
+
+.fishing-fish {
+  animation: fishing-fish-bob 1.2s ease-in-out infinite;
+}
+
+@keyframes secret-crystal-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 color-mix(in srgb, #38bdf8 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px color-mix(in srgb, #38bdf8 55%, transparent);
+  }
+}
+
+@keyframes fishing-fish-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+/* ── Manga / shōnen UI ── */
+
+.font-display {
+  font-family: var(--font-display), var(--font-game), system-ui, sans-serif;
+}
+
+.manga-panel {
+  border: 3px solid color-mix(in srgb, var(--theme-primary) 55%, #1e1b4b);
+  box-shadow: 4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a);
+  border-radius: 0.85rem;
+}
+
+.manga-panel-quest {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 10%, #0f172a) 0%,
+    #0f172a 55%
+  );
+}
+
+.manga-panel-power {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-secondary) 12%, #0f172a) 0%,
+    #0f172a 60%
+  );
+}
+
+.manga-panel-boss {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ef4444 14%, #0f172a) 0%,
+    #0f172a 65%
+  );
+  border-color: color-mix(in srgb, #ef4444 55%, #450a0a);
+  box-shadow:
+    4px 4px 0 color-mix(in srgb, #ef4444 25%, #0f172a),
+    0 0 24px color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.boss-hp-panel {
+  border: 2px solid color-mix(in srgb, #ef4444 35%, transparent);
+  background: color-mix(in srgb, #ef4444 8%, #0f172a);
+}
+
+.boss-hp-bar .manga-hud-bar {
+  border-color: color-mix(in srgb, #ef4444 65%, transparent);
+}
+
+.boss-icon-badge {
+  border: 3px solid color-mix(in srgb, #ef4444 50%, #450a0a);
+  border-radius: 1rem;
+  background: color-mix(in srgb, #ef4444 12%, #0f172a);
+  box-shadow: 3px 3px 0 color-mix(in srgb, #ef4444 30%, #0f172a);
+}
+
+.boss-strike-burst {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, #ef4444 40%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.player-page-transition {
+  animation-duration: 150ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.player-page-to-route {
+  animation-name: player-page-to-route;
+}
+
+.player-page-to-camp {
+  animation-name: player-page-to-camp;
+}
+
+@keyframes player-page-to-route {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes player-page-to-camp {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.manga-panel-active {
+  animation: manga-panel-pulse 1.8s ease-in-out infinite;
+}
+
+.manga-panel-completed {
+  opacity: 0.82;
+}
+
+.manga-panel-dialogue {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary) 14%, #0f172a) 0%,
+    #0f172a 70%
+  );
+  border-color: color-mix(in srgb, var(--theme-secondary) 55%, #1e1b4b);
+}
+
+.manga-dialogue-overlay {
+  background: linear-gradient(to top, rgba(15, 23, 42, 0.92) 0%, transparent 55%);
+  animation: manga-dialogue-in 0.25s ease-out;
+}
+
+.manga-dialogue-box {
+  box-shadow:
+    0 -4px 24px rgba(0, 0, 0, 0.35),
+    4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a);
+}
+
+.manga-dialogue-portrait {
+  border: 3px solid color-mix(in srgb, var(--theme-primary) 60%, #1e1b4b);
+  border-radius: 0.65rem;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--theme-primary) 30%, #0f172a);
+  background: #0f172a;
+}
+
+@keyframes manga-dialogue-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.manga-hero-hud {
+  border-bottom: 1px solid color-mix(in srgb, var(--theme-primary) 25%, transparent);
+  background: color-mix(in srgb, var(--theme-primary) 8%, #0f172a);
+}
+
+.manga-hud-bar {
+  height: 0.85rem;
+  overflow: hidden;
+  border: 2px solid color-mix(in srgb, var(--theme-primary) 70%, transparent);
+  background: #0f172a;
+  clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 100%, 0 100%);
+}
+
+.manga-hud-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--theme-primary), var(--theme-secondary));
+  transition: width 0.5s ease;
+}
+
+.manga-energy-high .manga-hud-bar-fill {
+  animation: manga-energy-pulse 1.6s ease-in-out infinite;
+}
+
+.manga-energy-badge-pulse {
+  animation: manga-panel-pulse 1.8s ease-in-out infinite;
+}
+
+.manga-streak-badge {
+  border: 1px solid color-mix(in srgb, #fb923c 55%, transparent);
+  background: color-mix(in srgb, #fb923c 18%, #0f172a);
+  box-shadow: 0 0 10px color-mix(in srgb, #fb923c 25%, transparent);
+}
+
+.pet-companion {
+  z-index: 2;
+}
+
+.pet-companion-heart {
+  position: absolute;
+  top: -0.65rem;
+  right: -0.35rem;
+  font-size: 0.75rem;
+  animation: pet-heart-pop 0.75s ease-out forwards;
+}
+
+.pet-companion-zzz {
+  position: absolute;
+  top: -0.85rem;
+  right: -0.15rem;
+}
+
+.pet-reaction-jump {
+  animation: pet-jump 0.75s cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+.pet-reaction-spin {
+  animation: pet-spin 0.85s ease-in-out;
+}
+
+.pet-reaction-fire {
+  animation: pet-fire 0.8s ease-in-out;
+  box-shadow: 0 0 12px color-mix(in srgb, #fb923c 55%, transparent);
+}
+
+.pet-reaction-sleep {
+  opacity: 0.85;
+  filter: saturate(0.75);
+}
+
+@keyframes pet-jump {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px) scale(1.08);
+  }
+}
+
+@keyframes pet-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pet-fire {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+
+@keyframes pet-heart-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.9);
+  }
+}
+
+.merchant-hero {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--theme-primary) 16%, #0f172a) 0%,
+    color-mix(in srgb, var(--theme-secondary) 10%, #0f172a) 45%,
+    #0f172a 100%
+  );
+}
+
+.merchant-hero-icon {
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--theme-primary) 30%, #0f172a);
+}
+
+.merchant-vitrine {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--theme-primary) 8%, #0f172a) 0%,
+    #0f172a 65%
+  );
+}
+
+.merchant-vitrine-display {
+  border: 2px dashed color-mix(in srgb, var(--theme-primary) 25%, transparent);
+  border-radius: 0.75rem;
+  background: color-mix(in srgb, var(--theme-primary) 6%, #0f172a);
+}
+
+.merchant-vitrine-emoji {
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+}
+
+@keyframes manga-energy-pulse {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+.manga-action-btn {
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--theme-primary) 35%, #0f172a);
+}
+
+.manga-action-btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 color-mix(in srgb, var(--theme-primary) 35%, #0f172a);
+}
+
+.manga-sfx {
+  font-family: var(--font-display), var(--font-game), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: #fef08a;
+  text-shadow:
+    2px 2px 0 #1e1b4b,
+    -1px -1px 0 #fb7185;
+  animation: manga-sfx-pop 0.75s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.manga-burst-overlay {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, var(--theme-accent, #fbbf24) 35%, transparent) 0%,
+    transparent 65%
+  );
+  animation: manga-burst-flash 0.45s ease-out forwards;
+}
+
+.manga-float-reward {
+  animation: manga-float-up 0.85s ease-out forwards;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+}
+
+.manga-float-reward-delay {
+  animation-delay: 0.08s;
+}
+
+.manga-quest-stamp {
+  position: absolute;
+  right: 0.75rem;
+  top: 0.65rem;
+  rotate: -12deg;
+  border: 2px solid #34d399;
+  padding: 0.1rem 0.45rem;
+  font-family: var(--font-display), var(--font-game), system-ui, sans-serif;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  color: #6ee7b7;
+  opacity: 0.9;
+}
+
+.manga-badge-active {
+  animation: manga-panel-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes manga-panel-pulse {
+  0%,
+  100% {
+    box-shadow:
+      4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a),
+      0 0 0 0 color-mix(in srgb, var(--theme-primary) 0%, transparent);
+  }
+  50% {
+    box-shadow:
+      4px 4px 0 color-mix(in srgb, var(--theme-primary) 25%, #0f172a),
+      0 0 14px 2px color-mix(in srgb, var(--theme-primary) 35%, transparent);
+  }
+}
+
+@keyframes manga-sfx-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.25) rotate(4deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes manga-burst-flash {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes manga-float-up {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px) scale(0.8);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -36px) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .manga-panel-active,
+  .manga-badge-active,
+  .manga-sfx,
+  .manga-burst-overlay,
+  .manga-float-reward,
+  .route-map-node-current,
+  .manga-dialogue-overlay,
+  .manga-energy-high .manga-hud-bar-fill,
+  .manga-energy-badge-pulse,
+  .pet-reaction-jump,
+  .pet-reaction-spin,
+  .pet-reaction-fire,
+  .pet-companion-heart,
+  .player-page-transition {
+    animation: none !important;
+  }
+}
+
+/* ── Legendary route map ── */
+
+.route-map-connector {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--theme-primary) 55%, transparent),
+    color-mix(in srgb, var(--theme-secondary) 35%, transparent)
+  );
+  border-radius: 999px;
+}
+
+.route-map-node-current {
+  animation: route-node-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 18px color-mix(in srgb, var(--theme-primary) 55%, transparent);
+}
+
+.route-map-panel-current {
+  position: relative;
+  overflow: hidden;
+}
+
+.route-map-panel-current::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 8px,
+    color-mix(in srgb, var(--theme-primary) 6%, transparent) 8px,
+    color-mix(in srgb, var(--theme-primary) 6%, transparent) 16px
+  );
+  pointer-events: none;
+}
+
+.route-map-panel-completed {
+  border-color: color-mix(in srgb, #34d399 50%, var(--theme-primary));
+}
+
+.route-map-banner-friday {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #f59e0b 22%, #0f172a),
+    color-mix(in srgb, var(--theme-primary) 18%, #0f172a)
+  );
+}
+
+.route-map-active-callout {
+  animation: route-node-pulse 2.2s ease-in-out infinite;
+}
+
+.route-map-badge {
+  border: 1px solid color-mix(in srgb, #fbbf24 50%, transparent);
+  background: color-mix(in srgb, #f59e0b 18%, transparent);
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+
+@keyframes route-node-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--theme-primary) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 16px 3px color-mix(in srgb, var(--theme-primary) 40%, transparent);
+  }
+}
