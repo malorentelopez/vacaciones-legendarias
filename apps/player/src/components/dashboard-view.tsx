@@ -7,6 +7,7 @@ import {
   normalizeRoleKey,
   getCharacterPortraitSrc,
 } from "@repo/domain";
+import { themeProgressBar } from "@/lib/theme-ui";
 
 interface CharacterData {
   id: string;
@@ -58,97 +59,107 @@ export function DashboardView({
   const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
   const roleName = getRoleName(character.themeKey, genderKey, roleKey);
   const portraitSrc = getCharacterPortraitSrc(character);
+  const showRoute = routePreview && routePreview.totalStages > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Card
-        className="overflow-hidden border-violet-500/30"
+        className="theme-card-border overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${theme.colors.primary}18 0%, transparent 60%)` }}
       >
-        <CardContent className="p-6 text-center">
+        <CardContent className="flex items-center gap-4 p-4 sm:gap-5 sm:p-5">
           <CharacterPortrait
             imageSrc={portraitSrc}
             alt={roleName}
             primaryColor={theme.colors.primary}
             secondaryColor={theme.colors.secondary}
-            size="xl"
-            className="mx-auto mb-4 ring-2 ring-violet-500/40"
+            size="lg"
+            className="theme-ring shrink-0 ring-2"
           />
-          <p className="text-xs font-semibold uppercase tracking-widest text-violet-400">Tu héroe</p>
-          <h1 className="text-3xl font-bold" style={{ color: theme.colors.heading }}>
-            {character.name}
-          </h1>
-          <p className="text-sm text-slate-400">{roleName} · {theme.name}</p>
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-            <Badge variant="info">
-              <Star className="mr-1 inline h-3 w-3" />
-              Nv. {character.level}
-            </Badge>
-            <Badge variant="warning">
-              <Gem className="mr-1 inline h-3 w-3" />
-              {character.crystals} 💎
-            </Badge>
-            <Badge variant="success">
-              <Zap className="mr-1 inline h-3 w-3" />
-              {character.weeklyPoints} pts
-            </Badge>
+          <div className="min-w-0 flex-1">
+            <p className="theme-label text-[10px] sm:text-xs">Tu héroe</p>
+            <h1 className="truncate text-2xl font-bold sm:text-3xl" style={{ color: theme.colors.heading }}>
+              {character.name}
+            </h1>
+            <p className="truncate text-sm text-slate-400">
+              {roleName} · {theme.name}
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5 sm:mt-3 sm:gap-2">
+              <Badge variant="info" className="text-xs">
+                <Star className="mr-1 inline h-3 w-3" />
+                Nv. {character.level}
+              </Badge>
+              <Badge variant="warning" className="text-xs">
+                <Gem className="mr-1 inline h-3 w-3" />
+                {character.crystals} 💎
+              </Badge>
+              <Badge variant="success" className="text-xs">
+                <Zap className="mr-1 inline h-3 w-3" />
+                {character.weeklyPoints} pts
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {routePreview && routePreview.totalStages > 0 && (
-        <Link href="/ruta">
-          <Card className="group cursor-pointer border-amber-500/20 transition-colors hover:border-violet-500/40 hover:bg-violet-950/20">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Map className="h-5 w-5 text-violet-400" />
-                Ruta legendaria de hoy
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {routePreview.currentBlockTitle ? (
-                <p className="text-sm text-slate-300">
-                  Etapa activa: {routePreview.currentBlockIcon && `${routePreview.currentBlockIcon} `}
-                  <span className="font-medium text-white">{routePreview.currentBlockTitle}</span>
-                </p>
-              ) : (
-                <p className="text-sm text-slate-400">Consulta tu mapa del día</p>
-              )}
-              {routePreview.totalQuests > 0 && (
-                <div>
-                  <div className="mb-1 flex justify-between text-xs text-slate-400">
-                    <span>Quests completadas</span>
-                    <span>{routePreview.completedQuests}/{routePreview.totalQuests}</span>
+      <div className={`grid gap-4 ${showRoute ? "lg:grid-cols-2 lg:gap-6" : ""}`}>
+        {showRoute && (
+          <Link href="/ruta" className="block h-full">
+            <Card className="theme-card-border theme-card-hover group h-full cursor-pointer">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Map className="theme-icon h-5 w-5" />
+                  Ruta legendaria de hoy
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {routePreview.currentBlockTitle ? (
+                  <p className="text-sm text-slate-300">
+                    Etapa activa: {routePreview.currentBlockIcon && `${routePreview.currentBlockIcon} `}
+                    <span className="font-medium text-white">{routePreview.currentBlockTitle}</span>
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-400">Consulta tu mapa del día</p>
+                )}
+                {routePreview.totalQuests > 0 && (
+                  <div>
+                    <div className="mb-1 flex justify-between text-xs text-slate-400">
+                      <span>Quests completadas</span>
+                      <span>
+                        {routePreview.completedQuests}/{routePreview.totalQuests}
+                      </span>
+                    </div>
+                    <Progress
+                      value={Math.round((routePreview.completedQuests / routePreview.totalQuests) * 100)}
+                      barStyle={themeProgressBar(theme)}
+                    />
                   </div>
-                  <Progress
-                    value={Math.round((routePreview.completedQuests / routePreview.totalQuests) * 100)}
-                    color="bg-gradient-to-r from-amber-500 to-violet-500"
-                  />
-                </div>
-              )}
-              <p className="text-sm text-violet-400 group-hover:text-violet-300">Ver mapa completo →</p>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
+                )}
+                <p className="theme-link text-sm">Ver mapa completo →</p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Scroll className="h-5 w-5 text-emerald-400" />
-            Experiencia de héroe
-          </CardTitle>
-          <p className="text-sm text-slate-400">
-            {character.xpProgress.xpInLevel} / {character.xpProgress.xpNeeded} XP → Nv. {character.level + 1}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <Progress value={character.xpProgress.progress} color="bg-gradient-to-r from-violet-500 to-emerald-500" />
-        </CardContent>
-      </Card>
+        <Card className={`h-full ${!showRoute ? "lg:max-w-xl" : ""}`}>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Scroll className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
+              Experiencia de héroe
+            </CardTitle>
+            <p className="text-sm text-slate-400">
+              {character.xpProgress.xpInLevel} / {character.xpProgress.xpNeeded} XP → Nv.{" "}
+              {character.level + 1}
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Progress value={character.xpProgress.progress} barStyle={themeProgressBar(theme)} />
+          </CardContent>
+        </Card>
+      </div>
 
       <div>
-        <h2 className="mb-4 text-xl font-bold text-violet-300">Tus poderes</h2>
+        <h2 className="theme-section-title mb-4">Tus poderes</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {character.skills.map((cs) => (
             <Card key={cs.id} className="p-4">
@@ -176,7 +187,7 @@ export function DashboardView({
               <div
                 key={c.id}
                 className={`flex items-center justify-between rounded-xl p-3 ${
-                  c.id === character.id ? "border border-violet-500/30 bg-violet-500/20" : "bg-slate-800/50"
+                  c.id === character.id ? "theme-highlight border" : "bg-slate-800/50"
                 }`}
               >
                 <div className="flex items-center gap-2">

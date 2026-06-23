@@ -12,3 +12,113 @@
     @apply bg-slate-900 text-slate-100 antialiased;
   }
 }
+
+/* Theme tokens are set on [data-player-theme] by ThemeProvider */
+@layer components {
+  .theme-page-title {
+    @apply text-3xl font-bold;
+    color: var(--theme-heading);
+  }
+
+  .theme-section-title {
+    @apply text-xl font-bold;
+    color: var(--theme-heading);
+  }
+
+  .theme-eyebrow {
+    @apply text-sm font-semibold uppercase tracking-wider;
+    color: var(--theme-accent);
+  }
+
+  .theme-label {
+    @apply text-xs font-semibold uppercase tracking-widest;
+    color: var(--theme-accent);
+  }
+
+  .theme-icon {
+    color: var(--theme-accent);
+  }
+
+  .theme-link {
+    color: var(--theme-accent);
+    @apply transition-colors;
+  }
+
+  .theme-link:hover {
+    color: var(--theme-heading);
+  }
+
+  .theme-card-border {
+    border-color: color-mix(in srgb, var(--theme-primary) 30%, transparent);
+  }
+
+  .theme-card-hover {
+    @apply transition-colors;
+  }
+
+  .theme-card-hover:hover {
+    border-color: color-mix(in srgb, var(--theme-primary) 50%, transparent);
+    background-color: color-mix(in srgb, var(--theme-primary) 8%, transparent);
+  }
+
+  .theme-ring {
+    --tw-ring-color: color-mix(in srgb, var(--theme-primary) 40%, transparent);
+  }
+
+  .theme-selected {
+    border-color: var(--theme-primary) !important;
+    background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent) !important;
+  }
+
+  .theme-focus {
+    @apply focus:outline-none focus:ring-2;
+    --tw-ring-color: var(--theme-primary);
+  }
+
+  .theme-focus-border:focus {
+    border-color: var(--theme-primary);
+    @apply outline-none;
+  }
+
+  .theme-highlight {
+    border-color: color-mix(in srgb, var(--theme-primary) 30%, transparent);
+    background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  }
+
+  .theme-surface {
+    border-color: color-mix(in srgb, var(--theme-primary) 40%, transparent);
+    background-color: color-mix(in srgb, var(--theme-primary) 12%, transparent);
+  }
+
+  .theme-surface-strong {
+    background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
+  }
+
+  .theme-current-ring {
+    --tw-ring-color: color-mix(in srgb, var(--theme-primary) 50%, transparent);
+    background-color: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+  }
+
+  .theme-timeline-line {
+    background: linear-gradient(
+      to bottom,
+      color-mix(in srgb, var(--theme-primary) 60%, transparent),
+      color-mix(in srgb, var(--theme-primary) 30%, transparent),
+      transparent
+    );
+  }
+
+  .theme-timeline-node-current {
+    border-color: var(--theme-accent);
+    background-color: var(--theme-primary);
+    color: white;
+  }
+
+  .theme-stat-muted {
+    color: color-mix(in srgb, var(--theme-heading) 80%, transparent);
+  }
+
+  .theme-nav-border {
+    border-color: color-mix(in srgb, var(--theme-primary) 25%, transparent);
+  }
+}

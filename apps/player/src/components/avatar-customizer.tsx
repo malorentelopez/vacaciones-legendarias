@@ -17,6 +17,7 @@ import {
 } from "@repo/domain/client";
 import { useRouter } from "next/navigation";
 import { Upload, Trash2, Shield, ImageIcon } from "lucide-react";
+import { useThemePreview } from "@/components/theme-provider";
 
 interface CharacterProfile {
   name: string;
@@ -33,6 +34,7 @@ const GENDER_OPTIONS: { value: "BOY" | "GIRL"; label: string }[] = [
 
 export function AvatarCustomizer({ character }: { character: CharacterProfile }) {
   const router = useRouter();
+  const previewTheme = useThemePreview();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const initialConfig = parseAvatarConfig(character.avatarConfig);
 
@@ -57,6 +59,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
 
   function handleThemeChange(newThemeKey: string) {
     setThemeKey(newThemeKey);
+    previewTheme?.(newThemeKey);
     const normalized = normalizeRoleKey(newThemeKey, avatarBase);
     const newRoles = getThemeRoles(newThemeKey);
     if (!newRoles.some((r) => r.key === normalized)) {
@@ -122,10 +125,8 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-widest text-violet-400">Personalización</p>
-        <h1 className="text-3xl font-bold" style={{ color: theme.colors.heading }}>
-          Tu héroe
-        </h1>
+        <p className="theme-label">Personalización</p>
+        <h1 className="theme-page-title">Tu héroe</h1>
       </div>
 
       <Card className="p-8 text-center">
@@ -135,7 +136,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
           primaryColor={theme.colors.primary}
           secondaryColor={theme.colors.secondary}
           size="xl"
-          className="mx-auto mb-4 ring-2 ring-violet-500/30"
+          className="theme-ring mx-auto mb-4 ring-2"
         />
         <p className="text-lg" style={{ color: theme.colors.heading }}>
           {name || "Sin nombre"}
@@ -146,7 +147,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
 
       <Card className="space-y-4 p-4">
         <div className="flex items-center gap-2">
-          <Upload className="h-5 w-5 text-violet-400" />
+          <Upload className="theme-icon h-5 w-5" />
           <h2 className="font-semibold text-white">Avatar propio</h2>
         </div>
         <p className="text-sm text-slate-400">
@@ -209,7 +210,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Nombre del personaje"
-            className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-violet-500"
+            className="theme-focus w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-2"
           />
         </div>
 
@@ -222,9 +223,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
                 type="button"
                 onClick={() => setGender(opt.value)}
                 className={`flex-1 rounded-xl border p-3 text-center transition-all ${
-                  gender === opt.value
-                    ? "border-violet-500 bg-violet-500/20"
-                    : "border-slate-700 hover:border-slate-500"
+                  gender === opt.value ? "theme-selected" : "border-slate-700 hover:border-slate-500"
                 }`}
               >
                 <p className="text-sm font-medium">{opt.label}</p>
@@ -242,9 +241,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
                 type="button"
                 onClick={() => handleThemeChange(t.key)}
                 className={`rounded-xl border p-4 text-left transition-all ${
-                  themeKey === t.key
-                    ? "border-violet-500 bg-violet-500/20"
-                    : "border-slate-700 hover:border-slate-500"
+                  themeKey === t.key ? "theme-selected" : "border-slate-700 hover:border-slate-500"
                 }`}
               >
                 <div
@@ -271,9 +268,7 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
                 type="button"
                 onClick={() => setAvatarBase(role.key)}
                 className={`rounded-2xl border p-3 text-center transition-all ${
-                  roleKey === role.key
-                    ? "border-violet-500 bg-violet-500/20"
-                    : "border-slate-700 hover:border-slate-500"
+                  roleKey === role.key ? "theme-selected" : "border-slate-700 hover:border-slate-500"
                 }`}
               >
                 <CharacterPortrait

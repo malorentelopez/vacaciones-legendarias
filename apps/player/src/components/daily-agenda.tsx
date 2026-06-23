@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, Badge, MissionCard, Progress } from "@repo/ui";
 import { completeMission } from "@/actions/game";
+import { themeGlow, themeProgressBar } from "@/lib/theme-ui";
+import { useTheme } from "@/components/theme-provider";
 import { Clock, MapPin, Scroll } from "lucide-react";
 
 interface AgendaMission {
@@ -46,6 +48,7 @@ export function DailyAgenda({
   totalQuests?: number;
 }) {
   const router = useRouter();
+  const theme = useTheme();
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleComplete(missionId: string) {
@@ -67,15 +70,15 @@ export function DailyAgenda({
     return (
       <div className="space-y-6">
         <header>
-          <div className="mb-1 flex items-center gap-2 text-violet-400">
+          <div className="theme-eyebrow mb-1 flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            <span className="text-sm font-semibold uppercase tracking-wider">Ruta legendaria</span>
+            <span>Ruta legendaria</span>
           </div>
-          <h1 className="text-3xl font-bold text-violet-300">Tu mapa está en blanco</h1>
+          <h1 className="theme-page-title">Tu mapa está en blanco</h1>
           <p className="text-slate-400">{dateLabel}</p>
         </header>
         <Card className="p-8 text-center text-slate-400">
-          <Scroll className="mx-auto mb-3 h-10 w-10 text-violet-500/60" />
+          <Scroll className="theme-icon mx-auto mb-3 h-10 w-10 opacity-60" />
           Aún no hay etapas trazadas para hoy. Pide a tus padres que preparen tu ruta de aventura.
         </Card>
       </div>
@@ -85,11 +88,11 @@ export function DailyAgenda({
   return (
     <div className="space-y-6">
       <header>
-        <div className="mb-1 flex items-center gap-2 text-violet-400">
+        <div className="theme-eyebrow mb-1 flex items-center gap-2">
           <MapPin className="h-5 w-5" />
-          <span className="text-sm font-semibold uppercase tracking-wider">Ruta legendaria</span>
+          <span>Ruta legendaria</span>
         </div>
-        <h1 className="text-3xl font-bold text-violet-300">Mapa del día</h1>
+        <h1 className="theme-page-title">Mapa del día</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <p className="text-slate-300">{dateLabel}</p>
           <Badge variant="default">{dayTypeLabel}</Badge>
@@ -100,15 +103,15 @@ export function DailyAgenda({
         <Card className="p-4">
           <div className="mb-2 flex items-center justify-between text-sm">
             <span className="font-medium text-slate-300">Quests del día</span>
-            <span className="text-violet-300">{completedQuests}/{totalQuests} completadas</span>
+            <span className="theme-stat-muted font-medium">{completedQuests}/{totalQuests} completadas</span>
           </div>
-          <Progress value={questProgress} color="bg-gradient-to-r from-violet-500 to-emerald-500" />
+          <Progress value={questProgress} barStyle={themeProgressBar(theme)} />
         </Card>
       )}
 
       {currentBlock && (
-        <Card className="border-violet-500/40 bg-violet-950/30 p-4">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-violet-400">Etapa activa</p>
+        <Card className="theme-surface p-4">
+          <p className="theme-label mb-1">Etapa activa</p>
           <div className="flex items-center gap-2">
             {currentBlock.icon && <span className="text-2xl">{currentBlock.icon}</span>}
             <div>
@@ -120,7 +123,7 @@ export function DailyAgenda({
       )}
 
       <div className="relative space-y-4">
-        <div className="absolute bottom-0 left-[19px] top-0 w-0.5 bg-gradient-to-b from-violet-600/60 via-violet-500/30 to-transparent" aria-hidden />
+        <div className="theme-timeline-line absolute bottom-0 left-[19px] top-0 w-0.5" aria-hidden />
 
         {blocks.map((block, index) => {
           const showSection = block.section && block.section !== lastSection;
@@ -129,7 +132,7 @@ export function DailyAgenda({
           return (
             <div key={block.id}>
               {showSection && (
-                <h2 className="mb-3 mt-2 pl-10 text-sm font-semibold uppercase tracking-wide text-amber-500/80">
+                <h2 className="theme-icon mb-3 mt-2 pl-10 text-sm font-semibold uppercase tracking-wide opacity-80">
                   ⚔ {block.section}
                 </h2>
               )}
@@ -138,19 +141,18 @@ export function DailyAgenda({
                 <div
                   className={`absolute left-3 top-5 flex h-4 w-4 items-center justify-center rounded-full border-2 text-[9px] font-bold ${
                     block.isCurrent
-                      ? "border-violet-400 bg-violet-500 text-white shadow-[0_0_10px_rgba(167,139,250,0.7)]"
+                      ? "theme-timeline-node-current"
                       : block.missions.length > 0 && block.missions.every((m) => m.completed)
                         ? "border-emerald-500 bg-emerald-600/80 text-white"
                         : "border-slate-600 bg-slate-800 text-slate-500"
                   }`}
+                  style={block.isCurrent ? { boxShadow: themeGlow(theme) } : undefined}
                 >
                   {index + 1}
                 </div>
 
                 <Card
-                  className={`p-4 transition-colors ${
-                    block.isCurrent ? "ring-2 ring-violet-500/50 bg-violet-950/20" : ""
-                  }`}
+                  className={`p-4 transition-colors ${block.isCurrent ? "theme-current-ring ring-2" : ""}`}
                 >
                   <div className="mb-2 flex flex-wrap items-center gap-2">
                     <span className="flex items-center gap-1 text-xs font-medium text-slate-400">

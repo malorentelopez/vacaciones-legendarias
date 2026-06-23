@@ -34,7 +34,7 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
     <div className="space-y-6 py-8">
       <div className="text-center">
         <AppLogo variant="full" size="2xl" className="mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-violet-300">¿Quién entra en acción?</h1>
+        <h1 className="theme-page-title">¿Quién entra en acción?</h1>
         <p className="text-slate-400">Elige tu héroe para esta aventura</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -51,7 +51,7 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
               disabled={loading === character.id}
               className="text-left"
             >
-              <Card className="overflow-hidden transition-all hover:border-violet-500/50 hover:shadow-violet-500/10">
+              <Card className="theme-card-border theme-card-hover overflow-hidden">
                 <div
                   className="h-1"
                   style={{ background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
@@ -71,7 +71,7 @@ export function CharacterSelector({ characters }: { characters: Character[] }) {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm text-violet-400">
+                  <p className="theme-link text-sm">
                     {loading === character.id ? "Cargando..." : "Seleccionar →"}
                   </p>
                 </CardContent>

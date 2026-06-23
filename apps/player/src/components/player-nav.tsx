@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home, Map, Sparkles, Trophy, Gem, Swords, User,
+  Home, Map, Sparkles, Trophy, Gem, Swords, User, LogOut,
 } from "lucide-react";
 import { cn, AppLogo } from "@repo/ui";
+import { logout } from "@/actions/auth";
 import { useTheme } from "./theme-provider";
 
 const navItems = [
@@ -23,7 +24,7 @@ export function PlayerNav() {
   const theme = useTheme();
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-700/50 bg-slate-900/80 backdrop-blur-lg">
+    <nav className="theme-nav-border sticky top-0 z-50 border-b bg-slate-900/80 backdrop-blur-lg">
       <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-2">
         <Link href="/" className="mr-1 shrink-0">
           <AppLogo variant="icon" size="sm" />
@@ -47,6 +48,16 @@ export function PlayerNav() {
             );
           })}
         </div>
+        <form action={logout} className="shrink-0">
+          <button
+            type="submit"
+            title="Salir"
+            className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Salir</span>
+          </button>
+        </form>
       </div>
     </nav>
   );
