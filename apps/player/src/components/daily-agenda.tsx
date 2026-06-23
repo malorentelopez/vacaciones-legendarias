@@ -12,6 +12,8 @@ import { useTheme } from "@/components/theme-provider";
 import { useCelebrations } from "@/components/celebration-provider";
 import { useMissionRewardFx } from "@/hooks/use-mission-reward-fx";
 import { LegendaryRouteMap } from "@/components/manga/legendary-route-map";
+import { DailyDialogueTrigger } from "@/components/daily-dialogue-trigger";
+import type { DialogueScript } from "@/lib/dialogue-scripts";
 import { MapPin, Scroll } from "lucide-react";
 
 interface AgendaMission extends PlayerMission {}
@@ -41,6 +43,7 @@ export function DailyAgenda({
   totalQuests = 0,
   isFreeDay = false,
   freeDayLabel,
+  routeCompleteDialogue,
 }: {
   dateLabel: string;
   dayTypeLabel: string;
@@ -50,6 +53,13 @@ export function DailyAgenda({
   totalQuests?: number;
   isFreeDay?: boolean;
   freeDayLabel?: string | null;
+  routeCompleteDialogue?: {
+    dialogueKey: string;
+    script: DialogueScript;
+    portraitSrc: string;
+    portraitAlt: string;
+    alreadySeen: boolean;
+  };
 }) {
   const router = useRouter();
   const theme = useTheme();
@@ -115,6 +125,15 @@ export function DailyAgenda({
 
   return (
     <div className="space-y-6">
+      {routeCompleteDialogue && (
+        <DailyDialogueTrigger
+          dialogueKey={routeCompleteDialogue.dialogueKey}
+          script={routeCompleteDialogue.script}
+          portraitSrc={routeCompleteDialogue.portraitSrc}
+          portraitAlt={routeCompleteDialogue.portraitAlt}
+          alreadySeen={routeCompleteDialogue.alreadySeen}
+        />
+      )}
       <header>
         <div className="theme-eyebrow mb-1 flex items-center gap-2">
           <MapPin className="h-5 w-5" />

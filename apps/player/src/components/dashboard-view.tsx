@@ -10,6 +10,7 @@ import {
 } from "@repo/domain";
 import { PowerGauge } from "@/components/power-gauge";
 import { MANGA_COPY } from "@/lib/manga-copy";
+import { formatSummerChapter, type SummerChapter } from "@repo/domain";
 import { themeProgressBar } from "@/lib/theme-ui";
 import { SecretPortraitTrigger } from "@/components/secrets/secret-portrait-trigger";
 
@@ -65,12 +66,14 @@ export function DashboardView({
   routePreview,
   sideQuestsPreview,
   dragonChestStatus,
+  chapter,
 }: {
   character: CharacterData;
   familyCharacters?: FamilyCharacter[];
   routePreview?: RoutePreview;
   sideQuestsPreview?: SideQuestsPreview;
   dragonChestStatus?: DragonChestStatus;
+  chapter?: SummerChapter;
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
@@ -86,6 +89,11 @@ export function DashboardView({
 
   return (
     <div className="space-y-8">
+      {chapter && chapter.number > 0 && (
+        <p className="theme-eyebrow font-display text-sm tracking-wide">
+          {formatSummerChapter(chapter)}
+        </p>
+      )}
       <Card
         className="theme-card-border overflow-hidden"
         style={{ background: `linear-gradient(135deg, ${theme.colors.primary}18 0%, transparent 60%)` }}

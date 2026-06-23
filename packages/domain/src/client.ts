@@ -40,6 +40,15 @@ export {
   MONTH_NAMES,
 } from "./utils/schedule";
 
+export {
+  getSummerWeek,
+  getSummerChapter,
+  formatSummerChapter,
+  DEFAULT_SUMMER_START,
+  type SummerChapter,
+  type SummerStartDate,
+} from "./utils/summer-chapters";
+
 export { getPeriodKey, getWeekKey, calculateXpForNextLevel } from "./utils/period";
 
 export {

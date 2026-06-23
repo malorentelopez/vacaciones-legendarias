@@ -4,6 +4,21 @@ import { getCharacter, getFamilyCharacters, getAgenda, getSideQuests } from "@/a
 import { getDragonChestStatus } from "@/actions/secrets";
 import { CharacterSelector } from "@/components/character-selector";
 import { DashboardView } from "@/components/dashboard-view";
+import { DailyDialogueTrigger } from "@/components/daily-dialogue-trigger";
+import {
+  getSummerChapter,
+  getCharacterPortraitSrc,
+  getRoleName,
+  normalizeRoleKey,
+  parseAvatarConfig,
+  toLocalDateKey,
+  getDayScheduleType,
+} from "@repo/domain";
+import {
+  buildMorningDialogue,
+  getDialogueKey,
+  hasSeenDialogue,
+} from "@/lib/dialogue-scripts";
 
 export default async function DashboardPage() {
   const session = await getValidPlayerSession();
@@ -36,8 +51,36 @@ export default async function DashboardPage() {
   const completedSideQuests = sideQuests.filter((m) => m.completed).length;
   const totalSideQuests = sideQuests.length;
 
+  const today = new Date();
+  const dateKey = toLocalDateKey(today);
+  const dayType = agenda?.dayType ?? getDayScheduleType(today);
+  const chapter = getSummerChapter(today);
+  const genderKey = character.gender === "BOY" ? "boy" : "girl";
+  const roleName = getRoleName(
+    character.themeKey,
+    genderKey,
+    normalizeRoleKey(character.themeKey, character.avatarBase)
+  );
+  const portraitSrc = getCharacterPortraitSrc(character);
+  const dialoguesSeen = parseAvatarConfig(character.avatarConfig).dialoguesSeen;
+  const morningDialogueKey = getDialogueKey(dateKey, "morning");
+  const morningScript = buildMorningDialogue({
+    themeKey: character.themeKey,
+    characterName: character.name,
+    chapter,
+    dayType,
+  });
+
   return (
-    <DashboardView
+    <>
+      <DailyDialogueTrigger
+        dialogueKey={morningDialogueKey}
+        script={morningScript}
+        portraitSrc={portraitSrc}
+        portraitAlt={roleName}
+        alreadySeen={hasSeenDialogue(dialoguesSeen, morningDialogueKey)}
+      />
+      <DashboardView
       character={character}
       familyCharacters={familyCharacters}
       routePreview={
@@ -57,6 +100,8 @@ export default async function DashboardPage() {
           : undefined
       }
       dragonChestStatus={dragonChestStatus}
+      chapter={chapter}
     />
+    </>
   );
 }

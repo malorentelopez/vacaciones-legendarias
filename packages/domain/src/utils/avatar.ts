@@ -18,6 +18,7 @@ export interface AvatarConfig {
   };
   unlockedAccessories?: string[];
   secrets?: Record<string, SecretProgress>;
+  dialoguesSeen?: Record<string, boolean>;
 }
 
 export function parseAvatarConfig(config: unknown): AvatarConfig {
@@ -42,6 +43,13 @@ export function parseAvatarConfig(config: unknown): AvatarConfig {
     }
   }
 
+  const dialoguesSeen: Record<string, boolean> = {};
+  if (c.dialoguesSeen && typeof c.dialoguesSeen === "object") {
+    for (const [key, value] of Object.entries(c.dialoguesSeen as Record<string, unknown>)) {
+      if (value === true) dialoguesSeen[key] = true;
+    }
+  }
+
   return {
     base: typeof c.base === "string" ? c.base : undefined,
     customImage: typeof c.customImage === "string" ? c.customImage : null,
@@ -51,6 +59,7 @@ export function parseAvatarConfig(config: unknown): AvatarConfig {
       ? c.unlockedAccessories.filter((item): item is string => typeof item === "string")
       : undefined,
     secrets: Object.keys(secrets).length > 0 ? secrets : undefined,
+    dialoguesSeen: Object.keys(dialoguesSeen).length > 0 ? dialoguesSeen : undefined,
   };
 }
 
@@ -66,6 +75,7 @@ export function mergeAvatarConfig(current: unknown, patch: Partial<AvatarConfig>
     equipped: { ...parsed.equipped, ...patch.equipped },
     unlockedAccessories: patch.unlockedAccessories ?? parsed.unlockedAccessories,
     secrets: { ...parsed.secrets, ...patch.secrets },
+    dialoguesSeen: { ...parsed.dialoguesSeen, ...patch.dialoguesSeen },
   };
 }
 
