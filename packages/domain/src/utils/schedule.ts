@@ -2,7 +2,32 @@ import type { DayScheduleType } from "@repo/database";
 
 export function getDayScheduleType(date: Date = new Date()): DayScheduleType {
   const day = date.getDay();
-  return day === 0 || day === 6 ? "WEEKEND" : "WEEKDAY";
+  if (day === 0 || day === 6) return "WEEKEND";
+  if (day === 5) return "FRIDAY";
+  return "WEEKDAY";
+}
+
+export function getDayScheduleTypeLabel(dayType: DayScheduleType): string {
+  switch (dayType) {
+    case "WEEKDAY":
+      return "Modo aventura";
+    case "FRIDAY":
+      return "Viernes legendario";
+    case "WEEKEND":
+      return "Modo explorador";
+  }
+}
+
+export function toLocalDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function parseLocalDateKey(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(y, m - 1, d);
 }
 
 export function parseTimeToMinutes(time: string): number {

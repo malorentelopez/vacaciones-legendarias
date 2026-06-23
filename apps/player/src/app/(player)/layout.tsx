@@ -27,7 +27,7 @@ export default async function PlayerLayout({ children }: { children: React.React
   return (
     <PlayerThemeShell initialThemeKey={themeKey}>
       <PlayerNav />
-      <main className="mx-auto max-w-4xl px-4 py-6">{children}</main>
+      <main className="mx-auto max-w-4xl px-4 py-6 pb-24 md:pb-6">{children}</main>
     </PlayerThemeShell>
   );
 }

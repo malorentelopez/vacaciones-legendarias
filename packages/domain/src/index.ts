@@ -12,6 +12,7 @@ export { AchievementRepository } from "./repositories/achievement.repository";
 export { RewardRepository } from "./repositories/reward.repository";
 export { GameEventRepository } from "./repositories/game-event.repository";
 export { ScheduleRepository } from "./repositories/schedule.repository";
+export { FreeDayRepository } from "./repositories/free-day.repository";
 export {
   SkillRepository,
   ConfigurationRepository,
@@ -21,9 +22,12 @@ export {
 export { getPeriodKey, getWeekKey, calculateXpForNextLevel } from "./utils/period";
 export {
   getDayScheduleType,
+  getDayScheduleTypeLabel,
   parseTimeToMinutes,
   isTimeInBlock,
   formatAgendaDate,
+  toLocalDateKey,
+  parseLocalDateKey,
   DAY_NAMES,
   MONTH_NAMES,
 } from "./utils/schedule";

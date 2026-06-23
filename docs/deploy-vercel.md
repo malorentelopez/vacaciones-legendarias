@@ -32,7 +32,7 @@ Dos proyectos en Vercel apuntando al **mismo repositorio**, cada uno con su carp
 2. **New project** → elige región cercana (p. ej. `eu-central-1`).
 3. Copia la connection string **pooled** (recomendada para serverless):
    ```
-   postgresql://user:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=require
+   postgresql://user:pass@ep-xxx.eu-central-1.aws.neon.tech/neondb?sslmode=verify-full
    ```
 
 4. Desde tu máquina, aplica el schema y el seed:
@@ -207,7 +207,7 @@ Los archivos `apps/*/vercel.json` incluyen `"git.deploymentEnabled.development":
 → Falta `BLOB_READ_WRITE_TOKEN` en el proyecto player.
 
 **Error de conexión a BD**
-→ Usa la URL **pooled** de Neon y `?sslmode=require`.
+→ Usa la URL **pooled** de Neon y `?sslmode=verify-full` (o `require`; el código lo normaliza automáticamente).
 
 **Build supera 250 MB o tarda >6 min**
 → No usar `@prisma/nextjs-monorepo-workaround-plugin`: duplica el query engine en cada chunk serverless.
@@ -219,7 +219,7 @@ Los archivos `apps/*/vercel.json` incluyen `"git.deploymentEnabled.development":
 
 **Login player devuelve 500 (`digest:...`) o "No se pudo conectar con la base de datos"**
 → Si el log menciona `Query Engine for runtime "rhel-openssl-3.0.x"`: Prisma usa `engineType = "client"` con el driver HTTP de Neon (sin binario nativo).
-→ `DATABASE_URL` debe ser la URL **pooled** de Neon (`-pooler` en el host, `?sslmode=require`).
+→ `DATABASE_URL` debe ser la URL **pooled** de Neon (`-pooler` en el host). Usa `?sslmode=verify-full` en Neon; si Neon te da `require`, también vale.
 → Ejecuta `pnpm db:push` y `pnpm db:seed` contra Neon desde local.
 → Redeploy del player tras cada cambio en `@repo/database`.
 

@@ -187,6 +187,26 @@ async function main() {
     skipDuplicates: true,
   });
 
+  if (readMission) {
+    const existing = await prisma.achievement.findFirst({
+      where: { title: "Lector voraz", familyId: family.id },
+    });
+    if (!existing) {
+      await prisma.achievement.create({
+        data: {
+          title: "Lector voraz",
+          description: "Completa la misión de lectura 5 veces",
+          crystalReward: 20,
+          familyId: family.id,
+          targetMissionId: readMission.id,
+          targetMissionCompletions: 5,
+        },
+      });
+    }
+  }
+
+  await prisma.$executeRaw`UPDATE "CharacterAchievement" SET "claimedAt" = "unlockedAt" WHERE "claimedAt" IS NULL`;
+
   await prisma.reward.createMany({
     data: [
       { title: "Helado extra", description: "Un helado a elegir", crystalCost: 10, familyId: family.id },
@@ -295,6 +315,54 @@ async function main() {
           data: {
             characterId: character.id,
             dayType: "WEEKDAY",
+            ...blockData,
+            endTime: blockData.endTime ?? undefined,
+          },
+        });
+        if (missionIds.length > 0) {
+          await prisma.scheduleBlockMission.createMany({
+            data: missionIds.map((missionId, order) => ({
+              scheduleBlockId: created.id,
+              missionId,
+              order,
+            })),
+          });
+        }
+      }
+
+      const fridayBlocks = [
+        {
+          order: 0,
+          section: "Mañana",
+          startTime: "09:00",
+          endTime: "09:30",
+          icon: "📋",
+          title: "Repaso semanal",
+          description: "Revisa lo aprendido esta semana y prepara el fin de semana.",
+        },
+        {
+          order: 1,
+          startTime: "09:30",
+          endTime: "10:30",
+          title: "Tareas semanales",
+          missionIds: [bedMission, readMission, creativeMission].filter(Boolean).map((m) => m!.id),
+        },
+        {
+          order: 2,
+          startTime: "10:30",
+          endTime: null,
+          icon: "🎉",
+          title: "¡Viernes legendario!",
+          description: "Tiempo libre tras completar las tareas de la semana.",
+        },
+      ] as const;
+
+      for (const block of fridayBlocks) {
+        const { missionIds = [], ...blockData } = block as typeof block & { missionIds?: string[] };
+        const created = await prisma.scheduleBlock.create({
+          data: {
+            characterId: character.id,
+            dayType: "FRIDAY",
             ...blockData,
             endTime: blockData.endTime ?? undefined,
           },

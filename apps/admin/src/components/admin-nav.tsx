@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
-  Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays,
+  Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays, UserCircle,
 } from "lucide-react";
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
@@ -26,6 +26,7 @@ const allNavItems = [
   { href: "/penalties", icon: AlertTriangle, label: "Penalizaciones" },
   { href: "/screen-time", icon: Settings, label: "Tiempo pantalla" },
   { href: "/timeline", icon: Clock, label: "Timeline" },
+  { href: "/settings", icon: UserCircle, label: "Mi cuenta" },
 ];
 
 function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutClick?: () => void }) {
@@ -35,6 +36,14 @@ function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutCli
         <p className="truncate text-sm font-medium text-slate-200">{userName}</p>
         <p className="text-xs text-slate-500">Administrador</p>
       </div>
+      <Link
+        href="/settings"
+        onClick={onLogoutClick}
+        className="mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+      >
+        <UserCircle className="h-4 w-4 shrink-0" />
+        Mi cuenta
+      </Link>
       <form action={logout}>
         <button
           type="submit"

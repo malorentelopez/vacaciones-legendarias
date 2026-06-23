@@ -58,7 +58,17 @@ export async function completeMission(missionId: string) {
 export async function getAchievements() {
   const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
+  await achievementService.evaluateAchievements(session.characterId);
   return achievementService.getCharacterAchievements(session.characterId, session.familyId);
+}
+
+export async function claimAchievement(achievementId: string) {
+  const session = await requirePlayerSession();
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+  const result = await achievementService.claimAchievement(session.characterId, achievementId);
+  revalidatePath("/achievements");
+  revalidatePath("/");
+  return result;
 }
 
 export async function getRewards() {

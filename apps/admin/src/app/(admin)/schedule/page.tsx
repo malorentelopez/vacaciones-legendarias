@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
-import { getCharacters, getMissions, getScheduleBlocks } from "@/actions/admin";
+import { getCharacters, getMissions, getScheduleBlocks, getFreeDays } from "@/actions/admin";
 import { ScheduleManager } from "@/components/schedule-manager";
+import { FreeDaysCalendar } from "@/components/free-days-calendar";
 
 export default async function SchedulePage() {
   const session = await getSession();
@@ -18,18 +19,23 @@ export default async function SchedulePage() {
   }
 
   const characterId = characters[0].id;
-  const [blocks, missions] = await Promise.all([
+  const now = new Date();
+  const [blocks, missions, freeDays] = await Promise.all([
     getScheduleBlocks(characterId, "WEEKDAY"),
     getMissions(),
+    getFreeDays(now.getFullYear(), now.getMonth() + 1),
   ]);
 
   return (
-    <ScheduleManager
-      characters={characters.map((c) => ({ id: c.id, name: c.name }))}
-      missions={missions.map((m) => ({ id: m.id, title: m.title, type: m.type }))}
-      initialBlocks={blocks}
-      initialCharacterId={characterId}
-      initialDayType="WEEKDAY"
-    />
+    <div className="space-y-10">
+      <ScheduleManager
+        characters={characters.map((c) => ({ id: c.id, name: c.name }))}
+        missions={missions.map((m) => ({ id: m.id, title: m.title, type: m.type }))}
+        initialBlocks={blocks}
+        initialCharacterId={characterId}
+        initialDayType="WEEKDAY"
+      />
+      <FreeDaysCalendar initialFreeDays={freeDays} />
+    </div>
   );
 }

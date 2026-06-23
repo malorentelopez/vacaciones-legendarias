@@ -1,4 +1,5 @@
 import { ScheduleRepository } from "../repositories/schedule.repository";
+import { FreeDayRepository } from "../repositories/free-day.repository";
 import { MissionRepository } from "../repositories/mission.repository";
 import { CharacterRepository } from "../repositories/character.repository";
 import { getPeriodKey } from "../utils/period";
@@ -8,6 +9,7 @@ import type { DayScheduleType } from "@repo/database";
 export class ScheduleService {
   constructor(
     private scheduleRepo = new ScheduleRepository(),
+    private freeDayRepo = new FreeDayRepository(),
     private missionRepo = new MissionRepository(),
     private characterRepo = new CharacterRepository()
   ) {}
@@ -17,10 +19,34 @@ export class ScheduleService {
     return this.scheduleRepo.findBlocksByCharacter(characterId, dayType);
   }
 
+  async getFreeDaysForMonth(familyId: string, year: number, month: number) {
+    return this.freeDayRepo.findByFamilyAndMonth(familyId, year, month);
+  }
+
+  async toggleFreeDay(familyId: string, dateKey: string, label?: string) {
+    return this.freeDayRepo.toggle(familyId, dateKey, label);
+  }
+
   async getAgendaForCharacter(characterId: string, date: Date = new Date()) {
-    await this.assertCharacterExists(characterId);
+    const character = await this.assertCharacterExists(characterId);
+
+    const freeDay = await this.freeDayRepo.findByFamilyAndDate(character.familyId, date);
+    if (freeDay) {
+      return {
+        dayType: getDayScheduleType(date),
+        date: date.toISOString(),
+        isFreeDay: true as const,
+        freeDayLabel: freeDay.label,
+        blocks: [],
+      };
+    }
+
     const dayType = getDayScheduleType(date);
-    const blocks = await this.scheduleRepo.findBlocksByCharacter(characterId, dayType);
+    let blocks = await this.scheduleRepo.findBlocksByCharacter(characterId, dayType);
+
+    if (blocks.length === 0 && dayType === "FRIDAY") {
+      blocks = await this.scheduleRepo.findBlocksByCharacter(characterId, "WEEKDAY");
+    }
 
     const agendaBlocks = [];
     for (const block of blocks) {
@@ -45,6 +71,7 @@ export class ScheduleService {
     return {
       dayType,
       date: date.toISOString(),
+      isFreeDay: false as const,
       blocks: agendaBlocks,
     };
   }
@@ -64,6 +91,12 @@ export class ScheduleService {
 
   async setBlockMissions(scheduleBlockId: string, missionIds: string[]) {
     return this.scheduleRepo.setBlockMissions(scheduleBlockId, missionIds);
+  }
+
+  async reorderBlocks(characterId: string, dayType: DayScheduleType, orderedIds: string[]) {
+    await this.assertCharacterExists(characterId);
+    await this.scheduleRepo.reorderBlocks(characterId, dayType, orderedIds);
+    return this.scheduleRepo.findBlocksByCharacter(characterId, dayType);
   }
 
   private async assertCharacterExists(characterId: string) {

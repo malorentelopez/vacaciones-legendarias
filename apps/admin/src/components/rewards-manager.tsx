@@ -2,11 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Card, Badge, Button } from "@repo/ui";
-import { createReward, updatePurchaseStatus, getPendingPurchases } from "@/actions/admin";
+import {
+  createReward,
+  updateReward,
+  deleteReward,
+  updatePurchaseStatus,
+  getPendingPurchases,
+} from "@/actions/admin";
 import type { RewardStatus } from "@repo/database";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, textareaClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
+import { ActionButtons } from "@/components/ui/action-buttons";
 import { Gift, Check, X } from "lucide-react";
 
 interface Reward {
@@ -14,6 +21,7 @@ interface Reward {
   title: string;
   description: string | null;
   crystalCost: number;
+  familyId: string | null;
 }
 
 interface Purchase {
@@ -24,13 +32,24 @@ interface Purchase {
   character: { name: string };
 }
 
-export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
+const emptyForm = {
+  title: "",
+  description: "",
+  crystalCost: 10,
+};
+
+export function RewardsManager({
+  rewards: initial,
+  familyId,
+}: {
+  rewards: Reward[];
+  familyId: string;
+}) {
   const [rewards, setRewards] = useState(initial);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [crystalCost, setCrystalCost] = useState(10);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -38,28 +57,62 @@ export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
   }, []);
 
   function openCreate() {
-    setTitle("");
-    setDescription("");
-    setCrystalCost(10);
+    setEditingId(null);
+    setForm(emptyForm);
     setModalOpen(true);
   }
 
-  async function handleCreate(e: React.FormEvent) {
+  function openEdit(r: Reward) {
+    setEditingId(r.id);
+    setForm({
+      title: r.title,
+      description: r.description ?? "",
+      crystalCost: r.crystalCost,
+    });
+    setModalOpen(true);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const reward = await createReward({
-      title,
-      description: description || undefined,
-      crystalCost,
-    });
-    setRewards([...rewards, reward]);
-    setModalOpen(false);
-    setLoading(false);
+    try {
+      const payload = {
+        title: form.title,
+        description: form.description || undefined,
+        crystalCost: form.crystalCost,
+      };
+      if (editingId) {
+        const updated = await updateReward(editingId, payload);
+        setRewards(rewards.map((r) => (r.id === editingId ? (updated as Reward) : r)));
+      } else {
+        const created = await createReward(payload);
+        setRewards([...rewards, created as Reward]);
+      }
+      setModalOpen(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al guardar");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("¿Eliminar esta recompensa de la tienda?")) return;
+    try {
+      await deleteReward(id);
+      setRewards(rewards.filter((r) => r.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al eliminar");
+    }
   }
 
   async function handleApprove(purchaseId: string, status: RewardStatus) {
     await updatePurchaseStatus(purchaseId, status);
     setPurchases(purchases.filter((p) => p.id !== purchaseId));
+  }
+
+  function canManage(r: Reward) {
+    return r.familyId === familyId;
   }
 
   return (
@@ -118,7 +171,15 @@ export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
                   <Gift className="h-6 w-6 text-violet-400" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-bold">{r.title}</h3>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-bold">{r.title}</h3>
+                    {canManage(r) && (
+                      <ActionButtons
+                        onEdit={() => openEdit(r)}
+                        onDelete={() => handleDelete(r.id)}
+                      />
+                    )}
+                  </div>
                   {r.description && (
                     <p className="mt-0.5 line-clamp-2 text-sm text-slate-400">{r.description}</p>
                   )}
@@ -135,15 +196,15 @@ export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Nueva recompensa"
+        title={editingId ? "Editar recompensa" : "Nueva recompensa"}
         description="Los jugadores podrán comprarla con cristales. Tú apruebas cada compra."
       >
-        <form onSubmit={handleCreate} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <FormField label="Título" htmlFor="reward-title" required>
             <input
               id="reward-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
               className={inputClass}
               placeholder="Ej: Helado extra"
               required
@@ -153,8 +214,8 @@ export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
           <FormField label="Descripción" htmlFor="reward-desc" hint="Opcional. Detalla qué incluye la recompensa.">
             <textarea
               id="reward-desc"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
               className={textareaClass}
               rows={2}
               placeholder="Ej: Un helado a elegir del supermercado"
@@ -166,8 +227,8 @@ export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
               id="reward-cost"
               type="number"
               min={1}
-              value={crystalCost}
-              onChange={(e) => setCrystalCost(Number(e.target.value))}
+              value={form.crystalCost}
+              onChange={(e) => setForm({ ...form, crystalCost: Number(e.target.value) })}
               className={inputClass}
               required
             />
@@ -178,7 +239,7 @@ export function RewardsManager({ rewards: initial }: { rewards: Reward[] }) {
               Cancelar
             </Button>
             <Button type="submit" className="flex-1" disabled={loading}>
-              {loading ? "Creando..." : "Crear recompensa"}
+              {loading ? "Guardando..." : editingId ? "Guardar" : "Crear recompensa"}
             </Button>
           </div>
         </form>

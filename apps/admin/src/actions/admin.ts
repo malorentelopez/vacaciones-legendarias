@@ -214,6 +214,8 @@ export async function createAchievement(data: {
   requiredMissions?: number;
   crystalReward?: number;
   missionIds?: string[];
+  targetMissionId?: string;
+  targetMissionCompletions?: number;
 }) {
   const session = await requireSession();
   const achievement = await achievementService.createAchievement({
@@ -222,6 +224,68 @@ export async function createAchievement(data: {
   });
   revalidatePath("/achievements");
   return achievement;
+}
+
+export async function updateAchievement(
+  id: string,
+  data: {
+    title: string;
+    description?: string;
+    crystalReward: number;
+    requiredLevel?: number;
+    missionIds?: string[];
+    targetMissionId?: string;
+    targetMissionCompletions?: number;
+  }
+) {
+  await assertFamilyAchievement(id);
+
+  let updateData: Parameters<typeof achievementService.updateAchievement>[1];
+
+  if (data.requiredLevel !== undefined) {
+    updateData = {
+      title: data.title,
+      description: data.description,
+      crystalReward: data.crystalReward,
+      requiredLevel: data.requiredLevel,
+      requiredMissions: null,
+      missionIds: [],
+      targetMissionId: null,
+      targetMissionCompletions: null,
+    };
+  } else if (data.targetMissionId !== undefined) {
+    updateData = {
+      title: data.title,
+      description: data.description,
+      crystalReward: data.crystalReward,
+      requiredLevel: null,
+      requiredMissions: null,
+      missionIds: [],
+      targetMissionId: data.targetMissionId,
+      targetMissionCompletions: data.targetMissionCompletions ?? 1,
+    };
+  } else {
+    updateData = {
+      title: data.title,
+      description: data.description,
+      crystalReward: data.crystalReward,
+      requiredLevel: null,
+      requiredMissions: null,
+      missionIds: data.missionIds ?? [],
+      targetMissionId: null,
+      targetMissionCompletions: null,
+    };
+  }
+
+  const achievement = await achievementService.updateAchievement(id, updateData);
+  revalidatePath("/achievements");
+  return achievement;
+}
+
+export async function deleteAchievement(id: string) {
+  await assertFamilyAchievement(id);
+  await achievementService.deleteAchievement(id);
+  revalidatePath("/achievements");
 }
 
 export async function getRewards() {
@@ -234,6 +298,26 @@ export async function createReward(data: { title: string; description?: string; 
   const reward = await rewardService.createReward({ ...data, familyId: session.familyId });
   revalidatePath("/rewards");
   return reward;
+}
+
+export async function updateReward(
+  id: string,
+  data: { title: string; description?: string; crystalCost: number }
+) {
+  await assertFamilyReward(id);
+  const reward = await rewardService.updateReward(id, {
+    title: data.title,
+    description: data.description,
+    crystalCost: data.crystalCost,
+  });
+  revalidatePath("/rewards");
+  return reward;
+}
+
+export async function deleteReward(id: string) {
+  await assertFamilyReward(id);
+  await rewardService.deleteReward(id);
+  revalidatePath("/rewards");
 }
 
 export async function getPendingPurchases() {
@@ -309,12 +393,42 @@ export async function createBossBattle(data: {
   return boss;
 }
 
+export async function updateBossBattle(
+  id: string,
+  data: {
+    title: string;
+    description?: string;
+    month: number;
+    year: number;
+    xpReward: number;
+    crystalReward: number;
+  }
+) {
+  await assertFamilyBossBattle(id);
+  const boss = await bossBattleService.updateBossBattle(id, data);
+  revalidatePath("/bosses");
+  return boss;
+}
+
+export async function deleteBossBattle(id: string) {
+  await assertFamilyBossBattle(id);
+  await bossBattleService.deleteBossBattle(id);
+  revalidatePath("/bosses");
+}
+
 export async function addBossObjective(bossBattleId: string, data: { title: string; description?: string; targetDate?: string }) {
-  await requireSession();
-  await bossBattleService.addObjective(bossBattleId, {
+  await assertFamilyBossBattle(bossBattleId);
+  const objective = await bossBattleService.addObjective(bossBattleId, {
     ...data,
     targetDate: data.targetDate ? new Date(data.targetDate) : undefined,
   });
+  revalidatePath("/bosses");
+  return objective;
+}
+
+export async function deleteBossObjective(bossBattleId: string, objectiveId: string) {
+  await assertFamilyBossBattle(bossBattleId);
+  await bossBattleService.deleteObjective(objectiveId);
   revalidatePath("/bosses");
 }
 
@@ -325,6 +439,33 @@ async function assertFamilyCharacter(characterId: string) {
   });
   if (!character) throw new Error("Personaje no encontrado");
   return character;
+}
+
+async function assertFamilyAchievement(id: string) {
+  const session = await requireSession();
+  const achievement = await prisma.achievement.findFirst({
+    where: { id, familyId: session.familyId },
+  });
+  if (!achievement) throw new Error("Logro no encontrado");
+  return achievement;
+}
+
+async function assertFamilyReward(id: string) {
+  const session = await requireSession();
+  const reward = await prisma.reward.findFirst({
+    where: { id, familyId: session.familyId },
+  });
+  if (!reward) throw new Error("Recompensa no encontrada");
+  return reward;
+}
+
+async function assertFamilyBossBattle(id: string) {
+  const session = await requireSession();
+  const boss = await prisma.bossBattle.findFirst({
+    where: { id, familyId: session.familyId },
+  });
+  if (!boss) throw new Error("Reto no encontrado");
+  return boss;
 }
 
 export async function getScheduleBlocks(characterId: string, dayType: DayScheduleType) {
@@ -384,4 +525,31 @@ export async function deleteScheduleBlock(id: string, characterId: string, dayTy
   await scheduleService.deleteBlock(id);
   revalidatePath("/schedule");
   return scheduleService.getBlocksForCharacter(characterId, dayType);
+}
+
+export async function reorderScheduleBlocks(
+  characterId: string,
+  dayType: DayScheduleType,
+  orderedIds: string[]
+) {
+  await assertFamilyCharacter(characterId);
+  const blocks = await scheduleService.reorderBlocks(characterId, dayType, orderedIds);
+  revalidatePath("/schedule");
+  return blocks;
+}
+
+export async function getFreeDays(year: number, month: number) {
+  const session = await requireSession();
+  const days = await scheduleService.getFreeDaysForMonth(session.familyId, year, month);
+  return days.map((d) => ({
+    date: `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(2, "0")}-${String(d.date.getDate()).padStart(2, "0")}`,
+    label: d.label,
+  }));
+}
+
+export async function toggleFreeDay(dateKey: string) {
+  const session = await requireSession();
+  const result = await scheduleService.toggleFreeDay(session.familyId, dateKey);
+  revalidatePath("/schedule");
+  return result;
 }

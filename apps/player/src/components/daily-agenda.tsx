@@ -40,12 +40,16 @@ export function DailyAgenda({
   blocks,
   completedQuests = 0,
   totalQuests = 0,
+  isFreeDay = false,
+  freeDayLabel,
 }: {
   dateLabel: string;
   dayTypeLabel: string;
   blocks: AgendaBlock[];
   completedQuests?: number;
   totalQuests?: number;
+  isFreeDay?: boolean;
+  freeDayLabel?: string | null;
 }) {
   const router = useRouter();
   const theme = useTheme();
@@ -66,7 +70,7 @@ export function DailyAgenda({
   const currentBlock = blocks.find((b) => b.isCurrent);
   const questProgress = totalQuests > 0 ? Math.round((completedQuests / totalQuests) * 100) : 0;
 
-  if (blocks.length === 0) {
+  if (isFreeDay || blocks.length === 0) {
     return (
       <div className="space-y-6">
         <header>
@@ -74,12 +78,16 @@ export function DailyAgenda({
             <MapPin className="h-5 w-5" />
             <span>Ruta legendaria</span>
           </div>
-          <h1 className="theme-page-title">Tu mapa está en blanco</h1>
+          <h1 className="theme-page-title">
+            {isFreeDay ? "¡Día de descanso!" : "Tu mapa está en blanco"}
+          </h1>
           <p className="text-slate-400">{dateLabel}</p>
         </header>
         <Card className="p-8 text-center text-slate-400">
           <Scroll className="theme-icon mx-auto mb-3 h-10 w-10 opacity-60" />
-          Aún no hay etapas trazadas para hoy. Pide a tus padres que preparen tu ruta de aventura.
+          {isFreeDay
+            ? (freeDayLabel ?? "Hoy no hay tareas. Disfruta del día libre y recarga energías para la próxima aventura.")
+            : "Aún no hay etapas trazadas para hoy. Pide a tus padres que preparen tu ruta de aventura."}
         </Card>
       </div>
     );
