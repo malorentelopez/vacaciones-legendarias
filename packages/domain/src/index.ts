@@ -1,13 +1,17 @@
 export { CharacterService } from "./services/character.service";
 export { MissionService } from "./services/mission.service";
+export { QuestionnaireService } from "./services/questionnaire.service";
+export type { QuestionnaireState } from "./types/questionnaire";
 export { AchievementService } from "./services/achievement.service";
 export { RewardService } from "./services/reward.service";
+export { CrystalEconomyService } from "./services/crystal-economy.service";
 export { WeeklyPointsService } from "./services/weekly-points.service";
 export { BossBattleService } from "./services/boss-battle.service";
 export { ScheduleService } from "./services/schedule.service";
 
 export { CharacterRepository } from "./repositories/character.repository";
 export { MissionRepository } from "./repositories/mission.repository";
+export { QuestionnaireRepository } from "./repositories/questionnaire.repository";
 export { AchievementRepository } from "./repositories/achievement.repository";
 export { RewardRepository } from "./repositories/reward.repository";
 export { GameEventRepository } from "./repositories/game-event.repository";
@@ -19,7 +23,32 @@ export {
   BossBattleRepository,
 } from "./repositories/skill.repository";
 
+export {
+  gradeAnswers,
+  stripCorrectAnswers,
+  type QuestionOption,
+  type GradeResult,
+} from "./utils/questionnaire";
+export {
+  parseQuestionnaireJson,
+  parsedToQuestionForms,
+  QUESTIONNAIRE_JSON_EXAMPLE,
+  type ParsedQuestionnaire,
+} from "./utils/questionnaire-import";
 export { getPeriodKey, getWeekKey, calculateXpForNextLevel } from "./utils/period";
+export {
+  SCENARIO_RATES,
+  TIER_LABELS,
+  TIER_THRESHOLDS,
+  formatWeeksLabel,
+  projectEconomy,
+  getRewardTier,
+  type EconomyProjection,
+  type ProgressScenario,
+  type RewardProjection,
+  type RewardTier,
+  type WeeklyIncomeBreakdown,
+} from "./utils/crystal-projection";
 export {
   getDayScheduleType,
   getDayScheduleTypeLabel,
@@ -28,6 +57,8 @@ export {
   formatAgendaDate,
   toLocalDateKey,
   parseLocalDateKey,
+  dateKeyToDbDate,
+  dbDateToDateKey,
   DAY_NAMES,
   MONTH_NAMES,
 } from "./utils/schedule";

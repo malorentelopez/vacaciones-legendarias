@@ -6,11 +6,13 @@ import { PlayerThemeShell } from "@/components/theme-provider";
 export default async function PlayerLayout({ children }: { children: React.ReactNode }) {
   const session = await getValidPlayerSession();
   let themeKey = "adventure";
+  let crystals = 0;
 
   if (session?.characterId) {
     try {
       const character = await getCharacter();
       themeKey = character.themeKey;
+      crystals = character.crystals;
     } catch {
       // Personaje no disponible; el layout mostrará el selector sin nav.
     }
@@ -26,7 +28,7 @@ export default async function PlayerLayout({ children }: { children: React.React
 
   return (
     <PlayerThemeShell initialThemeKey={themeKey}>
-      <PlayerNav />
+      <PlayerNav crystals={crystals} />
       <main className="mx-auto max-w-4xl px-4 py-6 pb-24 md:pb-6">{children}</main>
     </PlayerThemeShell>
   );

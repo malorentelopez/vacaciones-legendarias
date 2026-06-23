@@ -68,7 +68,8 @@ export class AchievementService {
         claimable: isUnlocked && !isClaimed && achievement.crystalReward > 0,
         unlockedAt: record?.unlockedAt,
         claimedAt: record?.claimedAt,
-        progress,
+        progress: achievement.isManual ? undefined : progress,
+        isManual: achievement.isManual,
       };
     });
   }
@@ -83,6 +84,34 @@ export class AchievementService {
 
   async deleteAchievement(id: string) {
     return this.achievementRepo.delete(id);
+  }
+
+  async getAchievementUnlocks(familyId: string) {
+    return this.achievementRepo.getUnlocksForFamily(familyId);
+  }
+
+  async grantAchievement(characterId: string, achievementId: string) {
+    const achievement = await this.achievementRepo.findById(achievementId);
+    if (!achievement) throw new Error("Logro no encontrado");
+    if (!achievement.isManual) {
+      throw new Error("Este logro no se puede otorgar manualmente");
+    }
+
+    const character = await this.characterRepo.findById(characterId);
+    if (!character) throw new Error("Personaje no encontrado");
+
+    const isUnlocked = await this.achievementRepo.isUnlocked(characterId, achievementId);
+    if (isUnlocked) throw new Error("El jugador ya tiene este logro");
+
+    const unlocked = await this.achievementRepo.unlock(characterId, achievementId);
+
+    await this.gameEventRepo.create(characterId, "ACHIEVEMENT_UNLOCKED", {
+      achievementId,
+      title: achievement.title,
+      grantedManually: true,
+    });
+
+    return unlocked;
   }
 
   async claimAchievement(characterId: string, achievementId: string) {
@@ -138,6 +167,8 @@ export class AchievementService {
     });
 
     for (const achievement of achievements) {
+      if (achievement.isManual) continue;
+
       const isUnlocked = await this.achievementRepo.isUnlocked(characterId, achievement.id);
       if (isUnlocked) continue;
 

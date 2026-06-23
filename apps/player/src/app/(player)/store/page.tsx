@@ -8,5 +8,5 @@ export default async function StorePage() {
   if (!session?.characterId) redirect("/");
 
   const [rewards, character] = await Promise.all([getRewards(), getCharacter()]);
-  return <StoreView rewards={rewards} crystals={character.crystals} />;
+  return <StoreView rewards={rewards} crystals={character.crystals} level={character.level} />;
 }

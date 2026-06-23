@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon, CharacterPortrait } from "@repo/ui";
-import { Gem, Star, Zap, Crown, Map, Scroll } from "lucide-react";
+import { Gem, Star, Zap, Crown, Map, Scroll, Sparkles } from "lucide-react";
 import {
   getTheme,
   getRoleName,
@@ -44,14 +44,21 @@ interface RoutePreview {
   totalStages: number;
 }
 
+interface SideQuestsPreview {
+  completedSideQuests: number;
+  totalSideQuests: number;
+}
+
 export function DashboardView({
   character,
   familyCharacters = [],
   routePreview,
+  sideQuestsPreview,
 }: {
   character: CharacterData;
   familyCharacters?: FamilyCharacter[];
   routePreview?: RoutePreview;
+  sideQuestsPreview?: SideQuestsPreview;
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
@@ -60,6 +67,8 @@ export function DashboardView({
   const roleName = getRoleName(character.themeKey, genderKey, roleKey);
   const portraitSrc = getCharacterPortraitSrc(character);
   const showRoute = routePreview && routePreview.totalStages > 0;
+  const showSideQuests = sideQuestsPreview && sideQuestsPreview.totalSideQuests > 0;
+  const showProgressCards = showRoute || showSideQuests;
 
   return (
     <div className="space-y-8">
@@ -102,8 +111,8 @@ export function DashboardView({
         </CardContent>
       </Card>
 
-      <div className={`grid gap-4 ${showRoute ? "lg:grid-cols-2 lg:gap-6" : ""}`}>
-        {showRoute && (
+      <div className={`grid gap-4 ${showProgressCards ? "lg:grid-cols-2 lg:gap-6" : ""}`}>
+        {showRoute && routePreview && (
           <Link href="/ruta" className="block h-full">
             <Card className="theme-card-border theme-card-hover group h-full cursor-pointer">
               <CardHeader className="pb-2">
@@ -141,7 +150,38 @@ export function DashboardView({
           </Link>
         )}
 
-        <Card className={`h-full ${!showRoute ? "lg:max-w-xl" : ""}`}>
+        {showSideQuests && sideQuestsPreview && (
+          <Link href="/side-quests" className="block h-full">
+            <Card className="theme-card-border theme-card-hover group h-full cursor-pointer">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Sparkles className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
+                  Side Quests
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-slate-400">Opcionales, disponibles cuando quieras</p>
+                <div>
+                  <div className="mb-1 flex justify-between text-xs text-slate-400">
+                    <span>Completadas hoy</span>
+                    <span>
+                      {sideQuestsPreview.completedSideQuests}/{sideQuestsPreview.totalSideQuests}
+                    </span>
+                  </div>
+                  <Progress
+                    value={Math.round(
+                      (sideQuestsPreview.completedSideQuests / sideQuestsPreview.totalSideQuests) * 100
+                    )}
+                    barStyle={themeProgressBar(theme)}
+                  />
+                </div>
+                <p className="theme-link text-sm">Ver Side Quests →</p>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
+
+        <Card className={`h-full ${!showProgressCards ? "lg:max-w-xl" : showRoute && showSideQuests ? "lg:col-span-2" : ""}`}>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg">
               <Scroll className="theme-icon h-5 w-5" style={{ color: theme.colors.secondary }} />
@@ -159,7 +199,7 @@ export function DashboardView({
       </div>
 
       <div>
-        <h2 className="theme-section-title mb-4">Tus poderes</h2>
+        <h2 className="theme-section-title mb-4">Tus habilidades</h2>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {character.skills.map((cs) => (
             <Card key={cs.id} className="p-4">

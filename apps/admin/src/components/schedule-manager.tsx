@@ -27,6 +27,7 @@ interface Mission {
   id: string;
   title: string;
   type: string;
+  isSideQuest?: boolean;
 }
 
 interface ScheduleBlockMission {
@@ -463,10 +464,12 @@ export function ScheduleManager({
 
           <FormField label="Misiones asignadas (opcional)">
             <div className="max-h-40 space-y-2 overflow-y-auto rounded-xl border border-slate-700 bg-slate-900/50 p-3">
-              {missions.length === 0 ? (
-                <p className="text-sm text-slate-500">No hay misiones disponibles</p>
+              {missions.filter((m) => !m.isSideQuest).length === 0 ? (
+                <p className="text-sm text-slate-500">No hay misiones principales disponibles</p>
               ) : (
-                missions.map((mission) => (
+                missions
+                  .filter((m) => !m.isSideQuest)
+                  .map((mission) => (
                   <label key={mission.id} className="flex cursor-pointer items-center gap-2 text-sm">
                     <input
                       type="checkbox"

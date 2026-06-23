@@ -4,6 +4,7 @@ import { requirePlayerSession } from "@/lib/player-session";
 import {
   CharacterService,
   MissionService,
+  QuestionnaireService,
   AchievementService,
   RewardService,
   BossBattleService,
@@ -14,6 +15,7 @@ import { revalidatePath } from "next/cache";
 
 const characterService = new CharacterService();
 const missionService = new MissionService();
+const questionnaireService = new QuestionnaireService();
 const achievementService = new AchievementService();
 const rewardService = new RewardService();
 const bossBattleService = new BossBattleService();
@@ -37,6 +39,12 @@ export async function getMissions() {
   return missionService.getMissionsForCharacter(session.characterId, session.familyId);
 }
 
+export async function getSideQuests() {
+  const session = await requirePlayerSession();
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+  return missionService.getSideQuestsForCharacter(session.characterId, session.familyId);
+}
+
 export async function getAgenda() {
   const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
@@ -49,10 +57,58 @@ export async function completeMission(missionId: string) {
   const result = await missionService.completeMission(missionId, session.characterId);
   revalidatePath("/");
   revalidatePath("/missions");
+  revalidatePath("/side-quests");
   revalidatePath("/calendar");
   revalidatePath("/ruta");
   revalidatePath("/achievements");
   return result;
+}
+
+export async function getQuestionnaireForMission(missionId: string) {
+  const session = await requirePlayerSession();
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+
+  const active = await questionnaireService.getActiveQuestionnaireForCharacter(
+    missionId,
+    session.characterId
+  );
+  if (!active) throw new Error("No hay cuestionario disponible");
+
+  return questionnaireService.getQuestionnaireForPlayer(
+    active.id,
+    session.characterId,
+    session.familyId
+  );
+}
+
+export async function submitQuestionnaire(
+  questionnaireId: string,
+  answers: Record<string, string>
+) {
+  const session = await requirePlayerSession();
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+
+  const result = await questionnaireService.submitQuestionnaire(
+    questionnaireId,
+    session.characterId,
+    session.familyId,
+    answers
+  );
+
+  revalidatePath("/");
+  revalidatePath("/missions");
+  revalidatePath("/side-quests");
+  revalidatePath("/ruta");
+  revalidatePath("/achievements");
+
+  return {
+    correctCount: result.correctCount,
+    totalCount: result.totalCount,
+    passed: result.passed,
+    missionCompleted: result.missionCompleted,
+    xpReward: result.xpReward,
+    crystalReward: result.crystalReward,
+  };
 }
 
 export async function getAchievements() {
@@ -73,7 +129,8 @@ export async function claimAchievement(achievementId: string) {
 
 export async function getRewards() {
   const session = await requirePlayerSession();
-  return rewardService.getRewards(session.familyId);
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+  return rewardService.getStoreRewards(session.familyId, session.characterId);
 }
 
 export async function purchaseReward(rewardId: string) {

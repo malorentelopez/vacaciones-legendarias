@@ -1,27 +1,80 @@
 "use client";
 
 import { useState } from "react";
-import { Card, Button } from "@repo/ui";
+import { Card, Badge, Button, CharacterPortrait } from "@repo/ui";
 import { applyPenalty, resetWeeklyPoints } from "@/actions/admin";
+import {
+  getTheme,
+  getRoleName,
+  getRoleImage,
+  normalizeRoleKey,
+} from "@repo/domain/client";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass, textareaClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
-import { AlertTriangle, RotateCcw, Zap } from "lucide-react";
+import { AlertTriangle, Clock, RotateCcw, Star, Zap } from "lucide-react";
 
 interface Character {
   id: string;
   name: string;
+  gender: "BOY" | "GIRL";
+  themeKey: string;
+  avatarBase: string;
+  level: number;
   weeklyPoints: number;
+  screenTimeMinutes: number;
 }
 
-export function PenaltiesManager({ characters: initial }: { characters: Character[] }) {
-  const [characters, setCharacters] = useState(initial);
+interface PenaltyRecord {
+  id: string;
+  points: number;
+  reason: string | null;
+  appliedAt: Date;
+  character: Character;
+}
+
+function CharacterAvatar({ character, size = "md" }: { character: Character; size?: "sm" | "md" | "lg" }) {
+  const genderKey = character.gender === "BOY" ? "boy" : "girl";
+  const theme = getTheme(character.themeKey);
+  const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
+
+  return (
+    <CharacterPortrait
+      imageSrc={getRoleImage(character.themeKey, genderKey, roleKey)}
+      alt={getRoleName(character.themeKey, genderKey, roleKey)}
+      primaryColor={theme.colors.primary}
+      secondaryColor={theme.colors.secondary}
+      size={size === "lg" ? "lg" : size === "sm" ? "sm" : "md"}
+    />
+  );
+}
+
+function formatPenaltyDate(date: Date) {
+  return new Date(date).toLocaleString("es-ES", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export function PenaltiesManager({
+  characters: initialCharacters,
+  initialPenalties,
+}: {
+  characters: Character[];
+  initialPenalties: PenaltyRecord[];
+}) {
+  const [characters, setCharacters] = useState(initialCharacters);
+  const [penalties, setPenalties] = useState(initialPenalties);
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState(characters[0]?.id ?? "");
+  const [selectedId, setSelectedId] = useState(initialCharacters[0]?.id ?? "");
   const [points, setPoints] = useState(5);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const maxPoints = Math.max(...characters.map((c) => c.weeklyPoints), 1);
 
   function openPenalty(characterId?: string) {
     if (characterId) setSelectedId(characterId);
@@ -34,31 +87,49 @@ export function PenaltiesManager({ characters: initial }: { characters: Characte
   async function handlePenalty(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await applyPenalty(selectedId, points, reason || undefined);
-    setCharacters(
-      characters.map((c) =>
-        c.id === selectedId
-          ? { ...c, weeklyPoints: Math.max(0, c.weeklyPoints - points) }
-          : c
-      )
-    );
-    setPenaltyModalOpen(false);
-    setReason("");
-    setLoading(false);
+    try {
+      const penalty = await applyPenalty(selectedId, points, reason || undefined);
+      const character = characters.find((c) => c.id === selectedId);
+      const enrichedPenalty: PenaltyRecord = {
+        ...penalty,
+        character: {
+          ...penalty.character,
+          weeklyPoints: penalty.character.weeklyPoints,
+          screenTimeMinutes: character?.screenTimeMinutes ?? 30,
+        },
+      };
+      setCharacters(
+        characters.map((c) =>
+          c.id === selectedId ? { ...c, weeklyPoints: penalty.character.weeklyPoints } : c
+        )
+      );
+      setPenalties([enrichedPenalty, ...penalties]);
+      setPenaltyModalOpen(false);
+      setReason("");
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al aplicar penalización");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleReset() {
     setLoading(true);
-    await resetWeeklyPoints();
-    setCharacters(characters.map((c) => ({ ...c, weeklyPoints: 0 })));
-    setResetModalOpen(false);
-    setLoading(false);
+    try {
+      await resetWeeklyPoints();
+      setCharacters(characters.map((c) => ({ ...c, weeklyPoints: 0 })));
+      setResetModalOpen(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al resetear");
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const maxPoints = Math.max(...characters.map((c) => c.weeklyPoints), 1);
+  const selectedCharacter = characters.find((c) => c.id === selectedId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Penalizaciones"
         description="Resta puntos semanales cuando haga falta. El reset semanal reinicia el contador de todos."
@@ -78,42 +149,112 @@ export function PenaltiesManager({ characters: initial }: { characters: Characte
           Crea personajes primero para gestionar penalizaciones.
         </Card>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {characters.map((c) => {
-            const progress = (c.weeklyPoints / maxPoints) * 100;
-            return (
-              <button key={c.id} type="button" onClick={() => openPenalty(c.id)} className="text-left">
-                <Card className="overflow-hidden transition-all hover:border-red-500/30">
+        <section className="space-y-3">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Jugadores</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {characters.map((c) => {
+              const progress = (c.weeklyPoints / maxPoints) * 100;
+              const weekPenalties = penalties
+                .filter((p) => p.character.id === c.id)
+                .reduce((sum, p) => sum + p.points, 0);
+
+              return (
+                <Card key={c.id} className="overflow-hidden">
                   <div
                     className="h-1 bg-gradient-to-r from-emerald-500 to-amber-500"
-                    style={{ width: `${Math.max(10, progress)}%` }}
+                    style={{ width: `${Math.max(8, progress)}%` }}
                   />
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-xl">
-                      {c.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-bold">{c.name}</h3>
-                      <div className="mt-1 flex items-center gap-1.5">
-                        <Zap className="h-3.5 w-3.5 text-amber-400" />
-                        <span className="text-sm text-slate-400">{c.weeklyPoints} pts esta semana</span>
+                  <div className="p-4">
+                    <div className="flex items-start gap-4">
+                      <CharacterAvatar character={c} size="lg" />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-bold text-white">{c.name}</h3>
+                        <div className="mt-1 flex flex-wrap gap-2">
+                          <Badge variant="info">
+                            <Star className="mr-1 inline h-3 w-3" />
+                            Nivel {c.level}
+                          </Badge>
+                          <Badge variant="default">
+                            <Zap className="mr-1 inline h-3 w-3" />
+                            {c.weeklyPoints} pts
+                          </Badge>
+                          <Badge variant="success">
+                            <Clock className="mr-1 inline h-3 w-3" />
+                            {c.screenTimeMinutes} min pantalla
+                          </Badge>
+                        </div>
+                        {weekPenalties > 0 && (
+                          <p className="mt-2 text-xs text-red-400">
+                            −{weekPenalties} pts penalizados en el historial reciente
+                          </p>
+                        )}
                       </div>
                     </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="mt-4 w-full"
+                      onClick={() => openPenalty(c.id)}
+                    >
+                      Aplicar penalización
+                    </Button>
                   </div>
                 </Card>
-              </button>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </section>
       )}
 
-      {/* Penalty modal */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          Historial de penalizaciones
+        </h2>
+        {penalties.length === 0 ? (
+          <Card className="p-8 text-center text-slate-400">
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-40" />
+            Aún no hay penalizaciones registradas.
+          </Card>
+        ) : (
+          <Card className="divide-y divide-slate-800 overflow-hidden">
+            {penalties.map((p) => (
+              <div key={p.id} className="flex items-start gap-4 p-4">
+                <CharacterAvatar character={p.character} size="sm" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-white">{p.character.name}</span>
+                    <Badge variant="warning">−{p.points} pts</Badge>
+                    <span className="text-xs text-slate-500">{formatPenaltyDate(p.appliedAt)}</span>
+                  </div>
+                  {p.reason ? (
+                    <p className="mt-1 text-sm text-slate-400">{p.reason}</p>
+                  ) : (
+                    <p className="mt-1 text-sm italic text-slate-600">Sin motivo indicado</p>
+                  )}
+                </div>
+              </div>
+            ))}
+          </Card>
+        )}
+      </section>
+
       <Modal
         open={penaltyModalOpen}
         onClose={() => setPenaltyModalOpen(false)}
         title="Aplicar penalización"
         description="Resta puntos semanales al jugador seleccionado."
       >
+        {selectedCharacter && (
+          <div className="mb-4 flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/50 p-3">
+            <CharacterAvatar character={selectedCharacter} size="md" />
+            <div>
+              <p className="font-medium text-white">{selectedCharacter.name}</p>
+              <p className="text-sm text-slate-400">{selectedCharacter.weeklyPoints} pts esta semana</p>
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handlePenalty} className="space-y-4">
           <FormField label="Jugador" htmlFor="penalty-char" required>
             <select
@@ -165,7 +306,6 @@ export function PenaltiesManager({ characters: initial }: { characters: Characte
         </form>
       </Modal>
 
-      {/* Reset confirmation modal */}
       <Modal
         open={resetModalOpen}
         onClose={() => setResetModalOpen(false)}

@@ -1,5 +1,9 @@
+import { loadEnvConfig } from "@next/env";
 import type { NextConfig } from "next";
 import path from "node:path";
+
+const monorepoRoot = path.join(__dirname, "../..");
+loadEnvConfig(monorepoRoot);
 
 /** Minimal Prisma client-engine tracing for Vercel (avoids 250 MB bundle bloat). */
 const prismaTracing = {

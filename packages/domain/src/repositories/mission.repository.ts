@@ -13,6 +13,30 @@ export class MissionRepository {
     });
   }
 
+  async findMainMissions(familyId?: string) {
+    return prisma.mission.findMany({
+      where: {
+        isActive: true,
+        isSideQuest: false,
+        OR: [{ familyId }, { familyId: null }],
+      },
+      include: { skill: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async findSideQuests(familyId?: string) {
+    return prisma.mission.findMany({
+      where: {
+        isActive: true,
+        isSideQuest: true,
+        OR: [{ familyId }, { familyId: null }],
+      },
+      include: { skill: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
   async findById(id: string) {
     return prisma.mission.findUnique({
       where: { id },
@@ -29,6 +53,7 @@ export class MissionRepository {
     crystalReward?: number;
     skillId?: string;
     familyId?: string;
+    isSideQuest?: boolean;
   }) {
     return prisma.mission.create({ data, include: { skill: true } });
   }
@@ -44,6 +69,7 @@ export class MissionRepository {
       crystalReward: number;
       skillId: string | null;
       isActive: boolean;
+      isSideQuest: boolean;
     }>
   ) {
     return prisma.mission.update({

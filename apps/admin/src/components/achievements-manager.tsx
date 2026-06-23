@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import { Card, Badge, Button } from "@repo/ui";
-import { createAchievement, updateAchievement, deleteAchievement } from "@/actions/admin";
+import { createAchievement, updateAchievement, deleteAchievement, grantAchievement } from "@/actions/admin";
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, textareaClass, selectClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
 import { ActionButtons } from "@/components/ui/action-buttons";
-import { Trophy, Target, Star, Repeat } from "lucide-react";
+import { Trophy, Target, Star, Repeat, UserCheck } from "lucide-react";
 
 interface Mission {
   id: string;
@@ -29,11 +29,23 @@ interface Achievement {
   targetMissionCompletions: number | null;
   crystalReward: number;
   familyId: string | null;
+  isManual: boolean;
   missions: AchievementMission[];
   targetMission?: { id: string; title: string } | null;
 }
 
-type AchievementType = "missions" | "level" | "mission_count";
+interface Character {
+  id: string;
+  name: string;
+}
+
+interface AchievementUnlock {
+  achievementId: string;
+  characterId: string;
+  character: { id: string; name: string };
+}
+
+type AchievementType = "missions" | "level" | "mission_count" | "manual";
 
 const emptyForm = {
   title: "",
@@ -48,14 +60,23 @@ const emptyForm = {
 export function AchievementsManager({
   achievements: initial,
   missions,
+  characters,
+  unlocks: initialUnlocks,
   familyId,
 }: {
   achievements: Achievement[];
   missions: Mission[];
+  characters: Character[];
+  unlocks: AchievementUnlock[];
   familyId: string;
 }) {
   const [achievements, setAchievements] = useState(initial);
+  const [unlocks, setUnlocks] = useState(initialUnlocks);
   const [modalOpen, setModalOpen] = useState(false);
+  const [grantModalOpen, setGrantModalOpen] = useState(false);
+  const [grantingAchievement, setGrantingAchievement] = useState<Achievement | null>(null);
+  const [grantCharacterId, setGrantCharacterId] = useState("");
+  const [grantLoading, setGrantLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [achievementType, setAchievementType] = useState<AchievementType>("missions");
   const [form, setForm] = useState(emptyForm);
@@ -117,19 +138,27 @@ export function AchievementsManager({
 
     setLoading(true);
     try {
-      const payload = {
-        title: form.title,
-        description: form.description || undefined,
-        crystalReward: form.crystalReward,
-        ...(achievementType === "missions"
-          ? { missionIds: form.selectedMissionIds }
-          : achievementType === "level"
-            ? { requiredLevel: form.requiredLevel }
-            : {
-                targetMissionId: form.targetMissionId,
-                targetMissionCompletions: form.targetMissionCompletions,
-              }),
-      };
+      const payload =
+        achievementType === "manual"
+          ? {
+              title: form.title,
+              description: form.description || undefined,
+              crystalReward: form.crystalReward,
+              isManual: true,
+            }
+          : {
+              title: form.title,
+              description: form.description || undefined,
+              crystalReward: form.crystalReward,
+              ...(achievementType === "missions"
+                ? { missionIds: form.selectedMissionIds }
+                : achievementType === "level"
+                  ? { requiredLevel: form.requiredLevel }
+                  : {
+                      targetMissionId: form.targetMissionId,
+                      targetMissionCompletions: form.targetMissionCompletions,
+                    }),
+            };
 
       if (editingId) {
         const updated = await updateAchievement(editingId, payload);
@@ -157,9 +186,46 @@ export function AchievementsManager({
   }
 
   function getAchievementType(a: Achievement): AchievementType {
+    if (a.isManual) return "manual";
     if (a.requiredLevel) return "level";
     if (a.targetMissionId) return "mission_count";
     return "missions";
+  }
+
+  function getUnlocksForAchievement(achievementId: string) {
+    return unlocks.filter((u) => u.achievementId === achievementId);
+  }
+
+  function openGrant(a: Achievement) {
+    setGrantingAchievement(a);
+    setGrantCharacterId("");
+    setGrantModalOpen(true);
+  }
+
+  async function handleGrant(e: React.FormEvent) {
+    e.preventDefault();
+    if (!grantingAchievement || !grantCharacterId) return;
+
+    setGrantLoading(true);
+    try {
+      await grantAchievement(grantCharacterId, grantingAchievement.id);
+      const character = characters.find((c) => c.id === grantCharacterId);
+      if (character) {
+        setUnlocks([
+          {
+            achievementId: grantingAchievement.id,
+            characterId: grantCharacterId,
+            character: { id: character.id, name: character.name },
+          },
+          ...unlocks,
+        ]);
+      }
+      setGrantModalOpen(false);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Error al otorgar");
+    } finally {
+      setGrantLoading(false);
+    }
   }
 
   function canManage(a: Achievement) {
@@ -170,7 +236,7 @@ export function AchievementsManager({
     <div className="space-y-6">
       <PageHeader
         title="Logros"
-        description="Insignias que los jugadores desbloquean al completar misiones o subir de nivel."
+        description="Insignias automáticas por misiones o nivel, y logros manuales que otorgas tras verificar algo en la vida real."
         actionLabel="Nuevo logro"
         onAction={openCreate}
       />
@@ -184,6 +250,7 @@ export function AchievementsManager({
         <div className="grid gap-3 sm:grid-cols-2">
           {achievements.map((a) => {
             const type = getAchievementType(a);
+            const achievementUnlocks = getUnlocksForAchievement(a.id);
             return (
               <Card key={a.id} className="p-4">
                 <div className="flex items-start gap-3">
@@ -205,6 +272,12 @@ export function AchievementsManager({
                     )}
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       <Badge variant="warning">+{a.crystalReward} 💎</Badge>
+                      {type === "manual" && (
+                        <Badge variant="info">
+                          <UserCheck className="mr-1 inline h-3 w-3" />
+                          Manual
+                        </Badge>
+                      )}
                       {type === "level" && a.requiredLevel && (
                         <Badge variant="info">
                           <Star className="mr-1 inline h-3 w-3" />
@@ -224,6 +297,19 @@ export function AchievementsManager({
                         </Badge>
                       )}
                     </div>
+                    {type === "manual" && canManage(a) && (
+                      <div className="mt-3 space-y-2">
+                        {achievementUnlocks.length > 0 && (
+                          <p className="text-xs text-slate-500">
+                            Otorgado a:{" "}
+                            {achievementUnlocks.map((u) => u.character.name).join(", ")}
+                          </p>
+                        )}
+                        <Button size="sm" variant="outline" onClick={() => openGrant(a)}>
+                          Otorgar a jugador
+                        </Button>
+                      </div>
+                    )}
                     {a.missions.length > 0 && (
                       <ul className="mt-2 space-y-0.5">
                         {a.missions.map(({ mission }) => (
@@ -243,15 +329,16 @@ export function AchievementsManager({
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editingId ? "Editar logro" : "Nuevo logro"}
-        description="Elige si se desbloquea por misiones o por subir de nivel."
+        description="Elige si se desbloquea por misiones, nivel o verificación manual."
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {([
               { value: "missions" as const, label: "Por misiones", icon: Target },
               { value: "mission_count" as const, label: "Repetir tarea", icon: Repeat },
               { value: "level" as const, label: "Por nivel", icon: Star },
+              { value: "manual" as const, label: "Manual", icon: UserCheck },
             ]).map(({ value, label, icon: Icon }) => (
               <button
                 key={value}
@@ -287,7 +374,11 @@ export function AchievementsManager({
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               className={textareaClass}
               rows={2}
-              placeholder="Opcional"
+              placeholder={
+                achievementType === "manual"
+                  ? "Ej: Leer un libro completo de principio a fin"
+                  : "Opcional"
+              }
             />
           </FormField>
 
@@ -302,7 +393,12 @@ export function AchievementsManager({
             />
           </FormField>
 
-          {achievementType === "level" ? (
+          {achievementType === "manual" ? (
+            <p className="rounded-xl border border-slate-700 bg-slate-900/50 p-3 text-sm text-slate-400">
+              Este logro no se desbloquea solo. Cuando compruebes que el jugador lo ha conseguido,
+              pulsa <strong className="text-slate-300">Otorgar a jugador</strong> en la tarjeta del logro.
+            </p>
+          ) : achievementType === "level" ? (
             <FormField label="Nivel requerido" htmlFor="ach-level" required hint="Se desbloquea al alcanzar este nivel.">
               <input
                 id="ach-level"
@@ -375,6 +471,55 @@ export function AchievementsManager({
             </Button>
             <Button type="submit" className="flex-1" disabled={loading}>
               {loading ? "Guardando..." : editingId ? "Guardar" : "Crear logro"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={grantModalOpen}
+        onClose={() => setGrantModalOpen(false)}
+        title="Otorgar logro"
+        description={
+          grantingAchievement
+            ? `Marca "${grantingAchievement.title}" como conseguido por un jugador.`
+            : undefined
+        }
+      >
+        <form onSubmit={handleGrant} className="space-y-4">
+          <FormField label="Jugador" htmlFor="grant-character" required>
+            <select
+              id="grant-character"
+              className={selectClass}
+              value={grantCharacterId}
+              onChange={(e) => setGrantCharacterId(e.target.value)}
+              required
+            >
+              <option value="">Selecciona un jugador</option>
+              {characters
+                .filter(
+                  (c) =>
+                    !grantingAchievement ||
+                    !getUnlocksForAchievement(grantingAchievement.id).some((u) => u.characterId === c.id)
+                )
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+            </select>
+          </FormField>
+          <div className="flex gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setGrantModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" className="flex-1" disabled={grantLoading || !grantCharacterId}>
+              {grantLoading ? "Otorgando..." : "Otorgar logro"}
             </Button>
           </div>
         </form>

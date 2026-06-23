@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
-import { getCharacter, getFamilyCharacters, getAgenda } from "@/actions/game";
+import { getCharacter, getFamilyCharacters, getAgenda, getSideQuests } from "@/actions/game";
 import { CharacterSelector } from "@/components/character-selector";
 import { DashboardView } from "@/components/dashboard-view";
 
@@ -13,10 +13,11 @@ export default async function DashboardPage() {
     return <CharacterSelector characters={characters} />;
   }
 
-  const [character, familyCharacters, agenda] = await Promise.all([
+  const [character, familyCharacters, agenda, sideQuests] = await Promise.all([
     getCharacter(),
     getFamilyCharacters(),
     getAgenda().catch(() => null),
+    getSideQuests().catch(() => []),
   ]);
 
   const currentBlock = agenda?.blocks.find((b) => b.isCurrent);
@@ -25,6 +26,8 @@ export default async function DashboardPage() {
     0
   ) ?? 0;
   const totalQuests = agenda?.blocks.reduce((sum, block) => sum + block.missions.length, 0) ?? 0;
+  const completedSideQuests = sideQuests.filter((m) => m.completed).length;
+  const totalSideQuests = sideQuests.length;
 
   return (
     <DashboardView
@@ -39,6 +42,11 @@ export default async function DashboardPage() {
               totalQuests,
               totalStages: agenda.blocks.length,
             }
+          : undefined
+      }
+      sideQuestsPreview={
+        totalSideQuests > 0
+          ? { completedSideQuests, totalSideQuests }
           : undefined
       }
     />

@@ -1,10 +1,11 @@
 import { prisma } from "@repo/database";
-import { parseLocalDateKey } from "../utils/schedule";
+import { dateKeyToDbDate, dbDateToDateKey, toLocalDateKey } from "../utils/schedule";
 
 export class FreeDayRepository {
   async findByFamilyAndMonth(familyId: string, year: number, month: number) {
-    const start = new Date(year, month - 1, 1);
-    const end = new Date(year, month, 0);
+    const monthIndex = month - 1;
+    const start = new Date(Date.UTC(year, monthIndex, 1));
+    const end = new Date(Date.UTC(year, monthIndex + 1, 0));
 
     return prisma.freeDay.findMany({
       where: {
@@ -16,30 +17,34 @@ export class FreeDayRepository {
   }
 
   async findByFamilyAndDate(familyId: string, date: Date) {
-    const day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const dateKey = toLocalDateKey(date);
     return prisma.freeDay.findUnique({
       where: {
-        familyId_date: { familyId, date: day },
+        familyId_date: { familyId, date: dateKeyToDbDate(dateKey) },
       },
     });
   }
 
   async toggle(familyId: string, dateKey: string, label?: string) {
-    const date = parseLocalDateKey(dateKey);
-    const existing = await this.findByFamilyAndDate(familyId, date);
+    const dbDate = dateKeyToDbDate(dateKey);
+    const existing = await prisma.freeDay.findUnique({
+      where: {
+        familyId_date: { familyId, date: dbDate },
+      },
+    });
 
     if (existing) {
       await prisma.freeDay.delete({ where: { id: existing.id } });
-      return { isFree: false as const };
+      return { isFree: false as const, dateKey: dbDateToDateKey(dbDate) };
     }
 
     await prisma.freeDay.create({
       data: {
         familyId,
-        date,
+        date: dbDate,
         label: label || null,
       },
     });
-    return { isFree: true as const };
+    return { isFree: true as const, dateKey: dbDateToDateKey(dbDate) };
   }
 }
