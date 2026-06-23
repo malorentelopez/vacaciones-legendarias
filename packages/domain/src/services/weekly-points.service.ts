@@ -28,8 +28,21 @@ export class WeeklyPointsService {
 
     await this.characterRepo.update(characterId, { weeklyPoints: newWeeklyPoints });
 
-    await prisma.penalty.create({
+    const penalty = await prisma.penalty.create({
       data: { characterId, type: "POINTS_DEDUCTION", points, reason },
+      include: {
+        character: {
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            themeKey: true,
+            avatarBase: true,
+            level: true,
+            weeklyPoints: true,
+          },
+        },
+      },
     });
 
     await prisma.weeklyPenalty.upsert({
@@ -39,6 +52,29 @@ export class WeeklyPointsService {
     });
 
     await this.gameEventRepo.create(characterId, "PENALTY_APPLIED", { points, reason });
+
+    return { ...penalty, character: { ...penalty.character, weeklyPoints: newWeeklyPoints } };
+  }
+
+  async getFamilyPenalties(familyId: string, limit = 50) {
+    return prisma.penalty.findMany({
+      where: { character: { familyId } },
+      include: {
+        character: {
+          select: {
+            id: true,
+            name: true,
+            gender: true,
+            themeKey: true,
+            avatarBase: true,
+            level: true,
+            weeklyPoints: true,
+          },
+        },
+      },
+      orderBy: { appliedAt: "desc" },
+      take: limit,
+    });
   }
 
   async resetWeeklyPoints(familyId: string) {

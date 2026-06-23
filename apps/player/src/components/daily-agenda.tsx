@@ -2,21 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, Badge, MissionCard, Progress } from "@repo/ui";
+import { Card, Badge, Progress } from "@repo/ui";
 import { completeMission } from "@/actions/game";
+import { PlayerMissionCard, type PlayerMission } from "@/components/player-mission-card";
 import { themeGlow, themeProgressBar } from "@/lib/theme-ui";
 import { useTheme } from "@/components/theme-provider";
 import { Clock, MapPin, Scroll } from "lucide-react";
 
-interface AgendaMission {
-  id: string;
-  title: string;
-  description: string | null;
-  xpReward: number;
-  crystalReward: number;
-  completed: boolean;
-  skill: { icon: string; color: string } | null;
-}
+interface AgendaMission extends PlayerMission {}
 
 interface AgendaBlock {
   id: string;
@@ -187,15 +180,9 @@ export function DailyAgenda({
                     <div className="mt-3 space-y-2 border-t border-slate-700/50 pt-3">
                       <p className="text-xs font-semibold uppercase tracking-wide text-amber-400/90">Quests de la etapa</p>
                       {block.missions.map((mission) => (
-                        <MissionCard
+                        <PlayerMissionCard
                           key={mission.id}
-                          title={mission.title}
-                          description={mission.description}
-                          xpReward={mission.xpReward}
-                          crystalReward={mission.crystalReward}
-                          skillIcon={mission.skill?.icon}
-                          skillColor={mission.skill?.color}
-                          completed={mission.completed}
+                          mission={mission}
                           onComplete={mission.completed ? undefined : () => handleComplete(mission.id)}
                           loading={loading === mission.id}
                         />

@@ -25,6 +25,7 @@ enum MissionType {
   LEARNING
   CHORE
   CUSTOM
+  QUESTIONNAIRE
 }
 
 enum RewardStatus {
@@ -46,6 +47,7 @@ enum EventType {
   PENALTY_APPLIED
   WEEKLY_RESET
   CHARACTER_CREATED
+  QUESTIONNAIRE_COMPLETED
 }
 
 enum PenaltyType {
@@ -126,7 +128,8 @@ model Character {
   weeklyPenalties     WeeklyPenalty[]
   crystalTransactions CrystalTransaction[]
   gameEvents          GameEvent[]
-  scheduleBlocks      ScheduleBlock[]
+  scheduleBlocks           ScheduleBlock[]
+  questionnaireSubmissions QuestionnaireSubmission[]
 
   @@index([familyId])
 }
@@ -169,6 +172,7 @@ model Mission {
   crystalReward Int            @default(0)
   skillId     String?
   isActive    Boolean          @default(true)
+  isSideQuest Boolean          @default(false)
   familyId    String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -178,6 +182,7 @@ model Mission {
   achievementMissions AchievementMission[]
   achievementTargets Achievement[]       @relation("AchievementTargetMission")
   scheduleBlocks     ScheduleBlockMission[]
+  questionnaires     MissionQuestionnaire[]
 }
 
 model MissionProgress {
@@ -210,6 +215,7 @@ model Achievement {
   targetMissionCompletions Int?
   crystalReward            Int      @default(0)
   isActive                 Boolean  @default(true)
+  isManual                 Boolean  @default(false)
   familyId                 String?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
@@ -245,15 +251,17 @@ model CharacterAchievement {
 }
 
 model Reward {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  crystalCost Int
-  icon        String   @default("gift")
-  isActive    Boolean  @default(true)
-  familyId    String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  crystalCost   Int
+  maxPurchases  Int?
+  requiredLevel Int?
+  icon          String   @default("gift")
+  isActive      Boolean  @default(true)
+  familyId      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   purchases RewardPurchase[]
 }
@@ -447,4 +455,50 @@ model FreeDay {
 
   @@unique([familyId, date])
   @@index([familyId, date])
+}
+
+model MissionQuestionnaire {
+  id          String   @id @default(cuid())
+  missionId   String
+  title       String
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  mission     Mission                   @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  questions   QuestionnaireQuestion[]
+  submissions QuestionnaireSubmission[]
+
+  @@index([missionId, order])
+}
+
+model QuestionnaireQuestion {
+  id              String @id @default(cuid())
+  questionnaireId String
+  text            String
+  options         Json
+  correctOptionId String
+  order           Int    @default(0)
+
+  questionnaire MissionQuestionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+
+  @@index([questionnaireId, order])
+}
+
+model QuestionnaireSubmission {
+  id              String   @id @default(cuid())
+  questionnaireId String
+  characterId     String
+  answers         Json
+  correctCount    Int      @default(0)
+  totalCount      Int      @default(0)
+  passed          Boolean  @default(false)
+  submittedAt     DateTime @default(now())
+
+  questionnaire MissionQuestionnaire @relation(fields: [questionnaireId], references: [id], onDelete: Cascade)
+  character     Character            @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([questionnaireId, characterId])
+  @@index([characterId])
 }

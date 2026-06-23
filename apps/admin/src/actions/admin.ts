@@ -4,14 +4,17 @@ import { requireSession } from "@/lib/auth";
 import {
   CharacterService,
   MissionService,
+  QuestionnaireService,
   AchievementService,
   RewardService,
+  CrystalEconomyService,
   WeeklyPointsService,
   BossBattleService,
   ScheduleService,
   SkillRepository,
   ConfigurationRepository,
   GameEventRepository,
+  dbDateToDateKey,
 } from "@repo/domain";
 import { prisma } from "@repo/database";
 import type { MissionFrequency, MissionType, RewardStatus, DayScheduleType } from "@repo/database";
@@ -20,8 +23,10 @@ import bcrypt from "bcryptjs";
 
 const characterService = new CharacterService();
 const missionService = new MissionService();
+const questionnaireService = new QuestionnaireService();
 const achievementService = new AchievementService();
 const rewardService = new RewardService();
+const crystalEconomyService = new CrystalEconomyService();
 const weeklyPointsService = new WeeklyPointsService();
 const bossBattleService = new BossBattleService();
 const scheduleService = new ScheduleService();
@@ -29,26 +34,90 @@ const skillRepo = new SkillRepository();
 const configRepo = new ConfigurationRepository();
 const gameEventRepo = new GameEventRepository();
 
-export async function getDashboardStats() {
+export async function getParentDashboard() {
   const session = await requireSession();
-  const characters = await characterService.getFamilyCharacters(session.familyId);
-  const today = new Date().toISOString().split("T")[0];
+  const familyId = session.familyId;
+  const now = new Date();
+  const today = now.toISOString().split("T")[0];
 
-  const missionsCompletedToday = await prisma.missionProgress.count({
-    where: {
-      completed: true,
-      completedAt: { gte: new Date(today) },
-      character: { familyId: session.familyId },
-    },
-  });
+  const [
+    characters,
+    weeklyStats,
+    pendingPurchases,
+    approvedPurchases,
+    recentEvents,
+    bossBattles,
+    missionsCompletedToday,
+  ] = await Promise.all([
+    characterService.getFamilyCharacters(familyId),
+    weeklyPointsService.getFamilyWeeklyStats(familyId),
+    rewardService.getFamilyPurchases(familyId, "PENDING"),
+    rewardService.getFamilyPurchases(familyId, "APPROVED"),
+    gameEventRepo.findByFamily(familyId, 10),
+    bossBattleService.getBossBattles(familyId),
+    prisma.missionProgress.count({
+      where: {
+        completed: true,
+        completedAt: { gte: new Date(today) },
+        character: { familyId },
+      },
+    }),
+  ]);
 
-  const weeklyXp = characters.reduce((sum, c) => sum + c.weeklyPoints, 0);
+  const characterSummaries = await Promise.all(
+    characters.map(async (character) => {
+      const agenda = await scheduleService.getAgendaForCharacter(character.id, now);
+      const weeklyStat = weeklyStats.find((s) => s.characterId === character.id);
+
+      if (agenda.isFreeDay) {
+        return {
+          ...character,
+          screenTimeMinutes: weeklyStat?.screenTimeMinutes ?? 30,
+          todayMissions: {
+            completed: 0,
+            total: 0,
+            isFreeDay: true as const,
+            freeDayLabel: agenda.freeDayLabel,
+          },
+        };
+      }
+
+      const missions = agenda.blocks.flatMap((block) => block.missions);
+      return {
+        ...character,
+        screenTimeMinutes: weeklyStat?.screenTimeMinutes ?? 30,
+        todayMissions: {
+          completed: missions.filter((m) => m.completed).length,
+          total: missions.length,
+          isFreeDay: false as const,
+          freeDayLabel: null,
+        },
+      };
+    })
+  );
+
+  const currentMonth = now.getMonth() + 1;
+  const currentYear = now.getFullYear();
+  const currentBoss = bossBattles.find(
+    (boss) => boss.month === currentMonth && boss.year === currentYear
+  );
 
   return {
-    characters,
+    characters: characterSummaries,
     missionsCompletedToday,
-    weeklyXp,
+    weeklyPointsTotal: characters.reduce((sum, c) => sum + c.weeklyPoints, 0),
     totalCrystals: characters.reduce((sum, c) => sum + c.crystals, 0),
+    pendingPurchases,
+    approvedPurchases,
+    recentEvents,
+    currentBoss: currentBoss
+      ? {
+          id: currentBoss.id,
+          title: currentBoss.title,
+          completedObjectives: currentBoss.objectives.filter((o) => o.completed).length,
+          totalObjectives: currentBoss.objectives.length,
+        }
+      : null,
   };
 }
 
@@ -183,10 +252,12 @@ export async function createMission(data: {
   xpReward: number;
   crystalReward?: number;
   skillId?: string;
+  isSideQuest?: boolean;
 }) {
   await requireSession();
   const mission = await missionService.createMission({ ...data, familyId: (await requireSession()).familyId });
   revalidatePath("/missions");
+  revalidatePath("/schedule");
   return mission;
 }
 
@@ -194,11 +265,47 @@ export async function updateMission(id: string, data: Record<string, unknown>) {
   await requireSession();
   await missionService.updateMission(id, data);
   revalidatePath("/missions");
+  revalidatePath("/schedule");
 }
 
 export async function deleteMission(id: string) {
   await requireSession();
   await missionService.deleteMission(id);
+  revalidatePath("/missions");
+}
+
+export async function getMissionQuestionnaires(missionId: string) {
+  const session = await requireSession();
+  return questionnaireService.getMissionQuestionnaires(missionId, session.familyId);
+}
+
+export async function createQuestionnaire(
+  missionId: string,
+  data: {
+    title: string;
+    description?: string;
+    questions: {
+      text: string;
+      options: { id: string; text: string }[];
+      correctOptionId: string;
+    }[];
+  }
+) {
+  const session = await requireSession();
+  const questionnaire = await questionnaireService.createQuestionnaire(
+    missionId,
+    session.familyId,
+    data
+  );
+  revalidatePath(`/missions/${missionId}/questionnaires`);
+  revalidatePath("/missions");
+  return questionnaire;
+}
+
+export async function deleteQuestionnaire(questionnaireId: string, missionId: string) {
+  const session = await requireSession();
+  await questionnaireService.deleteQuestionnaire(questionnaireId, session.familyId);
+  revalidatePath(`/missions/${missionId}/questionnaires`);
   revalidatePath("/missions");
 }
 
@@ -216,11 +323,22 @@ export async function createAchievement(data: {
   missionIds?: string[];
   targetMissionId?: string;
   targetMissionCompletions?: number;
+  isManual?: boolean;
 }) {
   const session = await requireSession();
   const achievement = await achievementService.createAchievement({
     ...data,
     familyId: session.familyId,
+    ...(data.isManual
+      ? {
+          isManual: true,
+          requiredLevel: undefined,
+          requiredMissions: undefined,
+          missionIds: [],
+          targetMissionId: undefined,
+          targetMissionCompletions: undefined,
+        }
+      : { isManual: false }),
   });
   revalidatePath("/achievements");
   return achievement;
@@ -236,17 +354,31 @@ export async function updateAchievement(
     missionIds?: string[];
     targetMissionId?: string;
     targetMissionCompletions?: number;
+    isManual?: boolean;
   }
 ) {
   await assertFamilyAchievement(id);
 
   let updateData: Parameters<typeof achievementService.updateAchievement>[1];
 
-  if (data.requiredLevel !== undefined) {
+  if (data.isManual) {
     updateData = {
       title: data.title,
       description: data.description,
       crystalReward: data.crystalReward,
+      isManual: true,
+      requiredLevel: null,
+      requiredMissions: null,
+      missionIds: [],
+      targetMissionId: null,
+      targetMissionCompletions: null,
+    };
+  } else if (data.requiredLevel !== undefined) {
+    updateData = {
+      title: data.title,
+      description: data.description,
+      crystalReward: data.crystalReward,
+      isManual: false,
       requiredLevel: data.requiredLevel,
       requiredMissions: null,
       missionIds: [],
@@ -258,6 +390,7 @@ export async function updateAchievement(
       title: data.title,
       description: data.description,
       crystalReward: data.crystalReward,
+      isManual: false,
       requiredLevel: null,
       requiredMissions: null,
       missionIds: [],
@@ -269,6 +402,7 @@ export async function updateAchievement(
       title: data.title,
       description: data.description,
       crystalReward: data.crystalReward,
+      isManual: false,
       requiredLevel: null,
       requiredMissions: null,
       missionIds: data.missionIds ?? [],
@@ -288,29 +422,58 @@ export async function deleteAchievement(id: string) {
   revalidatePath("/achievements");
 }
 
+export async function getAchievementUnlocks() {
+  const session = await requireSession();
+  return achievementService.getAchievementUnlocks(session.familyId);
+}
+
+export async function grantAchievement(characterId: string, achievementId: string) {
+  await assertFamilyAchievement(achievementId);
+  await assertFamilyCharacter(characterId);
+  const result = await achievementService.grantAchievement(characterId, achievementId);
+  revalidatePath("/achievements");
+  return result;
+}
+
 export async function getRewards() {
   const session = await requireSession();
   return rewardService.getRewards(session.familyId);
 }
 
-export async function createReward(data: { title: string; description?: string; crystalCost: number }) {
+export async function createReward(data: {
+  title: string;
+  description?: string;
+  crystalCost: number;
+  maxPurchases?: number | null;
+  requiredLevel?: number | null;
+}) {
   const session = await requireSession();
   const reward = await rewardService.createReward({ ...data, familyId: session.familyId });
   revalidatePath("/rewards");
+  revalidatePath("/economy");
   return reward;
 }
 
 export async function updateReward(
   id: string,
-  data: { title: string; description?: string; crystalCost: number }
+  data: {
+    title: string;
+    description?: string;
+    crystalCost: number;
+    maxPurchases?: number | null;
+    requiredLevel?: number | null;
+  }
 ) {
   await assertFamilyReward(id);
   const reward = await rewardService.updateReward(id, {
     title: data.title,
     description: data.description,
     crystalCost: data.crystalCost,
+    maxPurchases: data.maxPurchases ?? null,
+    requiredLevel: data.requiredLevel ?? null,
   });
   revalidatePath("/rewards");
+  revalidatePath("/economy");
   return reward;
 }
 
@@ -318,17 +481,39 @@ export async function deleteReward(id: string) {
   await assertFamilyReward(id);
   await rewardService.deleteReward(id);
   revalidatePath("/rewards");
+  revalidatePath("/economy");
+}
+
+export async function getEconomyProjection() {
+  const session = await requireSession();
+  return crystalEconomyService.getProjection(session.familyId);
+}
+
+export async function getRewardBalancePreview(crystalCost: number, maxPurchases: number | null = null) {
+  const session = await requireSession();
+  return crystalEconomyService.getRewardPreview(session.familyId, crystalCost, maxPurchases);
 }
 
 export async function getPendingPurchases() {
-  await requireSession();
-  return rewardService.getPurchases(undefined, "PENDING");
+  const session = await requireSession();
+  return rewardService.getFamilyPurchases(session.familyId, "PENDING");
+}
+
+export async function getRewardPurchases() {
+  const session = await requireSession();
+  return rewardService.getFamilyPurchases(session.familyId);
 }
 
 export async function updatePurchaseStatus(purchaseId: string, status: RewardStatus) {
-  await requireSession();
-  await rewardService.updatePurchaseStatus(purchaseId, status);
+  const session = await requireSession();
+  const purchase = await rewardService.updatePurchaseStatus(
+    purchaseId,
+    status,
+    session.familyId
+  );
   revalidatePath("/rewards");
+  revalidatePath("/");
+  return purchase;
 }
 
 export async function getSkills() {
@@ -359,8 +544,14 @@ export async function getTimeline() {
 
 export async function applyPenalty(characterId: string, points: number, reason?: string) {
   await requireSession();
-  await weeklyPointsService.applyPenalty(characterId, points, reason);
+  const penalty = await weeklyPointsService.applyPenalty(characterId, points, reason);
   revalidatePath("/penalties");
+  return penalty;
+}
+
+export async function getPenalties() {
+  const session = await requireSession();
+  return weeklyPointsService.getFamilyPenalties(session.familyId);
 }
 
 export async function resetWeeklyPoints() {
@@ -542,7 +733,7 @@ export async function getFreeDays(year: number, month: number) {
   const session = await requireSession();
   const days = await scheduleService.getFreeDaysForMonth(session.familyId, year, month);
   return days.map((d) => ({
-    date: `${d.date.getFullYear()}-${String(d.date.getMonth() + 1).padStart(2, "0")}-${String(d.date.getDate()).padStart(2, "0")}`,
+    date: dbDateToDateKey(d.date),
     label: d.label,
   }));
 }
@@ -551,5 +742,6 @@ export async function toggleFreeDay(dateKey: string) {
   const session = await requireSession();
   const result = await scheduleService.toggleFreeDay(session.familyId, dateKey);
   revalidatePath("/schedule");
+  revalidatePath("/");
   return result;
 }

@@ -1,20 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { MissionCard } from "@repo/ui";
 import { completeMission } from "@/actions/game";
+import { PlayerMissionCard, type PlayerMission } from "@/components/player-mission-card";
 
-interface Mission {
-  id: string;
-  title: string;
-  description: string | null;
-  xpReward: number;
-  crystalReward: number;
-  completed: boolean;
-  skill: { icon: string; color: string } | null;
-}
-
-export function MissionsList({ missions }: { missions: Mission[] }) {
+export function MissionsList({ missions }: { missions: PlayerMission[] }) {
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleComplete(missionId: string) {
@@ -38,15 +28,9 @@ export function MissionsList({ missions }: { missions: Mission[] }) {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-slate-300">Pendientes</h2>
           {pending.map((mission) => (
-            <MissionCard
+            <PlayerMissionCard
               key={mission.id}
-              title={mission.title}
-              description={mission.description}
-              xpReward={mission.xpReward}
-              crystalReward={mission.crystalReward}
-              skillIcon={mission.skill?.icon}
-              skillColor={mission.skill?.color}
-              completed={false}
+              mission={mission}
               onComplete={() => handleComplete(mission.id)}
               loading={loading === mission.id}
             />
@@ -58,16 +42,7 @@ export function MissionsList({ missions }: { missions: Mission[] }) {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold text-emerald-400">Completadas</h2>
           {completed.map((mission) => (
-            <MissionCard
-              key={mission.id}
-              title={mission.title}
-              description={mission.description}
-              xpReward={mission.xpReward}
-              crystalReward={mission.crystalReward}
-              skillIcon={mission.skill?.icon}
-              skillColor={mission.skill?.color}
-              completed
-            />
+            <PlayerMissionCard key={mission.id} mission={mission} />
           ))}
         </section>
       )}

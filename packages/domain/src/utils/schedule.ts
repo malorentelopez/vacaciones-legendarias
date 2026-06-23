@@ -30,6 +30,19 @@ export function parseLocalDateKey(key: string): Date {
   return new Date(y, m - 1, d);
 }
 
+/** Prisma @db.Date fields are stored at UTC midnight — use for reads/writes. */
+export function dateKeyToDbDate(key: string): Date {
+  const [y, m, d] = key.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
+export function dbDateToDateKey(date: Date): string {
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function parseTimeToMinutes(time: string): number {
   const [hours, minutes] = time.split(":").map(Number);
   return hours * 60 + minutes;

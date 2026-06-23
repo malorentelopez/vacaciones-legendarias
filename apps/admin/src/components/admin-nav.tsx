@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
-  Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays, UserCircle,
+  Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays, UserCircle, TrendingUp,
 } from "lucide-react";
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
@@ -21,6 +21,7 @@ const allNavItems = [
   ...mainNavItems,
   { href: "/schedule", icon: CalendarDays, label: "Agenda" },
   { href: "/rewards", icon: Gift, label: "Recompensas" },
+  { href: "/economy", icon: TrendingUp, label: "Economía" },
   { href: "/bosses", icon: Swords, label: "Retos del mes" },
   { href: "/levels", icon: BarChart3, label: "Niveles" },
   { href: "/penalties", icon: AlertTriangle, label: "Penalizaciones" },

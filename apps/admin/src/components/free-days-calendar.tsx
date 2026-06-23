@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@repo/ui";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, CheckCircle2, XCircle } from "lucide-react";
 import { getFreeDays, toggleFreeDay } from "@/actions/admin";
 import { DAY_NAMES, MONTH_NAMES } from "@repo/domain/client";
 
@@ -11,12 +11,22 @@ interface FreeDayEntry {
   label: string | null;
 }
 
+type Feedback = {
+  message: string;
+  type: "added" | "removed";
+};
+
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate();
 }
 
 function getFirstWeekday(year: number, month: number) {
   return new Date(year, month - 1, 1).getDay();
+}
+
+function formatDayLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  return `${day} de ${MONTH_NAMES[month - 1]}${year !== new Date().getFullYear() ? ` de ${year}` : ""}`;
 }
 
 export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDayEntry[] }) {
@@ -27,9 +37,16 @@ export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDay
     () => new Set(initialFreeDays.map((d) => d.date))
   );
   const [loading, setLoading] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   const daysInMonth = getDaysInMonth(year, month);
   const firstWeekday = getFirstWeekday(year, month);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = window.setTimeout(() => setFeedback(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
 
   async function changeMonth(delta: number) {
     let newMonth = month + delta;
@@ -43,6 +60,7 @@ export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDay
     }
     setYear(newYear);
     setMonth(newMonth);
+    setFeedback(null);
     const data = await getFreeDays(newYear, newMonth);
     setFreeDays(new Set(data.map((d) => d.date)));
   }
@@ -50,6 +68,7 @@ export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDay
   async function handleToggle(day: number) {
     const dateKey = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setLoading(dateKey);
+    setFeedback(null);
     try {
       const result = await toggleFreeDay(dateKey);
       setFreeDays((prev) => {
@@ -57,6 +76,12 @@ export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDay
         if (result.isFree) next.add(dateKey);
         else next.delete(dateKey);
         return next;
+      });
+      setFeedback({
+        type: result.isFree ? "added" : "removed",
+        message: result.isFree
+          ? `${formatDayLabel(dateKey)} marcado como día libre`
+          : `${formatDayLabel(dateKey)} ya no es día libre`,
       });
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al actualizar");
@@ -99,6 +124,24 @@ export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDay
           </button>
         </div>
       </div>
+
+      {feedback && (
+        <div
+          role="status"
+          className={`mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${
+            feedback.type === "added"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
+              : "border-slate-600 bg-slate-800/80 text-slate-300"
+          }`}
+        >
+          {feedback.type === "added" ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          ) : (
+            <XCircle className="h-4 w-4 shrink-0" />
+          )}
+          {feedback.message}
+        </div>
+      )}
 
       <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-500">
         {DAY_NAMES.map((name) => (

@@ -14,9 +14,11 @@ import {
   LogOut,
   MoreHorizontal,
   X,
+  Scroll,
 } from "lucide-react";
 import { cn, AppLogo } from "@repo/ui";
 import { logout } from "@/actions/auth";
+import { CrystalCounter } from "@/components/crystal-counter";
 import { useTheme } from "./theme-provider";
 
 const primaryNavItems = [
@@ -26,13 +28,12 @@ const primaryNavItems = [
 ] as const;
 
 const moreNavItems = [
-  { href: "/skills", icon: Sparkles, label: "Poderes" },
-  { href: "/store", icon: Gem, label: "Cofre" },
+  { href: "/side-quests", icon: Scroll, label: "Side Quests" },
+  { href: "/skills", icon: Sparkles, label: "Habilidades" },
+  { href: "/store", icon: Gem, label: "Mercader" },
   { href: "/boss-battles", icon: Swords, label: "Boss" },
   { href: "/avatar", icon: User, label: "Héroe" },
 ] as const;
-
-const allNavItems = [...primaryNavItems, ...moreNavItems];
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -74,7 +75,7 @@ function NavLink({
   );
 }
 
-export function PlayerNav() {
+export function PlayerNav({ crystals }: { crystals: number }) {
   const pathname = usePathname();
   const theme = useTheme();
   const [moreOpen, setMoreOpen] = useState(false);
@@ -93,8 +94,8 @@ export function PlayerNav() {
           <Link href="/" className="mr-1 shrink-0">
             <AppLogo variant="icon" size="sm" />
           </Link>
-          <div className="flex flex-1 flex-wrap items-center gap-1">
-            {allNavItems.map(({ href, icon, label }) => (
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            {primaryNavItems.map(({ href, icon, label }) => (
               <NavLink
                 key={href}
                 href={href}
@@ -103,7 +104,51 @@ export function PlayerNav() {
                 active={isActive(pathname, href)}
               />
             ))}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMoreOpen((open) => !open)}
+                className={cn(
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors",
+                  moreOpen || moreActive ? "text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
+                )}
+                style={moreOpen || moreActive ? { backgroundColor: theme.colors.navActive } : undefined}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                <span>Más</span>
+              </button>
+              {moreOpen && (
+                <>
+                  <button
+                    type="button"
+                    aria-label="Cerrar menú"
+                    className="fixed inset-0 z-40"
+                    onClick={() => setMoreOpen(false)}
+                  />
+                  <div className="theme-nav-border absolute left-0 top-full z-50 mt-1 min-w-[11rem] overflow-hidden rounded-xl border bg-slate-900/95 py-1 shadow-xl backdrop-blur-lg">
+                    {moreNavItems.map(({ href, icon: Icon, label }) => (
+                      <Link
+                        key={href}
+                        href={href}
+                        onClick={() => setMoreOpen(false)}
+                        className={cn(
+                          "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
+                          isActive(pathname, href)
+                            ? "text-white"
+                            : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                        )}
+                        style={isActive(pathname, href) ? { backgroundColor: theme.colors.navActive } : undefined}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
+          <CrystalCounter crystals={crystals} />
           <form action={logout} className="shrink-0">
             <button
               type="submit"
@@ -117,11 +162,14 @@ export function PlayerNav() {
         </div>
       </nav>
 
-      {/* Móvil: logo arriba */}
-      <header className="theme-nav-border flex justify-center border-b bg-slate-900/60 px-4 py-3 backdrop-blur-lg md:hidden">
-        <Link href="/" className="inline-flex max-w-[12rem]">
+      {/* Móvil: logo y cristales arriba */}
+      <header className="theme-nav-border relative flex items-center justify-center border-b bg-slate-900/60 px-4 py-3 backdrop-blur-lg md:hidden">
+        <Link href="/" className="inline-flex max-w-[10rem] sm:max-w-[12rem]">
           <AppLogo variant="full" size="sm" />
         </Link>
+        <div className="absolute right-4 top-1/2 -translate-y-1/2">
+          <CrystalCounter crystals={crystals} compact />
+        </div>
       </header>
 
       {/* Móvil: menú expandido */}

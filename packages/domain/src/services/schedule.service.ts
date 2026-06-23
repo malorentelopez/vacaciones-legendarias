@@ -2,6 +2,7 @@ import { ScheduleRepository } from "../repositories/schedule.repository";
 import { FreeDayRepository } from "../repositories/free-day.repository";
 import { MissionRepository } from "../repositories/mission.repository";
 import { CharacterRepository } from "../repositories/character.repository";
+import { MissionService } from "./mission.service";
 import { getPeriodKey } from "../utils/period";
 import { getDayScheduleType, isTimeInBlock } from "../utils/schedule";
 import type { DayScheduleType } from "@repo/database";
@@ -11,7 +12,8 @@ export class ScheduleService {
     private scheduleRepo = new ScheduleRepository(),
     private freeDayRepo = new FreeDayRepository(),
     private missionRepo = new MissionRepository(),
-    private characterRepo = new CharacterRepository()
+    private characterRepo = new CharacterRepository(),
+    private missionService = new MissionService()
   ) {}
 
   async getBlocksForCharacter(characterId: string, dayType: DayScheduleType) {
@@ -54,11 +56,14 @@ export class ScheduleService {
       for (const link of block.missions) {
         const periodKey = getPeriodKey(link.mission.frequency);
         const completed = await this.missionRepo.isCompleted(link.mission.id, characterId, periodKey);
-        missions.push({
-          ...link.mission,
-          periodKey,
-          completed,
-        });
+        missions.push(
+          await this.missionService.enrichMissionForCharacter(
+            link.mission,
+            characterId,
+            periodKey,
+            completed
+          )
+        );
       }
 
       agendaBlocks.push({

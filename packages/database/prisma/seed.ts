@@ -142,6 +142,8 @@ async function main() {
       { title: "Hacer la cama", description: "Ordena tu habitación", frequency: "DAILY", type: "CHORE", xpReward: 10, skillId: vitalitySkill?.id, familyId: family.id },
       { title: "Ejercicio", description: "30 minutos de actividad física", frequency: "DAILY", type: "HABIT", xpReward: 20, crystalReward: 2, skillId: vitalitySkill?.id, familyId: family.id },
       { title: "Proyecto creativo", description: "Dibuja, construye o crea algo", frequency: "WEEKLY", type: "CREATIVE", xpReward: 50, crystalReward: 5, familyId: family.id },
+      { title: "Ayuda extra en casa", description: "Ayuda con una tarea sin que te lo pidan", frequency: "DAILY", type: "CHORE", xpReward: 15, familyId: family.id, isSideQuest: true },
+      { title: "Acto de bondad", description: "Haz algo amable por alguien de la familia", frequency: "DAILY", type: "CUSTOM", xpReward: 10, crystalReward: 1, familyId: family.id, isSideQuest: true },
     ],
     skipDuplicates: true,
   });
@@ -205,15 +207,42 @@ async function main() {
     }
   }
 
+  const existingManual = await prisma.achievement.findFirst({
+    where: { title: "Primer libro leído", familyId: family.id },
+  });
+  if (!existingManual) {
+    await prisma.achievement.create({
+      data: {
+        title: "Primer libro leído",
+        description: "Leer un libro completo de principio a fin",
+        crystalReward: 25,
+        familyId: family.id,
+        isManual: true,
+      },
+    });
+  }
+
   await prisma.$executeRaw`UPDATE "CharacterAchievement" SET "claimedAt" = "unlockedAt" WHERE "claimedAt" IS NULL`;
 
   await prisma.reward.createMany({
     data: [
       { title: "Helado extra", description: "Un helado a elegir", crystalCost: 10, familyId: family.id },
       { title: "30 min extra de pantalla", description: "Tiempo extra de videojuegos", crystalCost: 15, familyId: family.id },
-      { title: "Salida especial", description: "Elegir actividad familiar", crystalCost: 50, familyId: family.id },
+      {
+        title: "Salida especial",
+        description: "Elegir actividad familiar",
+        crystalCost: 50,
+        maxPurchases: 1,
+        requiredLevel: 5,
+        familyId: family.id,
+      },
     ],
     skipDuplicates: true,
+  });
+
+  await prisma.reward.updateMany({
+    where: { familyId: family.id, title: "Salida especial" },
+    data: { maxPurchases: 1, requiredLevel: 5 },
   });
 
   await prisma.bossBattle.createMany({

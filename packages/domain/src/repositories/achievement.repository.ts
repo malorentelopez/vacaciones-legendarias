@@ -37,16 +37,19 @@ export class AchievementRepository {
     targetMissionCompletions?: number;
     crystalReward?: number;
     familyId?: string;
+    isManual?: boolean;
     missionIds?: string[];
   }) {
-    const { missionIds, ...achievementData } = data;
+    const { missionIds, requiredSkillId, targetMissionId, ...achievementData } = data;
 
     return prisma.achievement.create({
       data: {
         ...achievementData,
-        missions: missionIds?.length
-          ? { create: missionIds.map((missionId) => ({ missionId })) }
-          : undefined,
+        ...(requiredSkillId && { requiredSkill: { connect: { id: requiredSkillId } } }),
+        ...(targetMissionId && { targetMission: { connect: { id: targetMissionId } } }),
+        ...(missionIds?.length && {
+          missions: { create: missionIds.map((missionId) => ({ missionId })) },
+        }),
       },
       include: achievementInclude,
     });
@@ -66,9 +69,10 @@ export class AchievementRepository {
       targetMissionCompletions: number | null;
       crystalReward: number;
       isActive: boolean;
+      isManual: boolean;
     }> & { missionIds?: string[] }
   ) {
-    const { missionIds, ...updateData } = data;
+    const { missionIds, requiredSkillId, targetMissionId, ...updateData } = data;
 
     if (missionIds !== undefined) {
       await prisma.achievementMission.deleteMany({ where: { achievementId: id } });
@@ -81,7 +85,19 @@ export class AchievementRepository {
 
     return prisma.achievement.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...updateData,
+        ...(requiredSkillId !== undefined && {
+          requiredSkill: requiredSkillId
+            ? { connect: { id: requiredSkillId } }
+            : { disconnect: true },
+        }),
+        ...(targetMissionId !== undefined && {
+          targetMission: targetMissionId
+            ? { connect: { id: targetMissionId } }
+            : { disconnect: true },
+        }),
+      },
       include: achievementInclude,
     });
   }
@@ -144,5 +160,18 @@ export class AchievementRepository {
       select: { claimedAt: true },
     });
     return !!record?.claimedAt;
+  }
+
+  async getUnlocksForFamily(familyId: string) {
+    return prisma.characterAchievement.findMany({
+      where: { character: { familyId } },
+      select: {
+        achievementId: true,
+        characterId: true,
+        unlockedAt: true,
+        character: { select: { id: true, name: true } },
+      },
+      orderBy: { unlockedAt: "desc" },
+    });
   }
 }

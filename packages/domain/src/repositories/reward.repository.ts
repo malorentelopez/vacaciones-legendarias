@@ -12,6 +12,39 @@ export class RewardRepository {
     });
   }
 
+  async findAllForStore(familyId: string, characterId: string, characterLevel: number) {
+    const rewards = await this.findAll(familyId);
+    const purchaseCounts = await prisma.rewardPurchase.groupBy({
+      by: ["rewardId"],
+      where: {
+        characterId,
+        status: { not: "REJECTED" },
+      },
+      _count: { _all: true },
+    });
+    const countByReward = new Map(purchaseCounts.map((row) => [row.rewardId, row._count._all]));
+
+    return rewards.map((reward) => ({
+      ...reward,
+      purchaseCount: countByReward.get(reward.id) ?? 0,
+      isExhausted:
+        reward.maxPurchases != null &&
+        (countByReward.get(reward.id) ?? 0) >= reward.maxPurchases,
+      isLevelLocked:
+        reward.requiredLevel != null && characterLevel < reward.requiredLevel,
+    }));
+  }
+
+  async countPurchases(rewardId: string, characterId: string) {
+    return prisma.rewardPurchase.count({
+      where: {
+        rewardId,
+        characterId,
+        status: { not: "REJECTED" },
+      },
+    });
+  }
+
   async findById(id: string) {
     return prisma.reward.findUnique({ where: { id } });
   }
@@ -20,6 +53,8 @@ export class RewardRepository {
     title: string;
     description?: string;
     crystalCost: number;
+    maxPurchases?: number | null;
+    requiredLevel?: number | null;
     icon?: string;
     familyId?: string;
   }) {
@@ -32,6 +67,8 @@ export class RewardRepository {
       title: string;
       description: string;
       crystalCost: number;
+      maxPurchases: number | null;
+      requiredLevel: number | null;
       icon: string;
       isActive: boolean;
     }>
@@ -59,6 +96,30 @@ export class RewardRepository {
       where: { id },
       data,
       include: { reward: true, character: true },
+    });
+  }
+
+  async findPurchaseById(id: string) {
+    return prisma.rewardPurchase.findUnique({
+      where: { id },
+      include: {
+        reward: true,
+        character: { select: { id: true, name: true, familyId: true, crystals: true } },
+      },
+    });
+  }
+
+  async getFamilyPurchases(familyId: string, status?: RewardStatus) {
+    return prisma.rewardPurchase.findMany({
+      where: {
+        character: { familyId },
+        ...(status ? { status } : {}),
+      },
+      include: {
+        reward: true,
+        character: { select: { name: true } },
+      },
+      orderBy: { purchasedAt: "desc" },
     });
   }
 

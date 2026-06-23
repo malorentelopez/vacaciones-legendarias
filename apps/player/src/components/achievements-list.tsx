@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AchievementBadge, Badge, Button } from "@repo/ui";
 import { claimAchievement } from "@/actions/game";
+import { RewardCelebration } from "@/components/reward-celebration";
 
 interface AchievementItem {
   id: string;
@@ -19,24 +20,35 @@ interface AchievementItem {
   missions: { mission: { id: string; title: string } }[];
   targetMission?: { id: string; title: string } | null;
   targetMissionCompletions?: number | null;
+  isManual?: boolean;
 }
 
 export function AchievementsList({ achievements: initial }: { achievements: AchievementItem[] }) {
   const router = useRouter();
   const [achievements, setAchievements] = useState(initial);
   const [claimingId, setClaimingId] = useState<string | null>(null);
+  const [celebration, setCelebration] = useState<{
+    title: string;
+    amount: number;
+    achievementId: string;
+  } | null>(null);
 
-  async function handleClaim(id: string) {
-    setClaimingId(id);
+  async function handleClaim(achievement: AchievementItem) {
+    setClaimingId(achievement.id);
     try {
-      await claimAchievement(id);
+      await claimAchievement(achievement.id);
       setAchievements((prev) =>
         prev.map((a) =>
-          a.id === id
+          a.id === achievement.id
             ? { ...a, claimed: true, claimable: false, claimedAt: new Date() }
             : a
         )
       );
+      setCelebration({
+        title: achievement.title,
+        amount: achievement.crystalReward,
+        achievementId: achievement.id,
+      });
       router.refresh();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Error al reclamar");
@@ -50,10 +62,23 @@ export function AchievementsList({ achievements: initial }: { achievements: Achi
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <>
+      {celebration && (
+        <RewardCelebration
+          title={celebration.title}
+          amount={celebration.amount}
+          onComplete={() => setCelebration(null)}
+        />
+      )}
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       {achievements.map((a) => (
-        <div key={a.id} className="space-y-2">
+        <div
+          key={a.id}
+          className={`space-y-2 ${celebration?.achievementId === a.id ? "achievement-just-claimed" : ""}`}
+        >
           <AchievementBadge
+            className={a.claimable ? "achievement-claimable" : undefined}
             title={a.title}
             description={a.description}
             unlocked={a.unlocked}
@@ -67,7 +92,12 @@ export function AchievementsList({ achievements: initial }: { achievements: Achi
                 +{a.crystalReward} 💎{a.claimed ? " reclamados" : ""}
               </Badge>
             )}
-            {a.progress && !a.unlocked && (
+            {a.isManual && !a.unlocked && (
+              <p className="mt-1 text-xs text-slate-500">
+                Tus padres lo activarán cuando comprueben que lo has conseguido.
+              </p>
+            )}
+            {a.progress && !a.unlocked && !a.isManual && (
               <p className="mt-1 text-xs text-slate-400">
                 Progreso: {a.progress.completed}/{a.progress.total}
                 {a.targetMission ? ` · ${a.targetMission.title}` : " misiones"}
@@ -85,9 +115,9 @@ export function AchievementsList({ achievements: initial }: { achievements: Achi
             {a.claimable && (
               <Button
                 size="sm"
-                className="mt-3 w-full"
-                onClick={() => handleClaim(a.id)}
-                disabled={claimingId === a.id}
+                className="mt-3 w-full transition-transform active:scale-95"
+                onClick={() => handleClaim(a)}
+                disabled={claimingId === a.id || celebration !== null}
               >
                 {claimingId === a.id ? "Reclamando..." : `¡Reclamar ${a.crystalReward} 💎!`}
               </Button>
@@ -95,6 +125,7 @@ export function AchievementsList({ achievements: initial }: { achievements: Achi
           </div>
         </div>
       ))}
-    </div>
+      </div>
+    </>
   );
 }
