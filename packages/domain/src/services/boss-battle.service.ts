@@ -1,6 +1,7 @@
 import { BossBattleRepository } from "../repositories/skill.repository";
 import { CharacterService } from "./character.service";
 import { GameEventRepository } from "../repositories/game-event.repository";
+import type { LevelUpInfo } from "../types/game-feedback";
 
 export class BossBattleService {
   constructor(
@@ -46,8 +47,13 @@ export class BossBattleService {
       (o) => o.id === objectiveId || o.completed
     );
 
+    let levelUp: LevelUpInfo | null = null;
+    let bossCompleted = false;
+
     if (allCompleted) {
-      await this.characterService.addXp(characterId, boss.xpReward);
+      bossCompleted = true;
+      const xpResult = await this.characterService.addXp(characterId, boss.xpReward);
+      levelUp = xpResult.levelUp;
       if (boss.crystalReward > 0) {
         await this.characterService.addCrystals(
           characterId,
@@ -61,6 +67,6 @@ export class BossBattleService {
       });
     }
 
-    return objective;
+    return { objective, bossCompleted, levelUp, boss: bossCompleted ? boss : null };
   }
 }

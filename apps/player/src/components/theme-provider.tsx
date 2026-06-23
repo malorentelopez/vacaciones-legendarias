@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, type CSSProperties } from "react";
 import type { ThemeConfig } from "@repo/domain/client";
 import { getTheme } from "@repo/domain/client";
+import { CelebrationProvider } from "@/components/celebration-provider";
 
 const ThemeContext = createContext<ThemeConfig>(getTheme("adventure"));
 const ThemeKeyContext = createContext<{
@@ -46,7 +47,7 @@ export function PlayerThemeShell({
           style={themeVars(theme)}
           className="min-h-screen bg-gradient-to-b from-[var(--theme-bg-from)] via-[var(--theme-bg-via)]/20 to-[var(--theme-bg-to)]"
         >
-          {children}
+          <CelebrationProvider>{children}</CelebrationProvider>
         </div>
       </ThemeContext.Provider>
     </ThemeKeyContext.Provider>

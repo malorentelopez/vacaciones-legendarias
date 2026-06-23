@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, Badge, Button } from "@repo/ui";
 import { completeBossObjective } from "@/actions/game";
+import { useCelebrations } from "@/components/celebration-provider";
 import { Swords, CheckCircle2 } from "lucide-react";
 
 interface BossObjective {
@@ -27,12 +29,25 @@ interface BossBattle {
 const MONTHS = ["", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 export function BossBattlesView({ bosses }: { bosses: BossBattle[] }) {
+  const router = useRouter();
+  const { applyGameFeedback } = useCelebrations();
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleComplete(objectiveId: string) {
     setLoading(objectiveId);
     try {
-      await completeBossObjective(objectiveId);
+      const result = await completeBossObjective(objectiveId);
+      applyGameFeedback({
+        bossVictory: result.bossCompleted && result.boss
+          ? {
+              title: result.boss.title,
+              xpReward: result.boss.xpReward,
+              crystalReward: result.boss.crystalReward,
+            }
+          : null,
+        levelUp: result.levelUp,
+      });
+      router.refresh();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error");
     }

@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon, CharacterPortrait } from "@repo/ui";
+import { Card, CardContent, CardHeader, CardTitle, Progress, Badge, SkillIcon } from "@repo/ui";
 import { Gem, Star, Zap, Crown, Map, Scroll, Sparkles } from "lucide-react";
 import {
   getTheme,
   getRoleName,
   normalizeRoleKey,
   getCharacterPortraitSrc,
+  getEquippedHatEmoji,
 } from "@repo/domain";
 import { themeProgressBar } from "@/lib/theme-ui";
+import { SecretPortraitTrigger } from "@/components/secrets/secret-portrait-trigger";
 
 interface CharacterData {
   id: string;
@@ -49,16 +51,24 @@ interface SideQuestsPreview {
   totalSideQuests: number;
 }
 
+interface DragonChestStatus {
+  eligible: boolean;
+  discovered: boolean;
+  completed: boolean;
+}
+
 export function DashboardView({
   character,
   familyCharacters = [],
   routePreview,
   sideQuestsPreview,
+  dragonChestStatus,
 }: {
   character: CharacterData;
   familyCharacters?: FamilyCharacter[];
   routePreview?: RoutePreview;
   sideQuestsPreview?: SideQuestsPreview;
+  dragonChestStatus?: DragonChestStatus;
 }) {
   const ranking = [...familyCharacters].sort((a, b) => b.weeklyPoints - a.weeklyPoints);
   const genderKey = character.gender === "BOY" ? "boy" : "girl";
@@ -66,6 +76,8 @@ export function DashboardView({
   const roleKey = normalizeRoleKey(character.themeKey, character.avatarBase);
   const roleName = getRoleName(character.themeKey, genderKey, roleKey);
   const portraitSrc = getCharacterPortraitSrc(character);
+  const hatEmoji = getEquippedHatEmoji(character.avatarConfig);
+  const chestStatus = dragonChestStatus ?? { eligible: false, discovered: false, completed: false };
   const showRoute = routePreview && routePreview.totalStages > 0;
   const showSideQuests = sideQuestsPreview && sideQuestsPreview.totalSideQuests > 0;
   const showProgressCards = showRoute || showSideQuests;
@@ -77,14 +89,18 @@ export function DashboardView({
         style={{ background: `linear-gradient(135deg, ${theme.colors.primary}18 0%, transparent 60%)` }}
       >
         <CardContent className="flex items-center gap-4 p-4 sm:gap-5 sm:p-5">
-          <CharacterPortrait
-            imageSrc={portraitSrc}
-            alt={roleName}
-            primaryColor={theme.colors.primary}
-            secondaryColor={theme.colors.secondary}
-            size="lg"
-            className="theme-ring shrink-0 ring-2"
-          />
+          <div className="flex flex-col items-center">
+            <SecretPortraitTrigger
+              imageSrc={portraitSrc}
+              alt={roleName}
+              primaryColor={theme.colors.primary}
+              secondaryColor={theme.colors.secondary}
+              eligible={chestStatus.eligible}
+              discovered={chestStatus.discovered}
+              completed={chestStatus.completed}
+              hatEmoji={hatEmoji}
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <p className="theme-label text-[10px] sm:text-xs">Tu héroe</p>
             <h1 className="truncate text-2xl font-bold sm:text-3xl" style={{ color: theme.colors.heading }}>

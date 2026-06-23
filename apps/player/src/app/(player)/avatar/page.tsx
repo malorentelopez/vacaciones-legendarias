@@ -1,13 +1,19 @@
 import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
+import { getDragonChestStatus } from "@/actions/secrets";
 import { AvatarCustomizer } from "@/components/avatar-customizer";
+import { parseAvatarConfig } from "@repo/domain";
 
 export default async function AvatarPage() {
   const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
-  const character = await getCharacter();
+  const [character, dragonStatus] = await Promise.all([
+    getCharacter(),
+    getDragonChestStatus().catch(() => ({ completed: false })),
+  ]);
+
   return (
     <AvatarCustomizer
       character={{
@@ -16,6 +22,8 @@ export default async function AvatarPage() {
         themeKey: character.themeKey,
         avatarBase: character.avatarBase,
         avatarConfig: character.avatarConfig,
+        level: character.level,
+        secretCompleted: dragonStatus.completed || !!parseAvatarConfig(character.avatarConfig).secrets?.["dragon-chest"]?.completedAt,
       }}
     />
   );

@@ -1,16 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { completeMission } from "@/actions/game";
 import { PlayerMissionCard, type PlayerMission } from "@/components/player-mission-card";
+import { useCelebrations } from "@/components/celebration-provider";
 
 export function MissionsList({ missions }: { missions: PlayerMission[] }) {
+  const router = useRouter();
+  const { applyGameFeedback } = useCelebrations();
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleComplete(missionId: string) {
     setLoading(missionId);
     try {
-      await completeMission(missionId);
+      const result = await completeMission(missionId);
+      applyGameFeedback({ levelUp: result.levelUp });
+      router.refresh();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error");
     }

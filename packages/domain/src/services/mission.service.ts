@@ -133,7 +133,7 @@ export class MissionService {
       crystalReward: resolvedMission.crystalReward,
     });
 
-    await this.characterService.addXp(
+    const { levelUp } = await this.characterService.addXp(
       characterId,
       resolvedMission.xpReward,
       resolvedMission.skillId ?? undefined
@@ -149,6 +149,6 @@ export class MissionService {
 
     await this.achievementService.evaluateAchievements(characterId);
 
-    return progress;
+    return { progress, levelUp };
   }
 }

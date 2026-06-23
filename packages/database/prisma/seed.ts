@@ -1,4 +1,4 @@
-import { prisma } from "../src/index";
+import { prisma } from "../src/prisma-client";
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
@@ -64,6 +64,7 @@ async function main() {
       { key: "default", name: "Aventurero", type: "OUTFIT", icon: "user", isDefault: true },
       { key: "hat_star", name: "Gorro Estrella", type: "HAT", icon: "star", requiredLevel: 3 },
       { key: "pet_cat", name: "Gato Compañero", type: "PET", icon: "cat", requiredLevel: 5 },
+      { key: "hat_dragon", name: "Gorro del Dragón", type: "HAT", icon: "flame" },
     ],
     skipDuplicates: true,
   });
@@ -219,6 +220,33 @@ async function main() {
         familyId: family.id,
         isManual: true,
       },
+    });
+  }
+
+  const existingSecret = await prisma.achievement.findFirst({
+    where: { icon: "secret-dragon-chest", familyId: family.id },
+  });
+  if (!existingSecret) {
+    await prisma.achievement.create({
+      data: {
+        title: "Guardián del Cofre",
+        description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
+        icon: "secret-dragon-chest",
+        crystalReward: 30,
+        familyId: family.id,
+        isHidden: true,
+      },
+    });
+  }
+
+  const dragonHat = await prisma.avatarAccessory.findUnique({ where: { key: "hat_dragon" } });
+  const secretAchievement = await prisma.achievement.findFirst({
+    where: { icon: "secret-dragon-chest", familyId: family.id },
+  });
+  if (dragonHat && secretAchievement && !dragonHat.achievementId) {
+    await prisma.avatarAccessory.update({
+      where: { key: "hat_dragon" },
+      data: { achievementId: secretAchievement.id },
     });
   }
 
@@ -432,6 +460,41 @@ async function main() {
           title: "Tiempo libre y actividades familiares",
         },
       });
+    }
+  }
+
+  const allFamilies = await prisma.family.findMany({ select: { id: true } });
+  for (const { id: familyId } of allFamilies) {
+    const existing = await prisma.achievement.findFirst({
+      where: { icon: "secret-dragon-chest", familyId },
+    });
+    if (!existing) {
+      await prisma.achievement.create({
+        data: {
+          title: "Guardián del Cofre",
+          description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
+          icon: "secret-dragon-chest",
+          crystalReward: 30,
+          familyId,
+          isHidden: true,
+        },
+      });
+    }
+  }
+
+  const dragonAccessory = await prisma.avatarAccessory.findUnique({ where: { key: "hat_dragon" } });
+  if (dragonAccessory) {
+    for (const { id: familyId } of allFamilies) {
+      const secretAchievement = await prisma.achievement.findFirst({
+        where: { icon: "secret-dragon-chest", familyId },
+      });
+      if (secretAchievement && dragonAccessory.achievementId !== secretAchievement.id) {
+        await prisma.avatarAccessory.update({
+          where: { key: "hat_dragon" },
+          data: { achievementId: secretAchievement.id },
+        });
+        break;
+      }
     }
   }
 

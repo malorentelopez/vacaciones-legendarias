@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, Button, Badge } from "@repo/ui";
 import { submitQuestionnaire } from "@/actions/game";
+import { useCelebrations } from "@/components/celebration-provider";
 import { ArrowLeft, CheckCircle2, XCircle } from "lucide-react";
 
 interface QuestionOption {
@@ -32,12 +33,14 @@ interface SubmitResult {
   totalCount: number;
   passed: boolean;
   missionCompleted: boolean;
+  levelUp?: { newLevel: number; crystalReward: number } | null;
   xpReward: number;
   crystalReward: number;
 }
 
 export function QuestionnaireForm({ questionnaire }: { questionnaire: QuestionnaireData }) {
   const router = useRouter();
+  const { applyGameFeedback } = useCelebrations();
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -61,6 +64,7 @@ export function QuestionnaireForm({ questionnaire }: { questionnaire: Questionna
 
       const response = await submitQuestionnaire(questionnaire.id, answers);
       setResult(response);
+      applyGameFeedback({ levelUp: response.levelUp });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar");

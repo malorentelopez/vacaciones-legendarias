@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter, getFamilyCharacters, getAgenda, getSideQuests } from "@/actions/game";
+import { getDragonChestStatus } from "@/actions/secrets";
 import { CharacterSelector } from "@/components/character-selector";
 import { DashboardView } from "@/components/dashboard-view";
 
@@ -13,11 +14,17 @@ export default async function DashboardPage() {
     return <CharacterSelector characters={characters} />;
   }
 
-  const [character, familyCharacters, agenda, sideQuests] = await Promise.all([
+  const [character, familyCharacters, agenda, sideQuests, dragonChestStatus] = await Promise.all([
     getCharacter(),
     getFamilyCharacters(),
     getAgenda().catch(() => null),
     getSideQuests().catch(() => []),
+    getDragonChestStatus().catch(() => ({
+      eligible: false,
+      discovered: false,
+      completed: false,
+      discoveredAt: null,
+    })),
   ]);
 
   const currentBlock = agenda?.blocks.find((b) => b.isCurrent);
@@ -49,6 +56,7 @@ export default async function DashboardPage() {
           ? { completedSideQuests, totalSideQuests }
           : undefined
       }
+      dragonChestStatus={dragonChestStatus}
     />
   );
 }

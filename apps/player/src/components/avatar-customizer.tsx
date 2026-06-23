@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Card, Button, Badge, CharacterPortrait } from "@repo/ui";
 import { updateAvatar } from "@/actions/game";
-import { uploadCustomAvatar, removeCustomAvatar, setAvatarMode } from "@/actions/avatar";
+import { uploadCustomAvatar, removeCustomAvatar, setAvatarMode, equipHat } from "@/actions/avatar";
 import {
   THEME_LIST,
   getTheme,
@@ -14,6 +14,10 @@ import {
   getCharacterPortraitSrc,
   parseAvatarConfig,
   hasCustomAvatar,
+  getEquippedHatEmoji,
+  getUnlockedAccessoryKeys,
+  ACCESSORY_DISPLAY,
+  mergeAvatarConfig,
 } from "@repo/domain/client";
 import { useRouter } from "next/navigation";
 import { Upload, Trash2, Shield, ImageIcon } from "lucide-react";
@@ -25,6 +29,8 @@ interface CharacterProfile {
   themeKey: string;
   avatarBase: string;
   avatarConfig?: unknown;
+  level: number;
+  secretCompleted?: boolean;
 }
 
 const GENDER_OPTIONS: { value: "BOY" | "GIRL"; label: string }[] = [
@@ -56,6 +62,11 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
   const previewCharacter = { themeKey, gender, avatarBase, avatarConfig };
   const portraitSrc = getCharacterPortraitSrc(previewCharacter);
   const customAvailable = hasCustomAvatar({ avatarConfig });
+  const hatEmoji = getEquippedHatEmoji(avatarConfig);
+  const unlockedHats = getUnlockedAccessoryKeys(avatarConfig, {
+    level: character.level,
+    secretCompleted: character.secretCompleted,
+  }).filter((key) => key === "default" || key.startsWith("hat_"));
 
   function handleThemeChange(newThemeKey: string) {
     setThemeKey(newThemeKey);
@@ -65,6 +76,20 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
     if (!newRoles.some((r) => r.key === normalized)) {
       setAvatarBase(newRoles[0]?.key ?? "warrior");
     }
+  }
+
+  async function handleEquipHat(hatKey: string) {
+    setLoading(true);
+    const result = await equipHat(hatKey);
+    if (result.success) {
+      setAvatarConfig(
+        mergeAvatarConfig(avatarConfig, {
+          equipped: { ...parseAvatarConfig(avatarConfig).equipped, hat: hatKey },
+        })
+      );
+      router.refresh();
+    }
+    setLoading(false);
   }
 
   async function handleSave() {
@@ -130,14 +155,21 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
       </div>
 
       <Card className="p-8 text-center">
-        <CharacterPortrait
-          imageSrc={portraitSrc}
-          alt={roleName}
-          primaryColor={theme.colors.primary}
-          secondaryColor={theme.colors.secondary}
-          size="xl"
-          className="theme-ring mx-auto mb-4 ring-2"
-        />
+        <div className="relative mx-auto mb-4 w-fit">
+          <CharacterPortrait
+            imageSrc={portraitSrc}
+            alt={roleName}
+            primaryColor={theme.colors.primary}
+            secondaryColor={theme.colors.secondary}
+            size="xl"
+            className="theme-ring mx-auto ring-2"
+          />
+          {hatEmoji && (
+            <span className="absolute -right-1 -top-1 flex h-10 w-10 items-center justify-center rounded-full bg-slate-900/90 text-xl shadow-lg ring-2 ring-amber-400/50">
+              {hatEmoji}
+            </span>
+          )}
+        </div>
         <p className="text-lg" style={{ color: theme.colors.heading }}>
           {name || "Sin nombre"}
         </p>
@@ -202,6 +234,33 @@ export function AvatarCustomizer({ character }: { character: CharacterProfile })
 
         {uploadError && <p className="text-sm text-red-400">{uploadError}</p>}
       </Card>
+
+      {unlockedHats.length > 1 && (
+        <Card className="space-y-4 p-4">
+          <h2 className="font-semibold text-white">Gorros desbloqueados</h2>
+          <p className="text-sm text-slate-400">Elige un gorro para tu héroe.</p>
+          <div className="flex flex-wrap gap-2">
+            {unlockedHats.map((hatKey) => {
+              const display = ACCESSORY_DISPLAY[hatKey] ?? { emoji: "🎩", label: hatKey };
+              const equipped = parseAvatarConfig(avatarConfig).equipped?.hat === hatKey;
+              return (
+                <button
+                  key={hatKey}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => handleEquipHat(hatKey)}
+                  className={`rounded-xl border px-4 py-3 text-left transition-all ${
+                    equipped ? "theme-selected" : "border-slate-700 hover:border-slate-500"
+                  }`}
+                >
+                  <span className="text-2xl">{display.emoji}</span>
+                  <p className="mt-1 text-sm font-medium">{display.label}</p>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card className="space-y-4 p-4">
         <div>

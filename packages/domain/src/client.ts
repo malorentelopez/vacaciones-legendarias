@@ -18,8 +18,13 @@ export {
   parseAvatarConfig,
   getCharacterPortraitSrc,
   hasCustomAvatar,
+  getEquippedHatEmoji,
+  getUnlockedAccessoryKeys,
+  mergeAvatarConfig,
   type AvatarConfig,
 } from "./utils/avatar";
+
+export { DRAGON_CHEST_SECRET, MEMORY_PAIRS_BY_THEME, ACCESSORY_DISPLAY } from "./config/secrets";
 
 export {
   getDayScheduleType,
@@ -53,3 +58,4 @@ export {
 } from "./utils/questionnaire-import";
 
 export type { QuestionnaireState } from "./types/questionnaire";
+export type { LevelUpInfo, BossVictoryInfo } from "./types/game-feedback";

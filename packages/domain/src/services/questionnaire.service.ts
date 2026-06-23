@@ -4,8 +4,9 @@ import { MissionRepository } from "../repositories/mission.repository";
 import { MissionService } from "./mission.service";
 import { GameEventRepository } from "../repositories/game-event.repository";
 import { gradeAnswers, stripCorrectAnswers, type QuestionOption } from "../utils/questionnaire";
-import { getPeriodKey } from "../utils/period";
+import type { LevelUpInfo } from "../types/game-feedback";
 import type { QuestionnaireState } from "../types/questionnaire";
+import { getPeriodKey } from "../utils/period";
 
 export type { QuestionnaireState };
 
@@ -245,6 +246,7 @@ export class QuestionnaireService {
     });
 
     let missionCompleted = false;
+    let levelUp: LevelUpInfo | null = null;
 
     if (grade.passed) {
       await this.gameEventRepo.create(characterId, "QUESTIONNAIRE_COMPLETED", {
@@ -259,8 +261,9 @@ export class QuestionnaireService {
       const periodKey = getPeriodKey(mission.frequency);
       const alreadyCompleted = await this.missionRepo.isCompleted(mission.id, characterId, periodKey);
       if (!alreadyCompleted) {
-        await this.missionService.completeMissionProgress(mission.id, characterId);
+        const result = await this.missionService.completeMissionProgress(mission.id, characterId);
         missionCompleted = true;
+        levelUp = result.levelUp;
       }
     }
 
@@ -270,6 +273,7 @@ export class QuestionnaireService {
       totalCount: grade.totalCount,
       passed: grade.passed,
       missionCompleted,
+      levelUp,
       xpReward: grade.passed && missionCompleted ? mission.xpReward : 0,
       crystalReward: grade.passed && missionCompleted ? mission.crystalReward : 0,
     };

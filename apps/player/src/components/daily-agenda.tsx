@@ -7,6 +7,7 @@ import { completeMission } from "@/actions/game";
 import { PlayerMissionCard, type PlayerMission } from "@/components/player-mission-card";
 import { themeGlow, themeProgressBar } from "@/lib/theme-ui";
 import { useTheme } from "@/components/theme-provider";
+import { useCelebrations } from "@/components/celebration-provider";
 import { Clock, MapPin, Scroll } from "lucide-react";
 
 interface AgendaMission extends PlayerMission {}
@@ -46,12 +47,14 @@ export function DailyAgenda({
 }) {
   const router = useRouter();
   const theme = useTheme();
+  const { applyGameFeedback } = useCelebrations();
   const [loading, setLoading] = useState<string | null>(null);
 
   async function handleComplete(missionId: string) {
     setLoading(missionId);
     try {
-      await completeMission(missionId);
+      const result = await completeMission(missionId);
+      applyGameFeedback({ levelUp: result.levelUp });
       router.refresh();
     } catch (e) {
       alert(e instanceof Error ? e.message : "Error");
