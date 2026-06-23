@@ -16,6 +16,7 @@ import {
   getDialogueKey,
   hasSeenDialogue,
 } from "@/lib/dialogue-scripts";
+import { getDayMoodEmoji } from "@/lib/day-mood";
 
 export default async function RutaPage() {
   const session = await getValidPlayerSession();
@@ -50,6 +51,12 @@ export default async function RutaPage() {
         })
       : null;
 
+  const dayMoodEmoji = getDayMoodEmoji({
+    isFreeDay: agenda.isFreeDay,
+    dayType: agenda.dayType,
+    dateKey,
+  });
+
   return (
     <DailyAgenda
       dateLabel={formatAgendaDate(new Date())}
@@ -71,6 +78,7 @@ export default async function RutaPage() {
             }
           : undefined
       }
+      dayMoodEmoji={dayMoodEmoji}
     />
   );
 }

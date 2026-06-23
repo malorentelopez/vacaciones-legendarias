@@ -37,9 +37,10 @@ export function BossVictoryCelebration({
             🐉
           </span>
         </div>
-        <p className="reward-celebration-title mt-5 text-2xl font-bold text-red-300">
-          ¡Boss derrotado!
+        <p className="reward-celebration-title mt-5 font-display text-3xl font-bold text-red-300">
+          ¡K.O.!
         </p>
+        <p className="mt-1 text-xl font-bold text-amber-200">¡Boss derrotado!</p>
         <p className="mt-1 max-w-xs text-base text-slate-200">{title}</p>
         <div className="reward-celebration-amount mt-3 flex flex-wrap justify-center gap-3 text-lg font-bold">
           {xpReward > 0 && <span className="text-violet-300">+{xpReward} XP</span>}

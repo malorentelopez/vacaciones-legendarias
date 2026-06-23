@@ -326,6 +326,78 @@
   );
 }
 
+.manga-panel-boss {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, #ef4444 14%, #0f172a) 0%,
+    #0f172a 65%
+  );
+  border-color: color-mix(in srgb, #ef4444 55%, #450a0a);
+  box-shadow:
+    4px 4px 0 color-mix(in srgb, #ef4444 25%, #0f172a),
+    0 0 24px color-mix(in srgb, #ef4444 12%, transparent);
+}
+
+.boss-hp-panel {
+  border: 2px solid color-mix(in srgb, #ef4444 35%, transparent);
+  background: color-mix(in srgb, #ef4444 8%, #0f172a);
+}
+
+.boss-hp-bar .manga-hud-bar {
+  border-color: color-mix(in srgb, #ef4444 65%, transparent);
+}
+
+.boss-icon-badge {
+  border: 3px solid color-mix(in srgb, #ef4444 50%, #450a0a);
+  border-radius: 1rem;
+  background: color-mix(in srgb, #ef4444 12%, #0f172a);
+  box-shadow: 3px 3px 0 color-mix(in srgb, #ef4444 30%, #0f172a);
+}
+
+.boss-strike-burst {
+  background: radial-gradient(
+    circle at center,
+    color-mix(in srgb, #ef4444 40%, transparent) 0%,
+    transparent 68%
+  );
+}
+
+.player-page-transition {
+  animation-duration: 150ms;
+  animation-timing-function: ease-out;
+  animation-fill-mode: both;
+}
+
+.player-page-to-route {
+  animation-name: player-page-to-route;
+}
+
+.player-page-to-camp {
+  animation-name: player-page-to-camp;
+}
+
+@keyframes player-page-to-route {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes player-page-to-camp {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 .manga-panel-active {
   animation: manga-panel-pulse 1.8s ease-in-out infinite;
 }
@@ -648,7 +720,8 @@
   .pet-reaction-jump,
   .pet-reaction-spin,
   .pet-reaction-fire,
-  .pet-companion-heart {
+  .pet-companion-heart,
+  .player-page-transition {
     animation: none !important;
   }
 }

@@ -47,6 +47,7 @@ export function DailyAgenda({
   isFreeDay = false,
   freeDayLabel,
   routeCompleteDialogue,
+  dayMoodEmoji,
 }: {
   dateLabel: string;
   dayTypeLabel: string;
@@ -63,6 +64,7 @@ export function DailyAgenda({
     portraitAlt: string;
     alreadySeen: boolean;
   };
+  dayMoodEmoji?: string;
 }) {
   const router = useRouter();
   const theme = useTheme();
@@ -122,6 +124,11 @@ export function DailyAgenda({
             {isFreeDay ? "¡Día de descanso!" : "Tu mapa está en blanco"}
           </h1>
           <p className="text-slate-400">{dateLabel}</p>
+          {dayMoodEmoji && (
+            <p className="text-2xl" aria-hidden>
+              {dayMoodEmoji}
+            </p>
+          )}
         </header>
         <Card className="manga-panel p-8 text-center text-slate-400">
           <p className="font-display text-3xl text-amber-200">¡DÍA DE DESCANSO!</p>
@@ -153,6 +160,11 @@ export function DailyAgenda({
         <h1 className="theme-page-title font-display tracking-wide">Mapa del día</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <p className="text-slate-300">{dateLabel}</p>
+          {dayMoodEmoji && (
+            <span className="text-lg" aria-hidden title="Clima del día">
+              {dayMoodEmoji}
+            </span>
+          )}
           <Badge variant="default">{dayTypeLabel}</Badge>
         </div>
       </header>

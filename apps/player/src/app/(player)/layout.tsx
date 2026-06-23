@@ -1,6 +1,7 @@
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
 import { PlayerNav } from "@/components/player-nav";
+import { PlayerPageTransition } from "@/components/player-page-transition";
 import { PlayerThemeShell } from "@/components/theme-provider";
 import {
   getCharacterPortraitSrc,
@@ -56,7 +57,9 @@ export default async function PlayerLayout({ children }: { children: React.React
   return (
     <PlayerThemeShell initialThemeKey={themeKey} petEmoji={petEmoji}>
       <PlayerNav crystals={crystals} hero={hero} />
-      <main className="mx-auto max-w-4xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+      <PlayerPageTransition>
+        <main className="mx-auto max-w-4xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+      </PlayerPageTransition>
     </PlayerThemeShell>
   );
 }
