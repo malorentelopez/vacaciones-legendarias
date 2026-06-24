@@ -4,7 +4,6 @@ import { useCallback, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn, CharacterPortrait } from "@repo/ui";
 import { MangaPanel } from "@/components/manga/manga-panel";
-import { MangaActionButton } from "@/components/manga/manga-action-button";
 
 export interface MangaDialogueBoxProps {
   portraitSrc: string;
@@ -62,17 +61,13 @@ export function MangaDialogueBox({
             <div className="my-2 h-px bg-gradient-to-r from-amber-400/50 via-slate-600 to-transparent" />
             <p className="min-h-[3.5rem] text-sm leading-relaxed text-slate-100 sm:text-base">{currentLine}</p>
             <div className="mt-3 flex justify-end">
-              <MangaActionButton
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="pointer-events-none gap-1"
-                tabIndex={-1}
+              <span
+                className="manga-action-btn pointer-events-none inline-flex h-8 items-center justify-center gap-1 rounded-xl bg-emerald-600 px-3 font-display text-xs font-medium uppercase tracking-wide text-white sm:text-sm"
                 aria-hidden
               >
                 {isLastLine ? "¡Vamos!" : "Siguiente"}
                 {!isLastLine && <ChevronDown className="h-4 w-4" />}
-              </MangaActionButton>
+              </span>
             </div>
           </div>
         </button>

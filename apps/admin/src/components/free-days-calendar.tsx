@@ -21,8 +21,11 @@ function getDaysInMonth(year: number, month: number) {
 }
 
 function getFirstWeekday(year: number, month: number) {
-  return new Date(year, month - 1, 1).getDay();
+  const sundayFirst = new Date(year, month - 1, 1).getDay();
+  return (sundayFirst + 6) % 7;
 }
+
+const WEEKDAY_HEADERS = [...DAY_NAMES.slice(1), DAY_NAMES[0]];
 
 function formatDayLabel(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map(Number);
@@ -144,7 +147,7 @@ export function FreeDaysCalendar({ initialFreeDays }: { initialFreeDays: FreeDay
       )}
 
       <div className="mb-2 grid grid-cols-7 gap-1 text-center text-xs font-medium text-slate-500">
-        {DAY_NAMES.map((name) => (
+        {WEEKDAY_HEADERS.map((name) => (
           <div key={name}>{name.slice(0, 3)}</div>
         ))}
       </div>
