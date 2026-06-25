@@ -106,6 +106,17 @@ export function getSecretProgress(config: unknown, secretKey: string): SecretPro
   return parseAvatarConfig(config).secrets?.[secretKey];
 }
 
+/** Conserva apariencia del héroe; elimina racha, secretos, diálogos y desbloqueos de progreso. */
+export function stripProgressFromAvatarConfig(config: unknown): AvatarConfig {
+  const parsed = parseAvatarConfig(config);
+  return {
+    base: parsed.base,
+    customImage: parsed.customImage,
+    useCustom: parsed.useCustom,
+    equipped: parsed.equipped,
+  };
+}
+
 export function mergeAvatarConfig(current: unknown, patch: Partial<AvatarConfig>): AvatarConfig {
   const parsed = parseAvatarConfig(current);
   return {

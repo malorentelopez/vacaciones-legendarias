@@ -2,6 +2,7 @@ import { CharacterRepository } from "../repositories/character.repository";
 import { ConfigurationRepository } from "../repositories/skill.repository";
 import { GameEventRepository } from "../repositories/game-event.repository";
 import { calculateXpForNextLevel } from "../utils/period";
+import { stripProgressFromAvatarConfig } from "../utils/avatar";
 
 export class CharacterService {
   constructor(
@@ -140,5 +141,14 @@ export class CharacterService {
 
     await this.gameEventRepo.create(characterId, "CRYSTALS_GAINED", { amount, reason });
     return character.crystals + amount;
+  }
+
+  async resetCharacterProgress(characterId: string) {
+    const character = await this.characterRepo.findById(characterId);
+    if (!character) throw new Error("Personaje no encontrado");
+
+    const avatarConfig = stripProgressFromAvatarConfig(character.avatarConfig);
+    await this.characterRepo.resetProgress(characterId, avatarConfig);
+    return this.getCharacter(characterId);
   }
 }

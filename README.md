@@ -28,6 +28,10 @@ docker compose up -d
 pnpm db:push
 pnpm db:seed
 
+# El seed es no destructivo: solo crea datos que faltan.
+# Los datos demo (familia demo, misiones de ejemplo) solo se crean en BD vacía.
+# Para forzar el demo: pnpm db:seed:demo
+
 # Arrancar ambas apps
 pnpm dev
 ```

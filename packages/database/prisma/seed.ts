@@ -24,13 +24,39 @@ const LEVELS = [
   { level: 10, xpRequired: 4000, crystalReward: 75 },
 ];
 
-async function main() {
-  console.log("🌱 Seeding database...");
+const DEFAULT_SCREEN_TIME = [
+  { minWeeklyPoints: 0, maxWeeklyPoints: 20, minutesAllowed: 30 },
+  { minWeeklyPoints: 21, maxWeeklyPoints: 50, minutesAllowed: 60 },
+  { minWeeklyPoints: 51, maxWeeklyPoints: 100, minutesAllowed: 90 },
+  { minWeeklyPoints: 101, maxWeeklyPoints: 9999, minutesAllowed: 120 },
+];
 
+const SECRET_ACHIEVEMENTS = [
+  {
+    icon: "secret-dragon-chest",
+    title: "Guardián del Cofre",
+    description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
+    crystalReward: 30,
+  },
+  {
+    icon: "secret-manga-combo",
+    title: "Maestro del Combo",
+    description: "Despertaste el combo de poder oculto en la barra POWER",
+    crystalReward: 20,
+  },
+  {
+    icon: "secret-ocean-fishing",
+    title: "Pescador relámpago",
+    description: "Atrapaste la pesca secreta cuando los cristales brillaron en 42",
+    crystalReward: 25,
+  },
+] as const;
+
+async function seedReferenceData() {
   for (const skill of SKILLS) {
     await prisma.skill.upsert({
       where: { key: skill.key },
-      update: skill,
+      update: {},
       create: skill,
     });
   }
@@ -38,24 +64,19 @@ async function main() {
   for (const level of LEVELS) {
     await prisma.levelConfiguration.upsert({
       where: { level: level.level },
-      update: level,
+      update: {},
       create: level,
     });
   }
 
-  await prisma.screenTimeConfiguration.deleteMany();
-  await prisma.screenTimeConfiguration.createMany({
-    data: [
-      { minWeeklyPoints: 0, maxWeeklyPoints: 20, minutesAllowed: 30 },
-      { minWeeklyPoints: 21, maxWeeklyPoints: 50, minutesAllowed: 60 },
-      { minWeeklyPoints: 51, maxWeeklyPoints: 100, minutesAllowed: 90 },
-      { minWeeklyPoints: 101, maxWeeklyPoints: 9999, minutesAllowed: 120 },
-    ],
-  });
+  const screenTimeCount = await prisma.screenTimeConfiguration.count();
+  if (screenTimeCount === 0) {
+    await prisma.screenTimeConfiguration.createMany({ data: DEFAULT_SCREEN_TIME });
+  }
 
   await prisma.crystalStoreConfiguration.upsert({
     where: { key: "max_daily_purchases" },
-    update: { value: "3", description: "Máximo de compras diarias" },
+    update: {},
     create: { key: "max_daily_purchases", value: "3", description: "Máximo de compras diarias" },
   });
 
@@ -70,7 +91,42 @@ async function main() {
     ],
     skipDuplicates: true,
   });
+}
 
+async function ensureAchievementForFamily(
+  familyId: string,
+  where: { title?: string; icon?: string },
+  data: {
+    title: string;
+    description: string;
+    crystalReward: number;
+    icon?: string;
+    isHidden?: boolean;
+    isManual?: boolean;
+    requiredLevel?: number;
+    targetMissionId?: string;
+    targetMissionCompletions?: number;
+    missionIds?: string[];
+  }
+) {
+  const existing = await prisma.achievement.findFirst({
+    where: { familyId, ...where },
+  });
+  if (existing) return existing;
+
+  const { missionIds, ...achievementData } = data;
+  return prisma.achievement.create({
+    data: {
+      ...achievementData,
+      familyId,
+      missions: missionIds?.length
+        ? { create: missionIds.map((missionId) => ({ missionId })) }
+        : undefined,
+    },
+  });
+}
+
+async function seedDemoFamily() {
   const family = await prisma.family.upsert({
     where: { id: "demo-family" },
     update: {},
@@ -78,7 +134,7 @@ async function main() {
   });
 
   const parentPassword = await bcrypt.hash("parent123", 10);
-  const parent = await prisma.user.upsert({
+  await prisma.user.upsert({
     where: { email: "parent@demo.com" },
     update: {},
     create: {
@@ -139,154 +195,108 @@ async function main() {
   const wisdomSkill = await prisma.skill.findUnique({ where: { key: "wisdom" } });
   const vitalitySkill = await prisma.skill.findUnique({ where: { key: "vitality" } });
 
-  await prisma.mission.createMany({
-    data: [
-      { title: "Leer 30 minutos", description: "Lee un libro o cómic", frequency: "DAILY", type: "LEARNING", xpReward: 15, skillId: wisdomSkill?.id, familyId: family.id },
-      { title: "Hacer la cama", description: "Ordena tu habitación", frequency: "DAILY", type: "CHORE", xpReward: 10, skillId: vitalitySkill?.id, familyId: family.id },
-      { title: "Ejercicio", description: "30 minutos de actividad física", frequency: "DAILY", type: "HABIT", xpReward: 20, crystalReward: 2, skillId: vitalitySkill?.id, familyId: family.id },
-      { title: "Proyecto creativo", description: "Dibuja, construye o crea algo", frequency: "WEEKLY", type: "CREATIVE", xpReward: 50, crystalReward: 5, familyId: family.id },
-      { title: "Ayuda extra en casa", description: "Ayuda con una tarea sin que te lo pidan", frequency: "DAILY", type: "CHORE", xpReward: 15, familyId: family.id, isSideQuest: true },
-      { title: "Acto de bondad", description: "Haz algo amable por alguien de la familia", frequency: "DAILY", type: "CUSTOM", xpReward: 10, crystalReward: 1, familyId: family.id, isSideQuest: true },
-    ],
-    skipDuplicates: true,
-  });
+  const demoMissions = [
+    { title: "Leer 30 minutos", description: "Lee un libro o cómic", frequency: "DAILY" as const, type: "LEARNING" as const, xpReward: 15, skillId: wisdomSkill?.id, familyId: family.id },
+    { title: "Hacer la cama", description: "Ordena tu habitación", frequency: "DAILY" as const, type: "CHORE" as const, xpReward: 10, skillId: vitalitySkill?.id, familyId: family.id },
+    { title: "Ejercicio", description: "30 minutos de actividad física", frequency: "DAILY" as const, type: "HABIT" as const, xpReward: 20, crystalReward: 2, skillId: vitalitySkill?.id, familyId: family.id },
+    { title: "Proyecto creativo", description: "Dibuja, construye o crea algo", frequency: "WEEKLY" as const, type: "CREATIVE" as const, xpReward: 50, crystalReward: 5, familyId: family.id },
+    { title: "Ayuda extra en casa", description: "Ayuda con una tarea sin que te lo pidan", frequency: "DAILY" as const, type: "CHORE" as const, xpReward: 15, familyId: family.id, isSideQuest: true },
+    { title: "Acto de bondad", description: "Haz algo amable por alguien de la familia", frequency: "DAILY" as const, type: "CUSTOM" as const, xpReward: 10, crystalReward: 1, familyId: family.id, isSideQuest: true },
+  ];
+
+  for (const mission of demoMissions) {
+    const existing = await prisma.mission.findFirst({
+      where: { title: mission.title, familyId: family.id },
+    });
+    if (!existing) {
+      await prisma.mission.create({ data: mission });
+    }
+  }
 
   const seededMissions = await prisma.mission.findMany({ where: { familyId: family.id } });
   const readMission = seededMissions.find((m) => m.title.includes("Leer"));
   const bedMission = seededMissions.find((m) => m.title.includes("cama"));
 
   if (readMission) {
-    const existing = await prisma.achievement.findFirst({ where: { title: "Primer paso", familyId: family.id } });
-    if (!existing) {
-      await prisma.achievement.create({
-        data: {
-          title: "Primer paso",
-          description: "Completa tu primera misión de lectura",
-          crystalReward: 5,
-          familyId: family.id,
-          missions: { create: [{ missionId: readMission.id }] },
-        },
-      });
-    }
+    await ensureAchievementForFamily(
+      family.id,
+      { title: "Primer paso" },
+      {
+        title: "Primer paso",
+        description: "Completa tu primera misión de lectura",
+        crystalReward: 5,
+        missionIds: [readMission.id],
+      }
+    );
   }
 
   if (readMission && bedMission) {
-    const existing = await prisma.achievement.findFirst({ where: { title: "Rutina matinal", familyId: family.id } });
-    if (!existing) {
-      await prisma.achievement.create({
-        data: {
-          title: "Rutina matinal",
-          description: "Completa leer y hacer la cama",
-          crystalReward: 15,
-          familyId: family.id,
-          missions: { create: [{ missionId: readMission.id }, { missionId: bedMission.id }] },
-        },
-      });
-    }
+    await ensureAchievementForFamily(
+      family.id,
+      { title: "Rutina matinal" },
+      {
+        title: "Rutina matinal",
+        description: "Completa leer y hacer la cama",
+        crystalReward: 15,
+        missionIds: [readMission.id, bedMission.id],
+      }
+    );
   }
 
-  await prisma.achievement.createMany({
-    data: [
-      { title: "Nivel 3", description: "Alcanza el nivel 3", requiredLevel: 3, crystalReward: 15, familyId: family.id },
-    ],
-    skipDuplicates: true,
-  });
+  await ensureAchievementForFamily(
+    family.id,
+    { title: "Nivel 3" },
+    {
+      title: "Nivel 3",
+      description: "Alcanza el nivel 3",
+      requiredLevel: 3,
+      crystalReward: 15,
+    }
+  );
 
   if (readMission) {
-    const existing = await prisma.achievement.findFirst({
-      where: { title: "Lector voraz", familyId: family.id },
-    });
-    if (!existing) {
-      await prisma.achievement.create({
-        data: {
-          title: "Lector voraz",
-          description: "Completa la misión de lectura 5 veces",
-          crystalReward: 20,
-          familyId: family.id,
-          targetMissionId: readMission.id,
-          targetMissionCompletions: 5,
-        },
-      });
-    }
-  }
-
-  const existingManual = await prisma.achievement.findFirst({
-    where: { title: "Primer libro leído", familyId: family.id },
-  });
-  if (!existingManual) {
-    await prisma.achievement.create({
-      data: {
-        title: "Primer libro leído",
-        description: "Leer un libro completo de principio a fin",
-        crystalReward: 25,
-        familyId: family.id,
-        isManual: true,
-      },
-    });
-  }
-
-  const existingSecret = await prisma.achievement.findFirst({
-    where: { icon: "secret-dragon-chest", familyId: family.id },
-  });
-  if (!existingSecret) {
-    await prisma.achievement.create({
-      data: {
-        title: "Guardián del Cofre",
-        description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
-        icon: "secret-dragon-chest",
-        crystalReward: 30,
-        familyId: family.id,
-        isHidden: true,
-      },
-    });
-  }
-
-  const existingMangaCombo = await prisma.achievement.findFirst({
-    where: { icon: "secret-manga-combo", familyId: family.id },
-  });
-  if (!existingMangaCombo) {
-    await prisma.achievement.create({
-      data: {
-        title: "Maestro del Combo",
-        description: "Despertaste el combo de poder oculto en la barra POWER",
-        icon: "secret-manga-combo",
+    await ensureAchievementForFamily(
+      family.id,
+      { title: "Lector voraz" },
+      {
+        title: "Lector voraz",
+        description: "Completa la misión de lectura 5 veces",
         crystalReward: 20,
-        familyId: family.id,
-        isHidden: true,
-      },
-    });
+        targetMissionId: readMission.id,
+        targetMissionCompletions: 5,
+      }
+    );
   }
 
-  const existingOceanFishing = await prisma.achievement.findFirst({
-    where: { icon: "secret-ocean-fishing", familyId: family.id },
-  });
-  if (!existingOceanFishing) {
-    await prisma.achievement.create({
-      data: {
-        title: "Pescador relámpago",
-        description: "Atrapaste la pesca secreta cuando los cristales brillaron en 42",
-        icon: "secret-ocean-fishing",
-        crystalReward: 25,
-        familyId: family.id,
-        isHidden: true,
-      },
-    });
+  await ensureAchievementForFamily(
+    family.id,
+    { title: "Primer libro leído" },
+    {
+      title: "Primer libro leído",
+      description: "Leer un libro completo de principio a fin",
+      crystalReward: 25,
+      isManual: true,
+    }
+  );
+
+  for (const achievement of SECRET_ACHIEVEMENTS) {
+    await ensureAchievementForFamily(
+      family.id,
+      { icon: achievement.icon },
+      { ...achievement, isHidden: true }
+    );
   }
 
-  const existingStreakSpirit = await prisma.achievement.findFirst({
-    where: { icon: "streak-spirit", familyId: family.id },
-  });
-  if (!existingStreakSpirit) {
-    await prisma.achievement.create({
-      data: {
-        title: "Espíritu constante",
-        description: "Mantén una racha de 3 días cumpliendo la ruta legendaria",
-        icon: "streak-spirit",
-        crystalReward: 0,
-        familyId: family.id,
-      },
-    });
-  }
+  await ensureAchievementForFamily(
+    family.id,
+    { icon: "streak-spirit" },
+    {
+      title: "Espíritu constante",
+      description: "Mantén una racha de 3 días cumpliendo la ruta legendaria",
+      icon: "streak-spirit",
+      crystalReward: 0,
+    }
+  );
 
   const dragonHat = await prisma.avatarAccessory.findUnique({ where: { key: "hat_dragon" } });
   const secretAchievement = await prisma.achievement.findFirst({
@@ -299,32 +309,39 @@ async function main() {
     });
   }
 
-  await prisma.$executeRaw`UPDATE "CharacterAchievement" SET "claimedAt" = "unlockedAt" WHERE "claimedAt" IS NULL`;
+  const demoRewards = [
+    { title: "Helado extra", description: "Un helado a elegir", crystalCost: 10, familyId: family.id },
+    { title: "30 min extra de pantalla", description: "Tiempo extra de videojuegos", crystalCost: 15, familyId: family.id },
+    {
+      title: "Salida especial",
+      description: "Elegir actividad familiar",
+      crystalCost: 50,
+      maxPurchases: 1,
+      requiredLevel: 5,
+      familyId: family.id,
+    },
+  ];
 
-  await prisma.reward.createMany({
-    data: [
-      { title: "Helado extra", description: "Un helado a elegir", crystalCost: 10, familyId: family.id },
-      { title: "30 min extra de pantalla", description: "Tiempo extra de videojuegos", crystalCost: 15, familyId: family.id },
-      {
-        title: "Salida especial",
-        description: "Elegir actividad familiar",
-        crystalCost: 50,
-        maxPurchases: 1,
-        requiredLevel: 5,
-        familyId: family.id,
-      },
-    ],
-    skipDuplicates: true,
+  for (const reward of demoRewards) {
+    const existing = await prisma.reward.findFirst({
+      where: { title: reward.title, familyId: family.id },
+    });
+    if (!existing) {
+      await prisma.reward.create({ data: reward });
+    }
+  }
+
+  const existingBoss = await prisma.bossBattle.findFirst({
+    where: {
+      familyId: family.id,
+      title: "Boss de Julio: El Dragón del Verano",
+      month: 7,
+      year: new Date().getFullYear(),
+    },
   });
-
-  await prisma.reward.updateMany({
-    where: { familyId: family.id, title: "Salida especial" },
-    data: { maxPurchases: 1, requiredLevel: 5 },
-  });
-
-  await prisma.bossBattle.createMany({
-    data: [
-      {
+  if (!existingBoss) {
+    await prisma.bossBattle.create({
+      data: {
         title: "Boss de Julio: El Dragón del Verano",
         description: "Completa todos los objetivos de julio",
         month: 7,
@@ -333,9 +350,8 @@ async function main() {
         crystalReward: 100,
         familyId: family.id,
       },
-    ],
-    skipDuplicates: true,
-  });
+    });
+  }
 
   const character = await prisma.character.findFirst({
     where: { familyId: family.id, name: "Aventurero" },
@@ -511,68 +527,58 @@ async function main() {
       });
     }
   }
+}
 
+async function seedMissingSecretAchievements() {
   const allFamilies = await prisma.family.findMany({ select: { id: true } });
-  for (const { id: familyId } of allFamilies) {
-    const secretAchievements = [
-      {
-        icon: "secret-dragon-chest",
-        title: "Guardián del Cofre",
-        description: "Encontraste y abriste el cofre secreto del Dragón del Verano",
-        crystalReward: 30,
-      },
-      {
-        icon: "secret-manga-combo",
-        title: "Maestro del Combo",
-        description: "Despertaste el combo de poder oculto en la barra POWER",
-        crystalReward: 20,
-      },
-      {
-        icon: "secret-ocean-fishing",
-        title: "Pescador relámpago",
-        description: "Atrapaste la pesca secreta cuando los cristales brillaron en 42",
-        crystalReward: 25,
-      },
-    ] as const;
 
-    for (const achievement of secretAchievements) {
-      const existing = await prisma.achievement.findFirst({
-        where: { icon: achievement.icon, familyId },
-      });
-      if (!existing) {
-        await prisma.achievement.create({
-          data: {
-            title: achievement.title,
-            description: achievement.description,
-            icon: achievement.icon,
-            crystalReward: achievement.crystalReward,
-            familyId,
-            isHidden: true,
-          },
-        });
-      }
+  for (const { id: familyId } of allFamilies) {
+    for (const achievement of SECRET_ACHIEVEMENTS) {
+      await ensureAchievementForFamily(
+        familyId,
+        { icon: achievement.icon },
+        { ...achievement, isHidden: true }
+      );
     }
   }
 
   const dragonAccessory = await prisma.avatarAccessory.findUnique({ where: { key: "hat_dragon" } });
-  if (dragonAccessory) {
-    for (const { id: familyId } of allFamilies) {
-      const secretAchievement = await prisma.achievement.findFirst({
-        where: { icon: "secret-dragon-chest", familyId },
+  if (!dragonAccessory || dragonAccessory.achievementId) return;
+
+  for (const { id: familyId } of allFamilies) {
+    const secretAchievement = await prisma.achievement.findFirst({
+      where: { icon: "secret-dragon-chest", familyId },
+    });
+    if (secretAchievement) {
+      await prisma.avatarAccessory.update({
+        where: { key: "hat_dragon" },
+        data: { achievementId: secretAchievement.id },
       });
-      if (secretAchievement && dragonAccessory.achievementId !== secretAchievement.id) {
-        await prisma.avatarAccessory.update({
-          where: { key: "hat_dragon" },
-          data: { achievementId: secretAchievement.id },
-        });
-        break;
-      }
+      break;
     }
   }
+}
+
+async function main() {
+  console.log("🌱 Seeding database (non-destructive)...");
+
+  await seedReferenceData();
+
+  const familyCount = await prisma.family.count();
+  const shouldSeedDemo = process.env.SEED_DEMO === "true" || familyCount === 0;
+
+  if (shouldSeedDemo) {
+    await seedDemoFamily();
+    console.log("✅ Demo family seeded");
+    console.log("   Parent: parent@demo.com / parent123");
+    console.log("   Child PIN: 1234");
+  } else {
+    console.log("⏭️  Demo family skipped (existing families detected). Use SEED_DEMO=true to force.");
+  }
+
+  await seedMissingSecretAchievements();
 
   console.log("✅ Seed completed");
-  console.log(`   Parent: parent@demo.com / parent123`);
-  console.log(`   Child PIN: 1234`);
 }
 
 main()
