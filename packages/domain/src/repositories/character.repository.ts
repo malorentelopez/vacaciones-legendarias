@@ -145,4 +145,39 @@ export class CharacterRepository {
       data: { xp, level },
     });
   }
+
+  async resetProgress(characterId: string, avatarConfig: object) {
+    const character = await prisma.character.findUnique({
+      where: { id: characterId },
+      include: { skills: true },
+    });
+    if (!character) throw new Error("Personaje no encontrado");
+
+    await prisma.$transaction([
+      prisma.missionProgress.deleteMany({ where: { characterId } }),
+      prisma.characterAchievement.deleteMany({ where: { characterId } }),
+      prisma.rewardPurchase.deleteMany({ where: { characterId } }),
+      prisma.penalty.deleteMany({ where: { characterId } }),
+      prisma.weeklyPenalty.deleteMany({ where: { characterId } }),
+      prisma.crystalTransaction.deleteMany({ where: { characterId } }),
+      prisma.gameEvent.deleteMany({ where: { characterId } }),
+      prisma.questionnaireSubmission.deleteMany({ where: { characterId } }),
+      ...character.skills.map((skill) =>
+        prisma.characterSkill.update({
+          where: { id: skill.id },
+          data: { xp: 0, level: 1 },
+        })
+      ),
+      prisma.character.update({
+        where: { id: characterId },
+        data: {
+          level: 1,
+          xp: 0,
+          crystals: 0,
+          weeklyPoints: 0,
+          avatarConfig,
+        },
+      }),
+    ]);
+  }
 }

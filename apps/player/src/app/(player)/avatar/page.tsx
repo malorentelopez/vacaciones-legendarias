@@ -3,7 +3,12 @@ import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
 import { getDragonChestStatus } from "@/actions/secrets";
 import { AvatarCustomizer } from "@/components/avatar-customizer";
+import { ResetProgressButton } from "@/components/reset-progress-button";
 import { parseAvatarConfig } from "@repo/domain";
+
+const canResetProgress =
+  process.env.NODE_ENV !== "production" ||
+  process.env.ENABLE_PLAYER_PROGRESS_RESET === "true";
 
 export default async function AvatarPage() {
   const session = await getValidPlayerSession();
@@ -17,19 +22,22 @@ export default async function AvatarPage() {
   const secrets = parseAvatarConfig(character.avatarConfig).secrets;
 
   return (
-    <AvatarCustomizer
-      character={{
-        name: character.name,
-        gender: character.gender,
-        themeKey: character.themeKey,
-        avatarBase: character.avatarBase,
-        avatarConfig: character.avatarConfig,
-        level: character.level,
-        secretCompleted:
-          dragonStatus.completed ||
-          !!secrets?.["dragon-chest"]?.completedAt ||
-          !!secrets?.["manga-power-combo"]?.completedAt,
-      }}
-    />
+    <div className="space-y-6">
+      <AvatarCustomizer
+        character={{
+          name: character.name,
+          gender: character.gender,
+          themeKey: character.themeKey,
+          avatarBase: character.avatarBase,
+          avatarConfig: character.avatarConfig,
+          level: character.level,
+          secretCompleted:
+            dragonStatus.completed ||
+            !!secrets?.["dragon-chest"]?.completedAt ||
+            !!secrets?.["manga-power-combo"]?.completedAt,
+        }}
+      />
+      {canResetProgress && <ResetProgressButton />}
+    </div>
   );
 }

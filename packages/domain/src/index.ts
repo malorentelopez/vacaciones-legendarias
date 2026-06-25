@@ -75,6 +75,7 @@ export {
 } from "./utils/summer-chapters";
 export {
   parseAvatarConfig,
+  stripProgressFromAvatarConfig,
   getCharacterPortraitSrc,
   hasCustomAvatar,
   getSecretProgress,

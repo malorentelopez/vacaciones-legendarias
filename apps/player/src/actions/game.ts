@@ -177,6 +177,30 @@ export async function updateAvatar(data: {
   revalidatePath("/avatar");
 }
 
+export async function resetPlayerProgress() {
+  const canReset =
+    process.env.NODE_ENV !== "production" ||
+    process.env.ENABLE_PLAYER_PROGRESS_RESET === "true";
+  if (!canReset) throw new Error("No disponible");
+
+  const session = await requirePlayerSession();
+  if (!session.characterId) throw new Error("Sin personaje seleccionado");
+
+  await characterService.resetCharacterProgress(session.characterId);
+
+  revalidatePath("/", "layout");
+  revalidatePath("/avatar");
+  revalidatePath("/missions");
+  revalidatePath("/side-quests");
+  revalidatePath("/calendar");
+  revalidatePath("/ruta");
+  revalidatePath("/achievements");
+  revalidatePath("/skills");
+  revalidatePath("/store");
+  revalidatePath("/boss-battles");
+  revalidatePath("/timeline");
+}
+
 export async function getThemes() {
   const { THEME_LIST } = await import("@repo/domain");
   return THEME_LIST;
