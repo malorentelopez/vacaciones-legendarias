@@ -12,6 +12,7 @@
     "@repo/database": "workspace:*",
     "@repo/domain": "workspace:*",
     "@repo/ui": "workspace:*",
+    "@serwist/next": "^9.5.11",
     "@vercel/blob": "^2.4.1",
     "bcryptjs": "^3.0.2",
     "jose": "^6.0.11",
@@ -29,6 +30,7 @@
     "@types/react-dom": "^19.1.6",
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
+    "serwist": "^9.5.11",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3"
   }

@@ -7,12 +7,6 @@ const secret = new TextEncoder().encode(
 );
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (pathname === "/login") {
-    return NextResponse.next();
-  }
-
   const token = request.cookies.get("session")?.value;
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -31,5 +25,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo-|avatars/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|sw.js|logo-|avatars/|icon|apple-icon|apple-touch|manifest\\.webmanifest|~offline|login).*)",
+  ],
 };

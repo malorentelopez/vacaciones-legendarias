@@ -9,5 +9,7 @@ dist
 .DS_Store
 coverage
 *.tsbuildinfo
+apps/player/public/sw.js
+apps/player/public/sw.js.map
 apps/player/public/avatars/custom/*
 !apps/player/public/avatars/custom/.gitkeep

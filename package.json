@@ -15,7 +15,8 @@
     "avatars:download": "node scripts/download-avatars.mjs",
     "avatars:sync": "node scripts/sync-avatars.mjs",
     "branding:sync": "node scripts/sync-branding.mjs",
-    "branding:process": "node scripts/process-branding.mjs && node scripts/sync-branding.mjs"
+    "branding:process": "node scripts/process-branding.mjs && node scripts/generate-pwa-icons.mjs && node scripts/sync-branding.mjs",
+    "pwa:icons": "node scripts/generate-pwa-icons.mjs"
   },
   "devDependencies": {
     "sharp": "^0.35.2",
