@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@repo/database";
 import { getSession, type SessionPayload } from "./auth";
 
@@ -16,11 +17,11 @@ async function sanitizePlayerSession(session: SessionPayload): Promise<SessionPa
 }
 
 /** Read-only: returns session ignoring a stale characterId (no cookie writes). */
-export async function getValidPlayerSession(): Promise<SessionPayload | null> {
+export const getValidPlayerSession = cache(async (): Promise<SessionPayload | null> => {
   const session = await getSession();
   if (!session) return null;
   return sanitizePlayerSession(session);
-}
+});
 
 export async function requirePlayerSession(): Promise<SessionPayload> {
   const session = await getValidPlayerSession();
