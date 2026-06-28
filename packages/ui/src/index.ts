@@ -1,4 +1,13 @@
 export { cn } from "./lib/utils";
+export {
+  APP_THEME_COLOR,
+  mobileBottomNavOffset,
+  mobileBottomNavPaddingStyle,
+  mobileMainBottomClass,
+  mobileMainBottomClassLg,
+  mobileMainTopClass,
+  mobileTopBarClass,
+} from "./lib/mobile-safe-area";
 export { Button } from "./components/button";
 export { Card, CardHeader, CardTitle, CardDescription, CardContent } from "./components/card";
 export { Progress } from "./components/progress";

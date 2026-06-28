@@ -48,7 +48,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" className="dark">
       <body
-        className={`${nunito.variable} ${bangers.variable} font-game min-h-screen min-h-[100dvh] pt-[env(safe-area-inset-top)]`}
+        className={`${nunito.variable} ${bangers.variable} font-game min-h-screen min-h-[100dvh] pt-[env(safe-area-inset-top,0px)]`}
       >
         <Providers>{children}</Providers>
       </body>

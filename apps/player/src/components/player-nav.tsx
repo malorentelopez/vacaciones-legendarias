@@ -16,7 +16,7 @@ import {
   X,
   Scroll,
 } from "lucide-react";
-import { cn, AppLogo } from "@repo/ui";
+import { cn, AppLogo, mobileBottomNavOffset, mobileBottomNavPaddingStyle } from "@repo/ui";
 import { logout } from "@/actions/auth";
 import { CrystalCounter } from "@/components/crystal-counter";
 import { SecretCrystalTrigger } from "@/components/secrets/secret-crystal-trigger";
@@ -227,7 +227,10 @@ export function PlayerNav({
             className="fixed inset-0 z-40 bg-black/50 md:hidden"
             onClick={() => setMoreOpen(false)}
           />
-          <div className="theme-nav-border fixed inset-x-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 overflow-hidden rounded-2xl border bg-slate-900/95 shadow-xl backdrop-blur-lg md:hidden">
+          <div
+            className="theme-nav-border fixed inset-x-4 z-50 overflow-hidden rounded-2xl border bg-slate-900/95 shadow-xl backdrop-blur-lg md:hidden"
+            style={{ bottom: mobileBottomNavOffset }}
+          >
             <div className="flex items-center justify-between border-b border-slate-700/50 px-4 py-3">
               <p className="text-sm font-semibold text-slate-200">Más opciones</p>
               <button
@@ -278,7 +281,7 @@ export function PlayerNav({
       <nav className="theme-nav-border fixed inset-x-0 bottom-0 z-50 border-t bg-slate-900/80 backdrop-blur-lg md:hidden">
         <div
           className="mx-auto grid max-w-4xl grid-cols-4 px-2 pt-1"
-          style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom))" }}
+          style={mobileBottomNavPaddingStyle}
         >
           {primaryNavItems.map(({ href, icon, label, mobileLabel }) => (
             <NavLink

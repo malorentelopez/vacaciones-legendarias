@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { cn, CharacterPortrait } from "@repo/ui";
+import { cn, CharacterPortrait, mobileBottomNavOffset } from "@repo/ui";
 import { MangaPanel } from "@/components/manga/manga-panel";
 
 export interface MangaDialogueBoxProps {
@@ -36,7 +36,8 @@ export function MangaDialogueBox({
 
   return (
     <div
-      className={cn("manga-dialogue-overlay fixed inset-x-0 bottom-0 z-50 px-3 pb-20 md:pb-6", className)}
+      className={cn("manga-dialogue-overlay fixed inset-x-0 bottom-0 z-50 px-3 md:pb-6", className)}
+      style={{ paddingBottom: mobileBottomNavOffset }}
       role="dialog"
       aria-labelledby="manga-dialogue-speaker"
       aria-live="polite"

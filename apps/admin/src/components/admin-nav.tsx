@@ -7,7 +7,7 @@ import {
   LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
   Clock, AlertTriangle, BarChart3, LogOut, Menu, X, CalendarDays, UserCircle, TrendingUp,
 } from "lucide-react";
-import { cn, AppLogo } from "@repo/ui";
+import { cn, AppLogo, mobileBottomNavPaddingStyle, mobileTopBarClass } from "@repo/ui";
 import { logout } from "@/actions/auth";
 
 const mainNavItems = [
@@ -82,7 +82,7 @@ export function AdminNav({ userName }: { userName: string }) {
   return (
     <>
       {/* Mobile top bar */}
-      <header className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur lg:hidden">
+      <header className={cn("fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-slate-800 bg-slate-900/95 px-4 backdrop-blur lg:hidden", mobileTopBarClass)}>
         <AppLogo variant="icon" size="sm" />
         <button
           type="button"
@@ -116,13 +116,16 @@ export function AdminNav({ userName }: { userName: string }) {
       )}
 
       {/* Mobile bottom nav */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-800 bg-slate-900/95 backdrop-blur lg:hidden">
+      <nav
+        className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-800 bg-slate-900/95 backdrop-blur lg:hidden"
+        style={mobileBottomNavPaddingStyle}
+      >
         {mainNavItems.map(({ href, icon: Icon, label }) => (
           <Link
             key={href}
             href={href}
             className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px]",
+              "flex flex-1 flex-col items-center gap-0.5 pt-2 text-[10px]",
               pathname === href ? "text-violet-400" : "text-slate-500"
             )}
           >
