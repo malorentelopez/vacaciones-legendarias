@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
   LayoutDashboard, Users, Target, Trophy, Gift, Swords, Settings,
@@ -9,6 +8,7 @@ import {
 } from "lucide-react";
 import { cn, AppLogo, mobileBottomNavPaddingStyle, mobileTopBarClass } from "@repo/ui";
 import { logout } from "@/actions/auth";
+import { AdminNavLink } from "@/components/admin-nav-link";
 
 const mainNavItems = [
   { href: "/", icon: LayoutDashboard, label: "Inicio" },
@@ -39,8 +39,9 @@ function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutCli
       </div>
       <Link
         href="/settings"
+        prefetch
         onClick={onLogoutClick}
-        className="mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+        className="mb-1 flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:opacity-80"
       >
         <UserCircle className="h-4 w-4 shrink-0" />
         Mi cuenta
@@ -49,7 +50,7 @@ function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutCli
         <button
           type="submit"
           onClick={onLogoutClick}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          className="flex w-full touch-manipulation items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:opacity-80"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Cerrar sesión
@@ -60,24 +61,7 @@ function UserFooter({ userName, onLogoutClick }: { userName: string; onLogoutCli
 }
 
 export function AdminNav({ userName }: { userName: string }) {
-  const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const NavLink = ({ href, icon: Icon, label }: { href: string; icon: typeof LayoutDashboard; label: string }) => (
-    <Link
-      href={href}
-      onClick={() => setMobileOpen(false)}
-      className={cn(
-        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors",
-        pathname === href
-          ? "bg-violet-600 text-white"
-          : "text-slate-400 hover:bg-slate-800 hover:text-white"
-      )}
-    >
-      <Icon className="h-4 w-4 shrink-0" />
-      {label}
-    </Link>
-  );
 
   return (
     <>
@@ -87,7 +71,7 @@ export function AdminNav({ userName }: { userName: string }) {
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"
+          className="touch-manipulation rounded-lg p-2 text-slate-400 hover:bg-slate-800 active:opacity-80"
           aria-label="Abrir menú"
         >
           <Menu className="h-5 w-5" />
@@ -101,13 +85,22 @@ export function AdminNav({ userName }: { userName: string }) {
           <aside className="absolute right-0 top-0 flex h-full w-72 flex-col bg-slate-900 p-4 shadow-xl">
             <div className="mb-4 flex items-center justify-between gap-2">
               <AppLogo variant="full" fullWidth className="min-w-0 flex-1" />
-              <button type="button" onClick={() => setMobileOpen(false)} className="shrink-0 rounded-lg p-1.5 hover:bg-slate-800">
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="shrink-0 touch-manipulation rounded-lg p-1.5 hover:bg-slate-800 active:opacity-80"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
             <nav className="flex-1 space-y-1 overflow-y-auto">
               {allNavItems.map((item) => (
-                <NavLink key={item.href} {...item} />
+                <AdminNavLink
+                  key={item.href}
+                  {...item}
+                  layout="sidebar"
+                  onNavigate={() => setMobileOpen(false)}
+                />
               ))}
             </nav>
             <UserFooter userName={userName} onLogoutClick={() => setMobileOpen(false)} />
@@ -120,18 +113,8 @@ export function AdminNav({ userName }: { userName: string }) {
         className="fixed inset-x-0 bottom-0 z-40 flex border-t border-slate-800 bg-slate-900/95 backdrop-blur lg:hidden"
         style={mobileBottomNavPaddingStyle}
       >
-        {mainNavItems.map(({ href, icon: Icon, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 pt-2 text-[10px]",
-              pathname === href ? "text-violet-400" : "text-slate-500"
-            )}
-          >
-            <Icon className="h-5 w-5" />
-            {label}
-          </Link>
+        {mainNavItems.map((item) => (
+          <AdminNavLink key={item.href} {...item} layout="bottom" />
         ))}
       </nav>
 
@@ -143,7 +126,7 @@ export function AdminNav({ userName }: { userName: string }) {
           </div>
           <nav className="flex-1 space-y-1 overflow-y-auto">
             {allNavItems.map((item) => (
-              <NavLink key={item.href} {...item} />
+              <AdminNavLink key={item.href} {...item} layout="sidebar" />
             ))}
           </nav>
           <UserFooter userName={userName} />
