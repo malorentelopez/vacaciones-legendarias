@@ -8,11 +8,17 @@ const ROOT = path.join(__dirname, "..");
 const BRANDING = path.join(ROOT, "assets/branding");
 
 const PUBLIC_FILES = ["logo-icon.png", "logo-full.png", "logo-favicon.png"];
+const PWA_FILES = ["icon-192.png", "icon-512.png", "icon-512-maskable.png", "apple-touch-icon.png"];
 
 for (const app of ["player", "admin"]) {
   const appDir = path.join(ROOT, `apps/${app}`);
   for (const file of PUBLIC_FILES) {
     fs.copyFileSync(path.join(BRANDING, file), path.join(appDir, "public", file));
+  }
+  if (app === "player") {
+    for (const file of PWA_FILES) {
+      fs.copyFileSync(path.join(BRANDING, "pwa", file), path.join(appDir, "public", file));
+    }
   }
   fs.copyFileSync(path.join(BRANDING, "logo-favicon.png"), path.join(appDir, "src/app/icon.png"));
   fs.copyFileSync(path.join(BRANDING, "logo-favicon.png"), path.join(appDir, "src/app/apple-icon.png"));

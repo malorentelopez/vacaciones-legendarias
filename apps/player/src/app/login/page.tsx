@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card, CardContent, CardHeader, AppLogo } from "@repo/ui";
+import { Button } from "@repo/ui";
+import { CenteredAuthCard } from "@/components/centered-auth-card";
 import { loginWithPin } from "@/actions/auth";
 
 export default function LoginPage() {
@@ -27,32 +28,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md border-violet-500/30">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 w-full max-w-xs px-2">
-            <AppLogo variant="full" fullWidth priority />
-          </div>
-          <p className="text-slate-400">Introduce tu PIN para empezar la aventura</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              placeholder="••••"
-              className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-center text-2xl tracking-[0.5em] focus:border-violet-500 focus:outline-none"
-            />
-            {error && <p className="text-center text-sm text-red-400">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading || pin.length < 4}>
-              {loading ? "Entrando..." : "¡A jugar!"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+    <CenteredAuthCard header={<p className="text-slate-400">Introduce tu PIN para empezar la aventura</p>}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="password"
+          inputMode="numeric"
+          maxLength={4}
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          placeholder="••••"
+          className="w-full rounded-xl border border-slate-600 bg-slate-800 px-4 py-3 text-center text-2xl tracking-[0.5em] focus:border-violet-500 focus:outline-none"
+        />
+        {error && <p className="text-center text-sm text-red-400">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading || pin.length < 4}>
+          {loading ? "Entrando..." : "¡A jugar!"}
+        </Button>
+      </form>
+    </CenteredAuthCard>
   );
 }
