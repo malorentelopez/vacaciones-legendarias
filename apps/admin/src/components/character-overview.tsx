@@ -129,65 +129,85 @@ export function CharacterOverview({ data }: { data: OverviewData }) {
       : 0;
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start gap-4">
-        <Link href="/characters">
-          <Button variant="outline" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
+    <div className="space-y-6 sm:space-y-8">
+      <header className="space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <Link
+            href="/characters"
+            className="inline-flex items-center gap-1.5 text-sm text-slate-400 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="h-4 w-4 shrink-0" />
             Personajes
-          </Button>
-        </Link>
-        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-4">
+          </Link>
+          <Link href="/characters">
+            <Button variant="outline" size="sm" className="shrink-0">
+              <Pencil className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Editar</span>
+            </Button>
+          </Link>
+        </div>
+
+        <div className="flex items-center gap-3 sm:gap-4">
+          <CharacterPortrait
+            imageSrc={portraitSrc}
+            alt={character.name}
+            primaryColor={theme.colors.primary}
+            secondaryColor={theme.colors.secondary}
+            size="md"
+            className="shrink-0 sm:hidden"
+          />
           <CharacterPortrait
             imageSrc={portraitSrc}
             alt={character.name}
             primaryColor={theme.colors.primary}
             secondaryColor={theme.colors.secondary}
             size="xl"
-            className="shrink-0"
+            className="hidden shrink-0 sm:block"
           />
           <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-bold">{character.name}</h1>
-            <p className="text-violet-300">{roleName}</p>
-            <p className="text-sm text-slate-400">
+            <h1 className="truncate text-2xl font-bold sm:text-3xl">{character.name}</h1>
+            <p className="truncate text-sm text-violet-300">{roleName}</p>
+            <p className="text-xs text-slate-400 sm:text-sm">
               {theme.name} · {character.gender === "BOY" ? "Chico" : "Chica"}
             </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Badge variant="info">Nv. {character.level}</Badge>
-              <Badge variant="warning">💎 {character.crystals}</Badge>
-              <Badge variant="success">{character.weeklyPoints} pts semana</Badge>
-              <Badge variant="default">
-                <Clock className="mr-1 inline h-3 w-3" />
-                {data.screenTimeMinutes} min pantalla
-              </Badge>
-              {data.streak?.current ? (
-                <Badge variant="default">
-                  <Flame className="mr-1 inline h-3 w-3 text-orange-400" />
-                  Racha {data.streak.current} días
-                </Badge>
-              ) : null}
-            </div>
           </div>
-          <Link href="/characters">
-            <Button variant="outline" size="sm">
-              <Pencil className="mr-2 h-4 w-4" />
-              Editar
-            </Button>
-          </Link>
         </div>
-      </div>
+
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <Badge variant="info" className="w-full justify-center px-2 py-1 sm:w-auto sm:justify-start">
+            Nv. {character.level}
+          </Badge>
+          <Badge variant="warning" className="w-full justify-center px-2 py-1 sm:w-auto sm:justify-start">
+            💎 {character.crystals}
+          </Badge>
+          <Badge variant="success" className="w-full justify-center px-2 py-1 sm:w-auto sm:justify-start">
+            {character.weeklyPoints} pts semana
+          </Badge>
+          <Badge variant="default" className="w-full justify-center px-2 py-1 sm:w-auto sm:justify-start">
+            <Clock className="mr-1 inline h-3 w-3" />
+            {data.screenTimeMinutes} min pantalla
+          </Badge>
+          {data.streak?.current ? (
+            <Badge
+              variant="default"
+              className="col-span-2 w-full justify-center px-2 py-1 sm:col-span-1 sm:w-auto sm:justify-start"
+            >
+              <Flame className="mr-1 inline h-3 w-3 text-orange-400" />
+              Racha {data.streak.current} días
+            </Badge>
+          ) : null}
+        </div>
+      </header>
 
       {character.xpProgress && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="mb-2 flex justify-between text-sm">
-              <span className="text-slate-400">Progreso al nivel {character.level + 1}</span>
-              <span>
-                {character.xpProgress.xpInLevel}/{character.xpProgress.xpNeeded} XP
-              </span>
-            </div>
-            <Progress value={character.xpProgress.progress} className="h-2" />
-          </CardContent>
+        <Card className="p-4">
+          <div className="mb-2 flex justify-between text-sm">
+            <span className="text-slate-400">Progreso al nivel {character.level + 1}</span>
+            <span>
+              {character.xpProgress.xpInLevel}/{character.xpProgress.xpNeeded} XP
+            </span>
+          </div>
+          <Progress value={character.xpProgress.progress} className="h-2" />
         </Card>
       )}
 
