@@ -5,6 +5,7 @@ import {
   getMangaPowerComboStatus,
   getOceanFishingStatus,
 } from "@/actions/secrets";
+import { cn, mobileMainBottomClass } from "@repo/ui";
 import { PlayerNav } from "@/components/player-nav";
 import { PlayerPageTransition } from "@/components/player-page-transition";
 import { PlayerThemeShell } from "@/components/theme-provider";
@@ -92,7 +93,7 @@ export default async function PlayerLayout({ children }: { children: React.React
     <PlayerThemeShell initialThemeKey={themeKey} petEmoji={petEmoji}>
       <PlayerNav crystals={crystals} hero={hero} themeKey={themeKey} oceanFishing={oceanFishing} />
       <PlayerPageTransition>
-        <main className="mx-auto max-w-4xl px-4 py-6 pb-24 md:pb-6">{children}</main>
+        <main className={cn("mx-auto max-w-4xl px-4 py-6", mobileMainBottomClass)}>{children}</main>
       </PlayerPageTransition>
     </PlayerThemeShell>
   );
