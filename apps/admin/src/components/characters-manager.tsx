@@ -1,12 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Card, Badge, Button, Progress, CharacterPortrait } from "@repo/ui";
 import {
   createCharacter,
   updateCharacter,
   deleteCharacter,
-  getCharacterDetail,
   checkPinAvailable,
 } from "@/actions/admin";
 import {
@@ -20,7 +20,7 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
-import { Gem, Star, Zap, Trophy, Target, Pencil, Trash2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 interface Character {
   id: string;
@@ -112,11 +112,8 @@ export function CharactersManager({ characters: initial }: { characters: Charact
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<FormMode>("create");
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [detail, setDetail] = useState<(Character & { completedMissions?: number; achievements?: number }) | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [detailLoading, setDetailLoading] = useState(false);
 
   const [name, setName] = useState("");
   const [pin, setPin] = useState("");
@@ -154,7 +151,6 @@ export function CharactersManager({ characters: initial }: { characters: Charact
     setAvatarBase(normalizeRoleKey(character.themeKey, character.avatarBase));
     setFormError("");
     setFormOpen(true);
-    setDetailOpen(false);
   }
 
   function handleThemeChange(newTheme: string) {
@@ -218,29 +214,17 @@ export function CharactersManager({ characters: initial }: { characters: Charact
   }
 
   async function handleDelete() {
-    if (!detail) return;
+    if (!deleteId) return;
     setLoading(true);
-    const result = await deleteCharacter(detail.id);
+    const result = await deleteCharacter(deleteId);
     if (result.success) {
-      setCharacters(characters.filter((c) => c.id !== detail.id));
-      setDeleteOpen(false);
-      setDetailOpen(false);
-      setDetail(null);
+      setCharacters(characters.filter((c) => c.id !== deleteId));
+      setDeleteId(null);
     }
     setLoading(false);
   }
 
-  async function openDetail(id: string) {
-    setDetailLoading(true);
-    setDetailOpen(true);
-    try {
-      const data = await getCharacterDetail(id);
-      setDetail(data);
-    } catch {
-      setDetail(null);
-    }
-    setDetailLoading(false);
-  }
+  const deleteTarget = characters.find((c) => c.id === deleteId);
 
   return (
     <div className="space-y-6">
@@ -268,30 +252,41 @@ export function CharactersManager({ characters: initial }: { characters: Charact
             const theme = getTheme(c.themeKey);
             const roleName = getRoleName(c.themeKey, c.gender === "BOY" ? "boy" : "girl", c.avatarBase);
             return (
-              <button key={c.id} type="button" onClick={() => openDetail(c.id)} className="text-left">
-                <Card className="overflow-hidden transition-all hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/5">
-                  <div
-                    className="h-2"
-                    style={{ background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
-                  />
-                  <div className="flex items-center gap-4 p-5">
-                    <CharacterAvatarDisplay character={c} />
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-lg font-bold">{c.name}</h3>
-                      <p className="text-sm text-slate-400">{roleName} · {theme.name}</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        <Badge variant="info">Nv. {c.level}</Badge>
-                        <Badge variant="warning">💎 {c.crystals}</Badge>
+              <div key={c.id} className="relative">
+                <Link href={`/characters/${c.id}`} className="block text-left">
+                  <Card className="overflow-hidden transition-all hover:border-violet-500/50 hover:shadow-lg hover:shadow-violet-500/5">
+                    <div
+                      className="h-2"
+                      style={{ background: `linear-gradient(90deg, ${theme.colors.primary}, ${theme.colors.secondary})` }}
+                    />
+                    <div className="flex items-center gap-4 p-5 pr-14">
+                      <CharacterAvatarDisplay character={c} />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-lg font-bold">{c.name}</h3>
+                        <p className="text-sm text-slate-400">{roleName} · {theme.name}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <Badge variant="info">Nv. {c.level}</Badge>
+                          <Badge variant="warning">💎 {c.crystals}</Badge>
+                          <Badge variant="success">{c.weeklyPoints} pts</Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  {c.xpProgress && (
-                    <div className="px-5 pb-4">
-                      <Progress value={c.xpProgress.progress} className="h-1.5" />
-                    </div>
-                  )}
-                </Card>
-              </button>
+                    {c.xpProgress && (
+                      <div className="px-5 pb-4">
+                        <Progress value={c.xpProgress.progress} className="h-1.5" />
+                      </div>
+                    )}
+                  </Card>
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => openEdit(c)}
+                  className="absolute right-3 top-6 rounded-lg border border-slate-600 bg-slate-900/90 p-2 text-slate-400 transition-colors hover:border-violet-500 hover:text-white"
+                  aria-label={`Editar ${c.name}`}
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -391,92 +386,16 @@ export function CharactersManager({ characters: initial }: { characters: Charact
         </form>
       </Modal>
 
-      {/* Detail modal */}
-      <Modal
-        open={detailOpen}
-        onClose={() => { setDetailOpen(false); setDetail(null); }}
-        title={detail?.name ?? "Personaje"}
-        size="lg"
-      >
-        {detailLoading ? (
-          <p className="py-8 text-center text-slate-400">Cargando...</p>
-        ) : detail ? (
-          <div className="space-y-5">
-            <div className="flex items-center gap-4">
-              <CharacterAvatarDisplay character={detail} size="xl" />
-              <div className="flex-1">
-                <p className="font-medium text-violet-300">
-                  {getRoleName(detail.themeKey, detail.gender === "BOY" ? "boy" : "girl", detail.avatarBase)}
-                </p>
-                <p className="text-slate-400">{getTheme(detail.themeKey).name}</p>
-                <p className="text-sm text-slate-500">
-                  {detail.gender === "BOY" ? "Chico" : "Chica"}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" onClick={() => openEdit(detail)}>
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <Button size="sm" variant="destructive" onClick={() => setDeleteOpen(true)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                { icon: Star, label: "Nivel", value: detail.level, color: "text-violet-400" },
-                { icon: Zap, label: "XP", value: detail.xp, color: "text-amber-400" },
-                { icon: Gem, label: "Cristales", value: detail.crystals, color: "text-cyan-400" },
-                { icon: Target, label: "Pts semana", value: detail.weeklyPoints, color: "text-emerald-400" },
-              ].map(({ icon: Icon, label, value, color }) => (
-                <div key={label} className="rounded-xl bg-slate-800/50 p-3 text-center">
-                  <Icon className={`mx-auto h-5 w-5 ${color}`} />
-                  <p className="mt-1 text-lg font-bold">{value}</p>
-                  <p className="text-xs text-slate-500">{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {detail.xpProgress && (
-              <div>
-                <div className="mb-1 flex justify-between text-sm">
-                  <span className="text-slate-400">Progreso al nivel {detail.level + 1}</span>
-                  <span>{detail.xpProgress.xpInLevel}/{detail.xpProgress.xpNeeded} XP</span>
-                </div>
-                <Progress value={detail.xpProgress.progress} />
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-xl bg-slate-800/50 p-3">
-                <p className="text-2xl font-bold">{detail.completedMissions ?? 0}</p>
-                <p className="text-xs text-slate-500">Misiones completadas</p>
-              </div>
-              <div className="rounded-xl bg-slate-800/50 p-3">
-                <p className="text-2xl font-bold flex items-center gap-1">
-                  <Trophy className="h-5 w-5 text-amber-400" />
-                  {detail.achievements ?? 0}
-                </p>
-                <p className="text-xs text-slate-500">Logros desbloqueados</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="py-8 text-center text-red-400">No se pudo cargar el personaje</p>
-        )}
-      </Modal>
-
       {/* Delete confirmation */}
       <Modal
-        open={deleteOpen}
-        onClose={() => setDeleteOpen(false)}
+        open={deleteId !== null}
+        onClose={() => setDeleteId(null)}
         title="Eliminar personaje"
-        description={`¿Seguro que quieres eliminar a ${detail?.name}? Esta acción no se puede deshacer.`}
+        description={`¿Seguro que quieres eliminar a ${deleteTarget?.name}? Esta acción no se puede deshacer.`}
         size="sm"
       >
         <div className="flex gap-2">
-          <Button type="button" variant="outline" className="flex-1" onClick={() => setDeleteOpen(false)}>
+          <Button type="button" variant="outline" className="flex-1" onClick={() => setDeleteId(null)}>
             Cancelar
           </Button>
           <Button variant="destructive" className="flex-1" disabled={loading} onClick={handleDelete}>

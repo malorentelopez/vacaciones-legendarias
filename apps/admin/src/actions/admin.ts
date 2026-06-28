@@ -15,6 +15,9 @@ import {
   ConfigurationRepository,
   GameEventRepository,
   dbDateToDateKey,
+  getWeekKey,
+  getPeriodKey,
+  parseAvatarConfig,
 } from "@repo/domain";
 import { prisma } from "@repo/database";
 import type { MissionFrequency, MissionType, RewardStatus, DayScheduleType } from "@repo/database";
@@ -195,6 +198,8 @@ export async function updateCharacter(
 
   const character = await characterService.updateCharacter(id, updateData);
   revalidatePath("/characters");
+  revalidatePath(`/characters/${id}`);
+  revalidatePath("/");
   return { success: true as const, character };
 }
 
@@ -207,6 +212,8 @@ export async function deleteCharacter(id: string) {
 
   await characterService.deleteCharacter(id);
   revalidatePath("/characters");
+  revalidatePath(`/characters/${id}`);
+  revalidatePath("/");
   return { success: true as const };
 }
 
@@ -237,6 +244,96 @@ export async function getCharacterDetail(id: string) {
   ]);
 
   return { ...character, completedMissions, achievements, recentEvents };
+}
+
+export async function getCharacterProgressOverview(characterId: string) {
+  const session = await requireSession();
+  const character = await characterService.getCharacter(characterId);
+  if (character.familyId !== session.familyId) {
+    throw new Error("Acceso denegado");
+  }
+
+  const now = new Date();
+  const weekKey = getWeekKey(now);
+  const todayKey = getPeriodKey("DAILY", now);
+  const familyId = session.familyId;
+
+  const [
+    agenda,
+    sideQuests,
+    allMissions,
+    screenTimeMinutes,
+    weeklyPenalty,
+    recentPenalties,
+    completedMissions,
+    achievementsCount,
+    missionsCompletedToday,
+    missionsCompletedThisWeek,
+    recentEvents,
+  ] = await Promise.all([
+    scheduleService.getAgendaForCharacter(characterId, now),
+    missionService.getSideQuestsForCharacter(characterId, familyId),
+    missionService.getMissionsForCharacter(characterId, familyId),
+    weeklyPointsService.calculateScreenTime(character.weeklyPoints),
+    prisma.weeklyPenalty.findUnique({
+      where: { characterId_weekKey: { characterId, weekKey } },
+    }),
+    prisma.penalty.findMany({
+      where: { characterId },
+      orderBy: { appliedAt: "desc" },
+      take: 5,
+    }),
+    prisma.missionProgress.count({ where: { characterId, completed: true } }),
+    prisma.characterAchievement.count({ where: { characterId } }),
+    prisma.missionProgress.count({
+      where: { characterId, periodKey: todayKey, completed: true },
+    }),
+    prisma.missionProgress.count({
+      where: { characterId, periodKey: weekKey, completed: true },
+    }),
+    gameEventRepo.findByCharacter(characterId, 20),
+  ]);
+
+  const weeklyMissions = allMissions.filter((mission) => mission.frequency === "WEEKLY");
+  const weeklyMissionsCompleted = weeklyMissions.filter((mission) => mission.completed).length;
+
+  const todayMissions = agenda.isFreeDay
+    ? []
+    : agenda.blocks.flatMap((block) => block.missions);
+
+  const todayCompleted = todayMissions.filter((mission) => mission.completed).length;
+  const streak = parseAvatarConfig(character.avatarConfig).streak;
+
+  return {
+    character,
+    weekKey,
+    todayKey,
+    todayDateLabel: now.toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    }),
+    agenda,
+    sideQuests,
+    weeklyMissions,
+    screenTimeMinutes,
+    weeklyPenalty,
+    recentPenalties,
+    completedMissions,
+    achievementsCount,
+    missionsCompletedToday,
+    missionsCompletedThisWeek,
+    weeklyMissionsCompleted,
+    todayMissions: {
+      completed: todayCompleted,
+      total: todayMissions.length,
+      isFreeDay: agenda.isFreeDay,
+      freeDayLabel: agenda.isFreeDay ? agenda.freeDayLabel : null,
+    },
+    sideQuestsCompleted: sideQuests.filter((mission) => mission.completed).length,
+    streak,
+    recentEvents,
+  };
 }
 
 export async function getMissions() {
