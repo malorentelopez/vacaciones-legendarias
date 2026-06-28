@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { requirePlayerSession } from "@/lib/player-session";
 import {
   CharacterService,
@@ -22,11 +23,11 @@ const bossBattleService = new BossBattleService();
 const scheduleService = new ScheduleService();
 const gameEventRepo = new GameEventRepository();
 
-export async function getCharacter() {
+export const getCharacter = cache(async () => {
   const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   return characterService.getCharacter(session.characterId);
-}
+});
 
 export async function getFamilyCharacters() {
   const session = await requirePlayerSession();

@@ -23,6 +23,11 @@ import { SecretCrystalTrigger } from "@/components/secrets/secret-crystal-trigge
 import { HeroHud, type HeroHudData } from "@/components/hero-hud";
 import { MANGA_COPY } from "@/lib/manga-copy";
 import { useTheme } from "./theme-provider";
+import {
+  PlayerDrawerNavLink,
+  PlayerMenuNavLink,
+  PlayerNavLink,
+} from "@/components/player-nav-link";
 
 const primaryNavItems = [
   { href: "/", icon: Home, label: "Campamento", mobileLabel: "Campamento" },
@@ -40,42 +45,6 @@ const moreNavItems = [
 
 function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
-
-function NavLink({
-  href,
-  icon: Icon,
-  label,
-  active,
-  onClick,
-  compact,
-}: {
-  href: string;
-  icon: typeof Home;
-  label: string;
-  active: boolean;
-  onClick?: () => void;
-  compact?: boolean;
-}) {
-  const theme = useTheme();
-
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={cn(
-        "flex items-center gap-1.5 whitespace-nowrap rounded-xl transition-colors",
-        compact
-          ? "flex-col gap-1 px-2 py-1.5 text-[10px] font-medium"
-          : "px-3 py-2 text-sm",
-        active ? "text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
-      )}
-      style={active ? { backgroundColor: theme.colors.navActive } : undefined}
-    >
-      <Icon className={compact ? "h-5 w-5" : "h-4 w-4"} />
-      <span>{label}</span>
-    </Link>
-  );
 }
 
 export function PlayerNav({
@@ -127,12 +96,12 @@ export function PlayerNav({
       {/* Desktop: barra superior */}
       <nav className="theme-nav-border sticky top-0 z-50 hidden border-b bg-slate-900/80 backdrop-blur-lg md:block">
         <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-2">
-          <Link href="/" className="mr-1 shrink-0">
+          <Link href="/" prefetch className="mr-1 shrink-0 touch-manipulation active:opacity-80">
             <AppLogo variant="icon" size="sm" />
           </Link>
           <div className="flex min-w-0 flex-1 items-center gap-1">
             {primaryNavItems.map(({ href, icon, label }) => (
-              <NavLink
+              <PlayerNavLink
                 key={href}
                 href={href}
                 icon={icon}
@@ -145,7 +114,7 @@ export function PlayerNav({
                 type="button"
                 onClick={() => setMoreOpen((open) => !open)}
                 className={cn(
-                  "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors",
+                  "flex items-center gap-1.5 whitespace-nowrap rounded-xl px-3 py-2 text-sm transition-colors touch-manipulation active:opacity-80",
                   moreOpen || moreActive ? "text-white" : "text-slate-400 hover:bg-slate-800 hover:text-white"
                 )}
                 style={moreOpen || moreActive ? { backgroundColor: theme.colors.navActive } : undefined}
@@ -162,22 +131,15 @@ export function PlayerNav({
                     onClick={() => setMoreOpen(false)}
                   />
                   <div className="theme-nav-border absolute left-0 top-full z-50 mt-1 min-w-[11rem] overflow-hidden rounded-xl border bg-slate-900/95 py-1 shadow-xl backdrop-blur-lg">
-                    {moreNavItems.map(({ href, icon: Icon, label }) => (
-                      <Link
+                    {moreNavItems.map(({ href, icon, label }) => (
+                      <PlayerMenuNavLink
                         key={href}
                         href={href}
+                        icon={icon}
+                        label={label}
+                        active={isActive(pathname, href)}
                         onClick={() => setMoreOpen(false)}
-                        className={cn(
-                          "flex items-center gap-2 px-3 py-2 text-sm transition-colors",
-                          isActive(pathname, href)
-                            ? "text-white"
-                            : "text-slate-300 hover:bg-slate-800 hover:text-white"
-                        )}
-                        style={isActive(pathname, href) ? { backgroundColor: theme.colors.navActive } : undefined}
-                      >
-                        <Icon className="h-4 w-4 shrink-0" />
-                        {label}
-                      </Link>
+                      />
                     ))}
                   </div>
                 </>
@@ -189,7 +151,7 @@ export function PlayerNav({
             <button
               type="submit"
               title="Salir"
-              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+              className="flex items-center gap-1.5 rounded-xl px-2.5 py-2 text-sm text-slate-400 transition-colors hover:bg-slate-800 hover:text-white touch-manipulation active:opacity-80"
             >
               <LogOut className="h-4 w-4" />
               Salir
@@ -205,7 +167,7 @@ export function PlayerNav({
 
       {/* Móvil: logo y cristales arriba */}
       <header className="theme-nav-border relative flex items-center justify-center border-b bg-slate-900/60 px-4 py-3 backdrop-blur-lg md:hidden">
-        <Link href="/" className="inline-flex max-w-[10rem] sm:max-w-[12rem]">
+        <Link href="/" prefetch className="inline-flex max-w-[10rem] touch-manipulation active:opacity-80 sm:max-w-[12rem]">
           <AppLogo variant="full" size="sm" />
         </Link>
         <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -236,36 +198,27 @@ export function PlayerNav({
               <button
                 type="button"
                 onClick={() => setMoreOpen(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white touch-manipulation active:opacity-80"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             <div className="grid grid-cols-2 gap-1 p-2">
-              {moreNavItems.map(({ href, icon: Icon, label }) => (
-                <Link
+              {moreNavItems.map(({ href, icon, label }) => (
+                <PlayerDrawerNavLink
                   key={href}
                   href={href}
+                  icon={icon}
+                  label={label}
+                  active={isActive(pathname, href)}
                   onClick={() => setMoreOpen(false)}
-                  className={cn(
-                    "flex items-center gap-2 rounded-xl px-3 py-3 text-sm transition-colors",
-                    isActive(pathname, href)
-                      ? "text-white"
-                      : "text-slate-300 hover:bg-slate-800"
-                  )}
-                  style={isActive(pathname, href) ? { backgroundColor: theme.colors.navActive } : undefined}
-                >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800/80">
-                    <Icon className="h-4 w-4" />
-                  </span>
-                  {label}
-                </Link>
+                />
               ))}
             </div>
             <form action={logout} className="border-t border-slate-700/50 p-2">
               <button
                 type="submit"
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-white"
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm text-slate-300 transition-colors hover:bg-slate-800 hover:text-white touch-manipulation active:opacity-80"
               >
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800/80">
                   <LogOut className="h-4 w-4" />
@@ -284,7 +237,7 @@ export function PlayerNav({
           style={mobileBottomNavPaddingStyle}
         >
           {primaryNavItems.map(({ href, icon, label, mobileLabel }) => (
-            <NavLink
+            <PlayerNavLink
               key={href}
               href={href}
               icon={icon}
@@ -297,7 +250,7 @@ export function PlayerNav({
             type="button"
             onClick={() => setMoreOpen((open) => !open)}
             className={cn(
-              "flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-medium transition-colors",
+              "flex flex-col items-center gap-1 rounded-xl px-2 py-1.5 text-[10px] font-medium transition-colors touch-manipulation active:opacity-80",
               moreOpen || moreActive ? "text-white" : "text-slate-400"
             )}
             style={moreOpen || moreActive ? { backgroundColor: theme.colors.navActive } : undefined}
