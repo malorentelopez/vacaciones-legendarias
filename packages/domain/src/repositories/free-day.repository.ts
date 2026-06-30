@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import { dateKeyToDbDate, dbDateToDateKey, toLocalDateKey } from "../utils/schedule";
 
 export class FreeDayRepository {

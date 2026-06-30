@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getAgenda, getCharacter } from "@/actions/game";
-import { DailyAgenda } from "@/components/daily-agenda";
+import { DailyAgendaLazy } from "@/components/lazy/secret-games-lazy";
 import {
   formatAgendaDate,
   getDayScheduleTypeLabel,
@@ -22,8 +22,7 @@ export default async function RutaPage() {
   const session = await getValidPlayerSession();
   if (!session?.characterId) redirect("/");
 
-  const agenda = await getAgenda();
-  const character = await getCharacter();
+  const [agenda, character] = await Promise.all([getAgenda(), getCharacter()]);
   const dayTypeLabel = getDayScheduleTypeLabel(agenda.dayType);
 
   const completedQuests = agenda.blocks.reduce(
@@ -58,7 +57,7 @@ export default async function RutaPage() {
   });
 
   return (
-    <DailyAgenda
+    <DailyAgendaLazy
       dateLabel={formatAgendaDate(new Date())}
       dayTypeLabel={dayTypeLabel}
       dayType={agenda.dayType}

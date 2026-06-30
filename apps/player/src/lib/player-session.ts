@@ -1,26 +1,9 @@
 import { cache } from "react";
-import { prisma } from "@repo/database";
 import { getSession, type SessionPayload } from "./auth";
 
-async function sanitizePlayerSession(session: SessionPayload): Promise<SessionPayload> {
-  if (!session.characterId) return session;
-
-  const character = await prisma.character.findFirst({
-    where: { id: session.characterId, familyId: session.familyId },
-    select: { id: true },
-  });
-
-  if (character) return session;
-
-  const { characterId: _removed, ...rest } = session;
-  return rest as SessionPayload;
-}
-
-/** Read-only: returns session ignoring a stale characterId (no cookie writes). */
+/** Session from the signed JWT. Character selection is validated when the cookie is issued. */
 export const getValidPlayerSession = cache(async (): Promise<SessionPayload | null> => {
-  const session = await getSession();
-  if (!session) return null;
-  return sanitizePlayerSession(session);
+  return getSession();
 });
 
 export async function requirePlayerSession(): Promise<SessionPayload> {

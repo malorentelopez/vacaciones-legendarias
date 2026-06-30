@@ -1,5 +1,5 @@
 import type { EventType, Prisma } from "@repo/database";
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 
 export class GameEventRepository {
   async create(

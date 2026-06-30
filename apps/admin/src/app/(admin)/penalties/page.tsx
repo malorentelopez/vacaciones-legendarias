@@ -20,6 +20,7 @@ export default async function PenaltiesPage() {
     avatarBase: string;
     level: number;
     weeklyPoints: number;
+    crystals: number;
   }) => ({
     ...c,
     screenTimeMinutes: screenTimeByCharacter.get(c.id) ?? 30,

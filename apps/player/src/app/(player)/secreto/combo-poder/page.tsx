@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getMangaPowerComboStatus } from "@/actions/secrets";
-import { MangaPowerComboGame } from "@/components/secrets/manga-power-combo-game";
+import { MangaPowerComboGameLazy } from "@/components/lazy/secret-games-lazy";
 
 export default async function MangaPowerComboPage() {
   const session = await getValidPlayerSession();
@@ -15,7 +15,7 @@ export default async function MangaPowerComboPage() {
 
   return (
     <div className="py-4">
-      <MangaPowerComboGame />
+      <MangaPowerComboGameLazy />
     </div>
   );
 }

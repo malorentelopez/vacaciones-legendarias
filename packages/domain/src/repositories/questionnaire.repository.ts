@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import type { Prisma } from "@repo/database";
 import type { QuestionOption } from "../utils/questionnaire";
 
@@ -165,5 +165,45 @@ export class QuestionnaireRepository {
     }
 
     return null;
+  }
+
+  async findActiveSummariesForMissions(missionIds: string[], characterId: string) {
+    if (missionIds.length === 0) {
+      return new Map<string, { id: string; title: string; questionCount: number }>();
+    }
+
+    const questionnaires = await prisma.missionQuestionnaire.findMany({
+      where: { missionId: { in: missionIds } },
+      include: {
+        questions: { select: { id: true } },
+        submissions: {
+          where: { characterId, passed: true },
+          select: { id: true },
+          take: 1,
+        },
+      },
+    });
+
+    const byMission = new Map<string, typeof questionnaires>();
+    for (const questionnaire of questionnaires) {
+      const list = byMission.get(questionnaire.missionId) ?? [];
+      list.push(questionnaire);
+      byMission.set(questionnaire.missionId, list);
+    }
+
+    const result = new Map<string, { id: string; title: string; questionCount: number }>();
+    for (const [missionId, list] of byMission) {
+      const sorted = [...list].sort((a, b) => b.order - a.order);
+      const active = sorted.find((questionnaire) => questionnaire.submissions.length === 0);
+      if (active) {
+        result.set(missionId, {
+          id: active.id,
+          title: active.title,
+          questionCount: active.questions.length,
+        });
+      }
+    }
+
+    return result;
   }
 }

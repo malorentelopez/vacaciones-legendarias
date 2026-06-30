@@ -37,6 +37,7 @@ export function formatEventDetail(type: EventType, payload: unknown): string {
     case "XP_GAINED":
       return `+${p.amount ?? 0} XP`;
     case "PENALTY_APPLIED":
+      if (p.crystals) return `-${p.crystals} 💎`;
       return `-${p.points ?? 0} pts`;
     case "BOSS_COMPLETED":
       return String(p.title ?? "");

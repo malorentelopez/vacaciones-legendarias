@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import type { RewardStatus } from "@repo/database";
 
 export class RewardRepository {

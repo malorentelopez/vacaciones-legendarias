@@ -2,7 +2,7 @@ import { AchievementRepository } from "../repositories/achievement.repository";
 import { CharacterRepository } from "../repositories/character.repository";
 import { CharacterService } from "./character.service";
 import { GameEventRepository } from "../repositories/game-event.repository";
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 
 export class AchievementService {
   constructor(

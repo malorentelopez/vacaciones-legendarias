@@ -51,8 +51,9 @@ export async function getParentDashboard() {
     recentEvents,
     bossBattles,
     missionsCompletedToday,
+    todayMissionSummaries,
   ] = await Promise.all([
-    characterService.getFamilyCharacters(familyId),
+    characterService.getFamilyCharactersForDashboard(familyId),
     weeklyPointsService.getFamilyWeeklyStats(familyId),
     rewardService.getFamilyPurchases(familyId, "PENDING"),
     rewardService.getFamilyPurchases(familyId, "APPROVED"),
@@ -65,39 +66,35 @@ export async function getParentDashboard() {
         character: { familyId },
       },
     }),
+    scheduleService.getTodayMissionSummariesForFamily(familyId, now),
   ]);
 
-  const characterSummaries = await Promise.all(
-    characters.map(async (character) => {
-      const agenda = await scheduleService.getAgendaForCharacter(character.id, now);
-      const weeklyStat = weeklyStats.find((s) => s.characterId === character.id);
+  const summaryByCharacter = new Map(
+    todayMissionSummaries.map((summary) => [summary.characterId, summary])
+  );
 
-      if (agenda.isFreeDay) {
-        return {
-          ...character,
-          screenTimeMinutes: weeklyStat?.screenTimeMinutes ?? 30,
-          todayMissions: {
+  const characterSummaries = characters.map((character) => {
+    const weeklyStat = weeklyStats.find((stat) => stat.characterId === character.id);
+    const todaySummary = summaryByCharacter.get(character.id);
+
+    return {
+      ...character,
+      screenTimeMinutes: weeklyStat?.screenTimeMinutes ?? 30,
+      todayMissions: todaySummary?.isFreeDay
+        ? {
             completed: 0,
             total: 0,
             isFreeDay: true as const,
-            freeDayLabel: agenda.freeDayLabel,
+            freeDayLabel: todaySummary.freeDayLabel,
+          }
+        : {
+            completed: todaySummary?.completed ?? 0,
+            total: todaySummary?.total ?? 0,
+            isFreeDay: false as const,
+            freeDayLabel: null,
           },
-        };
-      }
-
-      const missions = agenda.blocks.flatMap((block) => block.missions);
-      return {
-        ...character,
-        screenTimeMinutes: weeklyStat?.screenTimeMinutes ?? 30,
-        todayMissions: {
-          completed: missions.filter((m) => m.completed).length,
-          total: missions.length,
-          isFreeDay: false as const,
-          freeDayLabel: null,
-        },
-      };
-    })
-  );
+    };
+  });
 
   const currentMonth = now.getMonth() + 1;
   const currentYear = now.getFullYear();
@@ -259,9 +256,7 @@ export async function getCharacterProgressOverview(characterId: string) {
   const familyId = session.familyId;
 
   const [
-    agenda,
-    sideQuests,
-    allMissions,
+    missionOverview,
     screenTimeMinutes,
     weeklyPenalty,
     recentPenalties,
@@ -271,9 +266,7 @@ export async function getCharacterProgressOverview(characterId: string) {
     missionsCompletedThisWeek,
     recentEvents,
   ] = await Promise.all([
-    scheduleService.getAgendaForCharacter(characterId, now),
-    missionService.getSideQuestsForCharacter(characterId, familyId),
-    missionService.getMissionsForCharacter(characterId, familyId),
+    missionService.getCharacterMissionOverview(characterId, familyId, now),
     weeklyPointsService.calculateScreenTime(character.weeklyPoints),
     prisma.weeklyPenalty.findUnique({
       where: { characterId_weekKey: { characterId, weekKey } },
@@ -294,7 +287,7 @@ export async function getCharacterProgressOverview(characterId: string) {
     gameEventRepo.findByCharacter(characterId, 20),
   ]);
 
-  const weeklyMissions = allMissions.filter((mission) => mission.frequency === "WEEKLY");
+  const { agenda, sideQuests, weeklyMissions } = missionOverview;
   const weeklyMissionsCompleted = weeklyMissions.filter((mission) => mission.completed).length;
 
   const todayMissions = agenda.isFreeDay
@@ -351,8 +344,8 @@ export async function createMission(data: {
   skillId?: string;
   isSideQuest?: boolean;
 }) {
-  await requireSession();
-  const mission = await missionService.createMission({ ...data, familyId: (await requireSession()).familyId });
+  const session = await requireSession();
+  const mission = await missionService.createMission({ ...data, familyId: session.familyId });
   revalidatePath("/missions");
   revalidatePath("/schedule");
   return mission;
@@ -639,9 +632,14 @@ export async function getTimeline() {
   return gameEventRepo.findByFamily(session.familyId);
 }
 
-export async function applyPenalty(characterId: string, points: number, reason?: string) {
+export async function applyPenalty(
+  characterId: string,
+  type: "POINTS_DEDUCTION" | "CRYSTAL_DEDUCTION",
+  amount: number,
+  reason?: string
+) {
   await requireSession();
-  const penalty = await weeklyPointsService.applyPenalty(characterId, points, reason);
+  const penalty = await weeklyPointsService.applyPenalty(characterId, type, amount, reason);
   revalidatePath("/penalties");
   return penalty;
 }
