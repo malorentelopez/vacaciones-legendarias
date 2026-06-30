@@ -13,8 +13,9 @@ import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass, textareaClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
 import { AlertTriangle, Clock, Gem, RotateCcw, Star, Zap } from "lucide-react";
+import type { PenaltyType } from "@repo/database";
 
-type PenaltyDeductionType = "POINTS_DEDUCTION" | "CRYSTAL_DEDUCTION";
+type PenaltyDeductionType = Extract<PenaltyType, "POINTS_DEDUCTION" | "CRYSTAL_DEDUCTION">;
 
 interface Character {
   id: string;
@@ -30,7 +31,7 @@ interface Character {
 
 interface PenaltyRecord {
   id: string;
-  type: PenaltyDeductionType;
+  type: PenaltyType;
   points: number;
   crystals: number;
   reason: string | null;
@@ -39,8 +40,22 @@ interface PenaltyRecord {
 }
 
 function formatPenaltyAmount(penalty: Pick<PenaltyRecord, "type" | "points" | "crystals">) {
-  if (penalty.type === "CRYSTAL_DEDUCTION") return `−${penalty.crystals} cristales`;
-  return `−${penalty.points} pts`;
+  switch (penalty.type) {
+    case "CRYSTAL_DEDUCTION":
+      return `−${penalty.crystals} cristales`;
+    case "POINTS_DEDUCTION":
+      return `−${penalty.points} pts`;
+    case "SCREEN_TIME_REDUCTION":
+      return `−${penalty.points} min pantalla`;
+    case "CUSTOM":
+      if (penalty.crystals > 0) return `−${penalty.crystals} cristales`;
+      if (penalty.points > 0) return `−${penalty.points} pts`;
+      return "Penalización";
+    default: {
+      const _exhaustive: never = penalty.type;
+      return _exhaustive;
+    }
+  }
 }
 
 function CharacterAvatar({ character, size = "md" }: { character: Character; size?: "sm" | "md" | "lg" }) {
@@ -177,8 +192,22 @@ export function PenaltiesManager({
                 .filter((p) => p.character.id === c.id)
                 .reduce(
                   (acc, p) => {
-                    if (p.type === "CRYSTAL_DEDUCTION") acc.crystals += p.crystals;
-                    else acc.points += p.points;
+                    switch (p.type) {
+                      case "CRYSTAL_DEDUCTION":
+                        acc.crystals += p.crystals;
+                        break;
+                      case "POINTS_DEDUCTION":
+                        acc.points += p.points;
+                        break;
+                      case "SCREEN_TIME_REDUCTION":
+                      case "CUSTOM":
+                        break;
+                      default: {
+                        const _exhaustive: never = p.type;
+                        void _exhaustive;
+                        break;
+                      }
+                    }
                     return acc;
                   },
                   { points: 0, crystals: 0 }
