@@ -1,59 +1,96 @@
 import { CharacterRepository } from "../repositories/character.repository";
-import { ConfigurationRepository } from "../repositories/skill.repository";
+import { ConfigurationRepository, resolveScreenTimeMinutes } from "../repositories/skill.repository";
 import { GameEventRepository } from "../repositories/game-event.repository";
-import { prisma } from "@repo/database";
+import { RewardRepository } from "../repositories/reward.repository";
+import { prisma } from "@repo/database/prisma";
 import { getWeekKey } from "../utils/period";
+
+export type PenaltyDeductionType = "POINTS_DEDUCTION" | "CRYSTAL_DEDUCTION";
 
 export class WeeklyPointsService {
   constructor(
     private characterRepo = new CharacterRepository(),
     private configRepo = new ConfigurationRepository(),
-    private gameEventRepo = new GameEventRepository()
+    private gameEventRepo = new GameEventRepository(),
+    private rewardRepo = new RewardRepository()
   ) {}
 
   async calculateScreenTime(weeklyPoints: number) {
     const configs = await this.configRepo.getScreenTimeConfigs();
-    const match = configs.find(
-      (c) => weeklyPoints >= c.minWeeklyPoints && weeklyPoints <= c.maxWeeklyPoints
-    );
-    return match?.minutesAllowed ?? 30;
+    return resolveScreenTimeMinutes(weeklyPoints, configs);
   }
 
-  async applyPenalty(characterId: string, points: number, reason?: string) {
+  async applyPenalty(
+    characterId: string,
+    type: PenaltyDeductionType,
+    amount: number,
+    reason?: string
+  ) {
     const character = await this.characterRepo.findById(characterId);
     if (!character) throw new Error("Personaje no encontrado");
+    if (amount < 1) throw new Error("La cantidad debe ser al menos 1");
 
-    const weekKey = getWeekKey();
-    const newWeeklyPoints = Math.max(0, character.weeklyPoints - points);
+    const characterSelect = {
+      id: true,
+      name: true,
+      gender: true,
+      themeKey: true,
+      avatarBase: true,
+      level: true,
+      weeklyPoints: true,
+      crystals: true,
+    } as const;
 
-    await this.characterRepo.update(characterId, { weeklyPoints: newWeeklyPoints });
+    if (type === "POINTS_DEDUCTION") {
+      const weekKey = getWeekKey();
+      const newWeeklyPoints = Math.max(0, character.weeklyPoints - amount);
+
+      await this.characterRepo.update(characterId, { weeklyPoints: newWeeklyPoints });
+
+      const penalty = await prisma.penalty.create({
+        data: { characterId, type, points: amount, reason },
+        include: { character: { select: characterSelect } },
+      });
+
+      await prisma.weeklyPenalty.upsert({
+        where: { characterId_weekKey: { characterId, weekKey } },
+        update: { points: { increment: amount }, reason },
+        create: { characterId, weekKey, points: amount, reason },
+      });
+
+      await this.gameEventRepo.create(characterId, "PENALTY_APPLIED", {
+        type,
+        points: amount,
+        crystals: 0,
+        reason,
+      });
+
+      return { ...penalty, character: { ...penalty.character, weeklyPoints: newWeeklyPoints } };
+    }
+
+    const newCrystals = Math.max(0, character.crystals - amount);
+
+    await this.characterRepo.update(characterId, { crystals: newCrystals });
 
     const penalty = await prisma.penalty.create({
-      data: { characterId, type: "POINTS_DEDUCTION", points, reason },
-      include: {
-        character: {
-          select: {
-            id: true,
-            name: true,
-            gender: true,
-            themeKey: true,
-            avatarBase: true,
-            level: true,
-            weeklyPoints: true,
-          },
-        },
-      },
+      data: { characterId, type, crystals: amount, reason },
+      include: { character: { select: characterSelect } },
     });
 
-    await prisma.weeklyPenalty.upsert({
-      where: { characterId_weekKey: { characterId, weekKey } },
-      update: { points: { increment: points }, reason },
-      create: { characterId, weekKey, points, reason },
+    await this.rewardRepo.addCrystalTransaction(
+      characterId,
+      -amount,
+      reason ? `Penalización: ${reason}` : "Penalización"
+    );
+
+    await this.gameEventRepo.create(characterId, "PENALTY_APPLIED", {
+      type,
+      points: 0,
+      crystals: amount,
+      reason,
     });
 
-    await this.gameEventRepo.create(characterId, "PENALTY_APPLIED", { points, reason });
-
-    return { ...penalty, character: { ...penalty.character, weeklyPoints: newWeeklyPoints } };
+    return { ...penalty, character: { ...penalty.character, crystals: newCrystals } };
   }
 
   async getFamilyPenalties(familyId: string, limit = 50) {
@@ -69,6 +106,7 @@ export class WeeklyPointsService {
             avatarBase: true,
             level: true,
             weeklyPoints: true,
+            crystals: true,
           },
         },
       },
@@ -87,15 +125,16 @@ export class WeeklyPointsService {
   }
 
   async getFamilyWeeklyStats(familyId: string) {
-    const characters = await this.characterRepo.findByFamily(familyId);
+    const [characters, configs] = await Promise.all([
+      this.characterRepo.findByFamilyForDashboard(familyId),
+      this.configRepo.getScreenTimeConfigs(),
+    ]);
 
-    return Promise.all(
-      characters.map(async (character) => ({
-        characterId: character.id,
-        name: character.name,
-        weeklyPoints: character.weeklyPoints,
-        screenTimeMinutes: await this.calculateScreenTime(character.weeklyPoints),
-      }))
-    );
+    return characters.map((character) => ({
+      characterId: character.id,
+      name: character.name,
+      weeklyPoints: character.weeklyPoints,
+      screenTimeMinutes: resolveScreenTimeMinutes(character.weeklyPoints, configs),
+    }));
   }
 }

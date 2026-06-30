@@ -1,5 +1,7 @@
 export { CharacterService } from "./services/character.service";
 export { MissionService } from "./services/mission.service";
+export type { EnrichedMission, CharacterMissionOverview, CharacterAgenda } from "./services/mission.service";
+export type { TodayMissionSummary } from "./services/schedule.service";
 export { QuestionnaireService } from "./services/questionnaire.service";
 export type { QuestionnaireState } from "./types/questionnaire";
 export type { LevelUpInfo, BossVictoryInfo, StreakFeedback, MorningComboFeedback, MissionCompleteFeedback } from "./types/game-feedback";
@@ -24,6 +26,8 @@ export {
   SkillRepository,
   ConfigurationRepository,
   BossBattleRepository,
+  invalidateConfigurationCache,
+  resolveScreenTimeMinutes,
 } from "./repositories/skill.repository";
 
 export {

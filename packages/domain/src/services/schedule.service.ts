@@ -5,7 +5,19 @@ import { CharacterRepository } from "../repositories/character.repository";
 import { MissionService } from "./mission.service";
 import { getPeriodKey } from "../utils/period";
 import { getDayScheduleType, isTimeInBlock } from "../utils/schedule";
+import {
+  characterMissionProgressKey,
+  type CharacterMissionProgressRef,
+} from "../utils/mission-progress";
 import type { DayScheduleType } from "@repo/database";
+
+export type TodayMissionSummary = {
+  characterId: string;
+  completed: number;
+  total: number;
+  isFreeDay: boolean;
+  freeDayLabel: string | null;
+};
 
 export class ScheduleService {
   constructor(
@@ -29,6 +41,80 @@ export class ScheduleService {
     return this.freeDayRepo.toggle(familyId, dateKey, label);
   }
 
+  async getTodayMissionSummariesForFamily(
+    familyId: string,
+    date: Date = new Date()
+  ): Promise<TodayMissionSummary[]> {
+    const characters = await this.characterRepo.findByFamilyForDashboard(familyId);
+    const characterIds = characters.map((character) => character.id);
+
+    if (characterIds.length === 0) {
+      return [];
+    }
+
+    const freeDay = await this.freeDayRepo.findByFamilyAndDate(familyId, date);
+    if (freeDay) {
+      return characterIds.map((characterId) => ({
+        characterId,
+        completed: 0,
+        total: 0,
+        isFreeDay: true,
+        freeDayLabel: freeDay.label,
+      }));
+    }
+
+    const dayType = getDayScheduleType(date);
+    let blocks = await this.scheduleRepo.findBlocksByCharacterIds(characterIds, dayType);
+
+    if (dayType === "FRIDAY") {
+      const charactersWithBlocks = new Set(blocks.map((block) => block.characterId));
+      const missingFriday = characterIds.filter((id) => !charactersWithBlocks.has(id));
+      if (missingFriday.length > 0) {
+        const weekdayBlocks = await this.scheduleRepo.findBlocksByCharacterIds(
+          missingFriday,
+          "WEEKDAY"
+        );
+        blocks = [...blocks, ...weekdayBlocks];
+      }
+    }
+
+    const progressRefs: CharacterMissionProgressRef[] = [];
+    const missionsByCharacter = new Map<string, { missionId: string; periodKey: string }[]>();
+
+    for (const block of blocks) {
+      for (const link of block.missions) {
+        const periodKey = getPeriodKey(link.mission.frequency, date);
+        const missions = missionsByCharacter.get(block.characterId) ?? [];
+        missions.push({ missionId: link.mission.id, periodKey });
+        missionsByCharacter.set(block.characterId, missions);
+        progressRefs.push({
+          characterId: block.characterId,
+          missionId: link.mission.id,
+          periodKey,
+        });
+      }
+    }
+
+    const completionMap = await this.missionRepo.getFamilyCompletionMap(progressRefs);
+
+    return characterIds.map((characterId) => {
+      const missions = missionsByCharacter.get(characterId) ?? [];
+      const completed = missions.filter((mission) =>
+        completionMap.get(
+          characterMissionProgressKey(characterId, mission.missionId, mission.periodKey)
+        )
+      ).length;
+
+      return {
+        characterId,
+        completed,
+        total: missions.length,
+        isFreeDay: false,
+        freeDayLabel: null,
+      };
+    });
+  }
+
   async getAgendaForCharacter(characterId: string, date: Date = new Date()) {
     const character = await this.assertCharacterExists(characterId);
 
@@ -50,28 +136,24 @@ export class ScheduleService {
       blocks = await this.scheduleRepo.findBlocksByCharacter(characterId, "WEEKDAY");
     }
 
-    const agendaBlocks = [];
+    const missionsById = new Map<string, (typeof blocks)[number]["missions"][number]["mission"]>();
     for (const block of blocks) {
-      const missions = [];
       for (const link of block.missions) {
-        const periodKey = getPeriodKey(link.mission.frequency);
-        const completed = await this.missionRepo.isCompleted(link.mission.id, characterId, periodKey);
-        missions.push(
-          await this.missionService.enrichMissionForCharacter(
-            link.mission,
-            characterId,
-            periodKey,
-            completed
-          )
-        );
+        missionsById.set(link.mission.id, link.mission);
       }
-
-      agendaBlocks.push({
-        ...block,
-        missions,
-        isCurrent: isTimeInBlock(date, block.startTime, block.endTime),
-      });
     }
+
+    const enrichedMissions = await this.missionService.enrichMissionsForCharacter(
+      [...missionsById.values()],
+      characterId
+    );
+    const enrichedById = new Map(enrichedMissions.map((mission) => [mission.id, mission]));
+
+    const agendaBlocks = blocks.map((block) => ({
+      ...block,
+      missions: block.missions.map((link) => enrichedById.get(link.mission.id)!),
+      isCurrent: isTimeInBlock(date, block.startTime, block.endTime),
+    }));
 
     return {
       dayType,

@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import type { DayScheduleType } from "@repo/database";
 
 export class ScheduleRepository {
@@ -12,6 +12,23 @@ export class ScheduleRepository {
         },
       },
       orderBy: [{ order: "asc" }, { startTime: "asc" }],
+    });
+  }
+
+  async findBlocksByCharacterIds(characterIds: string[], dayType: DayScheduleType) {
+    if (characterIds.length === 0) {
+      return [];
+    }
+
+    return prisma.scheduleBlock.findMany({
+      where: { characterId: { in: characterIds }, dayType, isActive: true },
+      include: {
+        missions: {
+          include: { mission: { include: { skill: true } } },
+          orderBy: { order: "asc" },
+        },
+      },
+      orderBy: [{ characterId: "asc" }, { order: "asc" }, { startTime: "asc" }],
     });
   }
 

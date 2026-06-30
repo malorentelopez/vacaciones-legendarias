@@ -1,4 +1,24 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
+import type { LevelConfiguration, ScreenTimeConfiguration } from "@repo/database";
+
+let cachedLevels: LevelConfiguration[] | null = null;
+let cachedScreenTimeConfigs: ScreenTimeConfiguration[] | null = null;
+
+export function invalidateConfigurationCache() {
+  cachedLevels = null;
+  cachedScreenTimeConfigs = null;
+}
+
+export function resolveScreenTimeMinutes(
+  weeklyPoints: number,
+  configs: ScreenTimeConfiguration[]
+): number {
+  const match = configs.find(
+    (config) =>
+      weeklyPoints >= config.minWeeklyPoints && weeklyPoints <= config.maxWeeklyPoints
+  );
+  return match?.minutesAllowed ?? 30;
+}
 
 export class SkillRepository {
   async findAll() {
@@ -26,41 +46,60 @@ export class SkillRepository {
 }
 
 export class ConfigurationRepository {
-  async getLevels() {
+  async getLevelsUncached() {
     return prisma.levelConfiguration.findMany({ orderBy: { level: "asc" } });
   }
 
+  async getLevels() {
+    if (!cachedLevels) {
+      cachedLevels = await this.getLevelsUncached();
+    }
+    return cachedLevels;
+  }
+
   async upsertLevel(level: number, xpRequired: number, crystalReward = 0) {
-    return prisma.levelConfiguration.upsert({
+    const result = await prisma.levelConfiguration.upsert({
       where: { level },
       update: { xpRequired, crystalReward },
       create: { level, xpRequired, crystalReward },
     });
+    invalidateConfigurationCache();
+    return result;
   }
 
   async deleteLevel(level: number) {
-    return prisma.levelConfiguration.delete({ where: { level } });
+    const result = await prisma.levelConfiguration.delete({ where: { level } });
+    invalidateConfigurationCache();
+    return result;
   }
 
-  async getScreenTimeConfigs() {
+  async getScreenTimeConfigsUncached() {
     return prisma.screenTimeConfiguration.findMany({
       orderBy: { minWeeklyPoints: "asc" },
     });
+  }
+
+  async getScreenTimeConfigs() {
+    if (!cachedScreenTimeConfigs) {
+      cachedScreenTimeConfigs = await this.getScreenTimeConfigsUncached();
+    }
+    return cachedScreenTimeConfigs;
   }
 
   async upsertScreenTime(minWeeklyPoints: number, maxWeeklyPoints: number, minutesAllowed: number) {
     const existing = await prisma.screenTimeConfiguration.findFirst({
       where: { minWeeklyPoints },
     });
-    if (existing) {
-      return prisma.screenTimeConfiguration.update({
-        where: { id: existing.id },
-        data: { maxWeeklyPoints, minutesAllowed },
-      });
-    }
-    return prisma.screenTimeConfiguration.create({
-      data: { minWeeklyPoints, maxWeeklyPoints, minutesAllowed },
-    });
+    const result = existing
+      ? await prisma.screenTimeConfiguration.update({
+          where: { id: existing.id },
+          data: { maxWeeklyPoints, minutesAllowed },
+        })
+      : await prisma.screenTimeConfiguration.create({
+          data: { minWeeklyPoints, maxWeeklyPoints, minutesAllowed },
+        });
+    invalidateConfigurationCache();
+    return result;
   }
 
   async getPenaltyConfigs() {

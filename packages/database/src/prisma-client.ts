@@ -1,6 +1,7 @@
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { Pool } from "pg";
+import { isQueryMetricsEnabled, recordQuery } from "./query-metrics";
 
 /** pg v8 treats require/prefer/verify-ca as verify-full; normalize to silence the deprecation warning. */
 function normalizeDatabaseUrl(url: string): string {
@@ -32,10 +33,25 @@ function createPrismaClient(): PrismaClient {
   });
   const adapter = new PrismaPg(pool);
 
-  return new PrismaClient({
+  const baseClient = new PrismaClient({
     adapter,
     log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
+
+  if (!isQueryMetricsEnabled()) {
+    return baseClient;
+  }
+
+  return baseClient.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          recordQuery(model, operation);
+          return query(args);
+        },
+      },
+    },
+  }) as unknown as PrismaClient;
 }
 
 const globalForPrisma = globalThis as unknown as {

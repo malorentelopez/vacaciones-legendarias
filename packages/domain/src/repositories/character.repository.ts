@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 
 export class CharacterRepository {
   async findById(id: string) {
@@ -17,6 +17,25 @@ export class CharacterRepository {
       include: {
         skills: { include: { skill: true } },
         user: true,
+      },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async findByFamilyForDashboard(familyId: string) {
+    return prisma.character.findMany({
+      where: { familyId },
+      select: {
+        id: true,
+        name: true,
+        gender: true,
+        themeKey: true,
+        avatarBase: true,
+        avatarConfig: true,
+        level: true,
+        crystals: true,
+        weeklyPoints: true,
+        xp: true,
       },
       orderBy: { createdAt: "asc" },
     });

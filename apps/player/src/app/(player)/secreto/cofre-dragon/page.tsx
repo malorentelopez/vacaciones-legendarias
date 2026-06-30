@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
 import { getDragonChestStatus } from "@/actions/secrets";
-import { DragonChestGame } from "@/components/secrets/dragon-chest-game";
+import { DragonChestGameLazy } from "@/components/lazy/secret-games-lazy";
 
 export default async function DragonChestPage() {
   const session = await getValidPlayerSession();
@@ -16,7 +16,7 @@ export default async function DragonChestPage() {
 
   return (
     <div className="py-4">
-      <DragonChestGame themeKey={character.themeKey} />
+      <DragonChestGameLazy themeKey={character.themeKey} />
     </div>
   );
 }

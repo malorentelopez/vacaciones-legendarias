@@ -1,8 +1,8 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { CharacterService, parseAvatarConfig, mergeAvatarConfig, getUnlockedAccessoryKeys, getUnlockedPetKeys } from "@repo/domain";
 import { requirePlayerSession } from "@/lib/player-session";
+import { revalidateAvatarRoutes } from "@/lib/revalidate-player-routes";
 import { removeStoredAvatar, storeAvatarImage } from "@/lib/avatar-storage";
 
 const MAX_SIZE = 2 * 1024 * 1024;
@@ -46,9 +46,7 @@ export async function uploadCustomAvatar(formData: FormData) {
     },
   });
 
-  revalidatePath("/");
-  revalidatePath("/avatar");
-  revalidatePath("/ruta");
+  revalidateAvatarRoutes();
 
   return { success: true as const, customImage };
 }
@@ -72,9 +70,7 @@ export async function removeCustomAvatar() {
     },
   });
 
-  revalidatePath("/");
-  revalidatePath("/avatar");
-  revalidatePath("/ruta");
+  revalidateAvatarRoutes();
 
   return { success: true as const };
 }
@@ -127,8 +123,7 @@ export async function equipHat(hatKey: string) {
     }),
   });
 
-  revalidatePath("/");
-  revalidatePath("/avatar");
+  revalidateAvatarRoutes();
 
   return { success: true as const };
 }
@@ -158,8 +153,7 @@ export async function equipPet(petKey: string) {
     }),
   });
 
-  revalidatePath("/");
-  revalidatePath("/avatar");
+  revalidateAvatarRoutes();
 
   return { success: true as const };
 }

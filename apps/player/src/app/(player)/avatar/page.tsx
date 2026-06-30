@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getCharacter } from "@/actions/game";
 import { getDragonChestStatus } from "@/actions/secrets";
-import { AvatarCustomizer } from "@/components/avatar-customizer";
+import { AvatarCustomizerLazy } from "@/components/lazy/avatar-customizer-lazy";
 import { ResetProgressButton } from "@/components/reset-progress-button";
 import { parseAvatarConfig } from "@repo/domain";
 
@@ -23,7 +23,7 @@ export default async function AvatarPage() {
 
   return (
     <div className="space-y-6">
-      <AvatarCustomizer
+      <AvatarCustomizerLazy
         character={{
           name: character.name,
           gender: character.gender,

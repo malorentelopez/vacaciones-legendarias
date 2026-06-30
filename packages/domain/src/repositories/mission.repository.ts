@@ -1,5 +1,13 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import type { MissionFrequency, MissionType } from "@repo/database";
+import {
+  characterMissionProgressKey,
+  dedupeCharacterMissionProgressRefs,
+  dedupeMissionProgressRefs,
+  missionProgressKey,
+  type CharacterMissionProgressRef,
+  type MissionProgressRef,
+} from "../utils/mission-progress";
 
 export class MissionRepository {
   async findAll(familyId?: string) {
@@ -18,6 +26,19 @@ export class MissionRepository {
       where: {
         isActive: true,
         isSideQuest: false,
+        OR: [{ familyId }, { familyId: null }],
+      },
+      include: { skill: true },
+      orderBy: { createdAt: "asc" },
+    });
+  }
+
+  async findMainMissionsByFrequency(familyId: string | undefined, frequency: MissionFrequency) {
+    return prisma.mission.findMany({
+      where: {
+        isActive: true,
+        isSideQuest: false,
+        frequency,
         OR: [{ familyId }, { familyId: null }],
       },
       include: { skill: true },
@@ -114,5 +135,70 @@ export class MissionRepository {
       },
     });
     return progress?.completed ?? false;
+  }
+
+  async getCompletionMap(characterId: string, items: MissionProgressRef[]) {
+    const refs = dedupeMissionProgressRefs(items);
+    const result = new Map<string, boolean>();
+
+    for (const ref of refs) {
+      result.set(missionProgressKey(ref.missionId, ref.periodKey), false);
+    }
+
+    if (refs.length === 0) {
+      return result;
+    }
+
+    const rows = await prisma.missionProgress.findMany({
+      where: {
+        characterId,
+        OR: refs.map(({ missionId, periodKey }) => ({ missionId, periodKey })),
+      },
+      select: { missionId: true, periodKey: true, completed: true },
+    });
+
+    for (const row of rows) {
+      result.set(missionProgressKey(row.missionId, row.periodKey), row.completed);
+    }
+
+    return result;
+  }
+
+  async getFamilyCompletionMap(items: CharacterMissionProgressRef[]) {
+    const refs = dedupeCharacterMissionProgressRefs(items);
+    const result = new Map<string, boolean>();
+
+    for (const ref of refs) {
+      result.set(
+        characterMissionProgressKey(ref.characterId, ref.missionId, ref.periodKey),
+        false
+      );
+    }
+
+    if (refs.length === 0) {
+      return result;
+    }
+
+    const characterIds = [...new Set(refs.map((ref) => ref.characterId))];
+    const rows = await prisma.missionProgress.findMany({
+      where: {
+        characterId: { in: characterIds },
+        OR: refs.map(({ characterId, missionId, periodKey }) => ({
+          characterId,
+          missionId,
+          periodKey,
+        })),
+      },
+      select: { characterId: true, missionId: true, periodKey: true, completed: true },
+    });
+
+    for (const row of rows) {
+      result.set(
+        characterMissionProgressKey(row.characterId, row.missionId, row.periodKey),
+        row.completed
+      );
+    }
+
+    return result;
   }
 }

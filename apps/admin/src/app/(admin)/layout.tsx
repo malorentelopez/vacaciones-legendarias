@@ -5,7 +5,7 @@ import { AdminNav } from "@/components/admin-nav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
-  if (!session) redirect("/login");
+  if (!session || session.role !== "PARENT") redirect("/login");
 
   return (
     <div className="flex min-h-screen flex-col lg:flex-row">

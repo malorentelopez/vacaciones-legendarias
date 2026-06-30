@@ -33,6 +33,18 @@ export class CharacterService {
     );
   }
 
+  async getFamilyCharactersForDashboard(familyId: string) {
+    const [characters, levels] = await Promise.all([
+      this.characterRepo.findByFamilyForDashboard(familyId),
+      this.configRepo.getLevels(),
+    ]);
+
+    return characters.map((character) => ({
+      ...character,
+      xpProgress: calculateXpForNextLevel(character.level, character.xp, levels),
+    }));
+  }
+
   async createCharacter(data: {
     name: string;
     familyId: string;

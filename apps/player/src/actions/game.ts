@@ -13,6 +13,10 @@ import {
   GameEventRepository,
 } from "@repo/domain";
 import { revalidatePath } from "next/cache";
+import {
+  revalidateAvatarRoutes,
+  revalidateMissionRelatedRoutes,
+} from "@/lib/revalidate-player-routes";
 
 const characterService = new CharacterService();
 const missionService = new MissionService();
@@ -56,12 +60,7 @@ export async function completeMission(missionId: string) {
   const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   const result = await missionService.completeMission(missionId, session.characterId);
-  revalidatePath("/");
-  revalidatePath("/missions");
-  revalidatePath("/side-quests");
-  revalidatePath("/calendar");
-  revalidatePath("/ruta");
-  revalidatePath("/achievements");
+  revalidateMissionRelatedRoutes();
   return result;
 }
 
@@ -96,11 +95,7 @@ export async function submitQuestionnaire(
     answers
   );
 
-  revalidatePath("/");
-  revalidatePath("/missions");
-  revalidatePath("/side-quests");
-  revalidatePath("/ruta");
-  revalidatePath("/achievements");
+  revalidateMissionRelatedRoutes();
 
   return {
     correctCount: result.correctCount,
@@ -116,7 +111,6 @@ export async function submitQuestionnaire(
 export async function getAchievements() {
   const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
-  await achievementService.evaluateAchievements(session.characterId);
   return achievementService.getCharacterAchievements(session.characterId, session.familyId);
 }
 
@@ -174,8 +168,8 @@ export async function updateAvatar(data: {
   const session = await requirePlayerSession();
   if (!session.characterId) throw new Error("Sin personaje seleccionado");
   await characterService.updateCharacter(session.characterId, data);
-  revalidatePath("/");
-  revalidatePath("/avatar");
+  revalidatePath("/", "layout");
+  revalidateAvatarRoutes();
 }
 
 export async function resetPlayerProgress() {

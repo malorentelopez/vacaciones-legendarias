@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getValidPlayerSession } from "@/lib/player-session";
 import { getOceanFishingStatus } from "@/actions/secrets";
-import { OceanFishingGame } from "@/components/secrets/ocean-fishing-game";
+import { OceanFishingGameLazy } from "@/components/lazy/secret-games-lazy";
 
 export default async function OceanFishingPage() {
   const session = await getValidPlayerSession();
@@ -15,7 +15,7 @@ export default async function OceanFishingPage() {
 
   return (
     <div className="py-4">
-      <OceanFishingGame />
+      <OceanFishingGameLazy />
     </div>
   );
 }

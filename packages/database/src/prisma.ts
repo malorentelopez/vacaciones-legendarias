@@ -1,5 +1,3 @@
-import "server-only";
-
 export { prisma, getPrismaClient } from "./prisma-client";
 export {
   getQueryMetrics,
@@ -7,4 +5,3 @@ export {
   runWithQueryMetrics,
   type QueryMetrics,
 } from "./query-metrics";
-export * from "@prisma/client";

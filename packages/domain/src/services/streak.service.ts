@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import { CharacterRepository } from "../repositories/character.repository";
 import { AchievementRepository } from "../repositories/achievement.repository";
 import { GameEventRepository } from "../repositories/game-event.repository";

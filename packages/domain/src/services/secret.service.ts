@@ -1,4 +1,4 @@
-import { prisma } from "@repo/database";
+import { prisma } from "@repo/database/prisma";
 import {
   DRAGON_CHEST_SECRET,
   MANGA_POWER_COMBO_SECRET,

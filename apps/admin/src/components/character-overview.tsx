@@ -382,7 +382,11 @@ export function CharacterOverview({ data }: { data: OverviewData }) {
                   key={penalty.id}
                   className="flex items-center justify-between gap-3 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2 text-sm"
                 >
-                  <span className="text-red-300">−{penalty.points} pts</span>
+                  <span className="text-red-300">
+                    {penalty.type === "CRYSTAL_DEDUCTION"
+                      ? `−${penalty.crystals} cristales`
+                      : `−${penalty.points} pts`}
+                  </span>
                   <span className="truncate text-slate-400">{penalty.reason ?? "Sin motivo"}</span>
                   <time className="shrink-0 text-xs text-slate-500">
                     {formatRelativeTime(penalty.appliedAt)}

@@ -12,7 +12,9 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { FormField, inputClass, selectClass, textareaClass } from "@/components/ui/form-field";
 import { PageHeader } from "@/components/ui/page-header";
-import { AlertTriangle, Clock, RotateCcw, Star, Zap } from "lucide-react";
+import { AlertTriangle, Clock, Gem, RotateCcw, Star, Zap } from "lucide-react";
+
+type PenaltyDeductionType = "POINTS_DEDUCTION" | "CRYSTAL_DEDUCTION";
 
 interface Character {
   id: string;
@@ -22,15 +24,23 @@ interface Character {
   avatarBase: string;
   level: number;
   weeklyPoints: number;
+  crystals: number;
   screenTimeMinutes: number;
 }
 
 interface PenaltyRecord {
   id: string;
+  type: PenaltyDeductionType;
   points: number;
+  crystals: number;
   reason: string | null;
   appliedAt: Date;
   character: Character;
+}
+
+function formatPenaltyAmount(penalty: Pick<PenaltyRecord, "type" | "points" | "crystals">) {
+  if (penalty.type === "CRYSTAL_DEDUCTION") return `−${penalty.crystals} cristales`;
+  return `−${penalty.points} pts`;
 }
 
 function CharacterAvatar({ character, size = "md" }: { character: Character; size?: "sm" | "md" | "lg" }) {
@@ -70,16 +80,20 @@ export function PenaltiesManager({
   const [penaltyModalOpen, setPenaltyModalOpen] = useState(false);
   const [resetModalOpen, setResetModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState(initialCharacters[0]?.id ?? "");
-  const [points, setPoints] = useState(5);
+  const [penaltyType, setPenaltyType] = useState<PenaltyDeductionType>("POINTS_DEDUCTION");
+  const [amount, setAmount] = useState(5);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
 
   const maxPoints = Math.max(...characters.map((c) => c.weeklyPoints), 1);
+  const selectedCharacter = characters.find((c) => c.id === selectedId);
+  const maxCrystals = selectedCharacter?.crystals ?? 0;
 
   function openPenalty(characterId?: string) {
     if (characterId) setSelectedId(characterId);
     else if (!selectedId && characters[0]) setSelectedId(characters[0].id);
-    setPoints(5);
+    setPenaltyType("POINTS_DEDUCTION");
+    setAmount(5);
     setReason("");
     setPenaltyModalOpen(true);
   }
@@ -88,19 +102,26 @@ export function PenaltiesManager({
     e.preventDefault();
     setLoading(true);
     try {
-      const penalty = await applyPenalty(selectedId, points, reason || undefined);
+      const penalty = await applyPenalty(selectedId, penaltyType, amount, reason || undefined);
       const character = characters.find((c) => c.id === selectedId);
       const enrichedPenalty: PenaltyRecord = {
         ...penalty,
         character: {
           ...penalty.character,
           weeklyPoints: penalty.character.weeklyPoints,
+          crystals: penalty.character.crystals,
           screenTimeMinutes: character?.screenTimeMinutes ?? 30,
         },
       };
       setCharacters(
         characters.map((c) =>
-          c.id === selectedId ? { ...c, weeklyPoints: penalty.character.weeklyPoints } : c
+          c.id === selectedId
+            ? {
+                ...c,
+                weeklyPoints: penalty.character.weeklyPoints,
+                crystals: penalty.character.crystals,
+              }
+            : c
         )
       );
       setPenalties([enrichedPenalty, ...penalties]);
@@ -126,13 +147,11 @@ export function PenaltiesManager({
     }
   }
 
-  const selectedCharacter = characters.find((c) => c.id === selectedId);
-
   return (
     <div className="space-y-8">
       <PageHeader
         title="Penalizaciones"
-        description="Resta puntos semanales cuando haga falta. El reset semanal reinicia el contador de todos."
+        description="Resta puntos semanales o cristales cuando haga falta. El reset semanal reinicia el contador de puntos de todos."
         actionLabel="Aplicar penalización"
         onAction={() => openPenalty()}
       />
@@ -156,7 +175,14 @@ export function PenaltiesManager({
               const progress = (c.weeklyPoints / maxPoints) * 100;
               const weekPenalties = penalties
                 .filter((p) => p.character.id === c.id)
-                .reduce((sum, p) => sum + p.points, 0);
+                .reduce(
+                  (acc, p) => {
+                    if (p.type === "CRYSTAL_DEDUCTION") acc.crystals += p.crystals;
+                    else acc.points += p.points;
+                    return acc;
+                  },
+                  { points: 0, crystals: 0 }
+                );
 
               return (
                 <Card key={c.id} className="overflow-hidden">
@@ -178,14 +204,21 @@ export function PenaltiesManager({
                             <Zap className="mr-1 inline h-3 w-3" />
                             {c.weeklyPoints} pts
                           </Badge>
+                          <Badge variant="warning">
+                            <Gem className="mr-1 inline h-3 w-3" />
+                            {c.crystals} cristales
+                          </Badge>
                           <Badge variant="success">
                             <Clock className="mr-1 inline h-3 w-3" />
                             {c.screenTimeMinutes} min pantalla
                           </Badge>
                         </div>
-                        {weekPenalties > 0 && (
+                        {(weekPenalties.points > 0 || weekPenalties.crystals > 0) && (
                           <p className="mt-2 text-xs text-red-400">
-                            −{weekPenalties} pts penalizados en el historial reciente
+                            {weekPenalties.points > 0 ? `−${weekPenalties.points} pts` : null}
+                            {weekPenalties.points > 0 && weekPenalties.crystals > 0 ? " · " : null}
+                            {weekPenalties.crystals > 0 ? `−${weekPenalties.crystals} cristales` : null}
+                            {" "}penalizados en el historial reciente
                           </p>
                         )}
                       </div>
@@ -224,7 +257,7 @@ export function PenaltiesManager({
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-medium text-white">{p.character.name}</span>
-                    <Badge variant="warning">−{p.points} pts</Badge>
+                    <Badge variant="warning">{formatPenaltyAmount(p)}</Badge>
                     <span className="text-xs text-slate-500">{formatPenaltyDate(p.appliedAt)}</span>
                   </div>
                   {p.reason ? (
@@ -243,14 +276,16 @@ export function PenaltiesManager({
         open={penaltyModalOpen}
         onClose={() => setPenaltyModalOpen(false)}
         title="Aplicar penalización"
-        description="Resta puntos semanales al jugador seleccionado."
+        description="Resta puntos semanales o cristales al jugador seleccionado."
       >
         {selectedCharacter && (
           <div className="mb-4 flex items-center gap-3 rounded-xl border border-slate-700 bg-slate-900/50 p-3">
             <CharacterAvatar character={selectedCharacter} size="md" />
             <div>
               <p className="font-medium text-white">{selectedCharacter.name}</p>
-              <p className="text-sm text-slate-400">{selectedCharacter.weeklyPoints} pts esta semana</p>
+              <p className="text-sm text-slate-400">
+                {selectedCharacter.weeklyPoints} pts esta semana · {selectedCharacter.crystals} cristales
+              </p>
             </div>
           </div>
         )}
@@ -266,19 +301,41 @@ export function PenaltiesManager({
             >
               {characters.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} ({c.weeklyPoints} pts actuales)
+                  {c.name} ({c.weeklyPoints} pts · {c.crystals} cristales)
                 </option>
               ))}
             </select>
           </FormField>
 
-          <FormField label="Puntos a restar" htmlFor="penalty-points" required>
+          <FormField label="Tipo de penalización" htmlFor="penalty-type" required>
+            <select
+              id="penalty-type"
+              value={penaltyType}
+              onChange={(e) => {
+                const nextType = e.target.value as PenaltyDeductionType;
+                setPenaltyType(nextType);
+                setAmount(nextType === "POINTS_DEDUCTION" ? 5 : 1);
+              }}
+              className={selectClass}
+              required
+            >
+              <option value="POINTS_DEDUCTION">Puntos semanales</option>
+              <option value="CRYSTAL_DEDUCTION">Cristales</option>
+            </select>
+          </FormField>
+
+          <FormField
+            label={penaltyType === "POINTS_DEDUCTION" ? "Puntos a restar" : "Cristales a restar"}
+            htmlFor="penalty-amount"
+            required
+          >
             <input
-              id="penalty-points"
+              id="penalty-amount"
               type="number"
               min={1}
-              value={points}
-              onChange={(e) => setPoints(Number(e.target.value))}
+              max={penaltyType === "CRYSTAL_DEDUCTION" ? Math.max(maxCrystals, 1) : undefined}
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
               className={inputClass}
               required
             />
